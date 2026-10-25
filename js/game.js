@@ -53,11 +53,13 @@ function titleScreen() {
     <h1>我推的市長</h1>
     <p class="muted">爆肝的幕僚團隊，想辦法把你的市長送上寶座。<br>一局約 10 分鐘。</p>
     <button class="btn" id="go">開始上班</button>
+    <button class="btn ghost" id="manual">📖 總幹事手冊</button>
     <button class="btn ghost" id="gal">結局圖鑑（${seen.size} / ${ENDINGS.length}）</button>
     <p class="muted" style="margin-top:22px;font-size:12px">本遊戲純屬虛構，人物、政黨、城市皆非真實。</p>
   `, 'title');
   $('#go').onclick = drawScreen;
   $('#gal').onclick = () => gallery(titleScreen);
+  $('#manual').onclick = openManual;
 }
 
 // ---------------- 抽老闆 ----------------
@@ -170,15 +172,17 @@ function introScreen() {
       📊 每月一次內參民調，最後 10 天民調封關。<br>
       🫀 顧好你的肝。</p>
       <button class="btn" id="ok">開工</button>
+      <button class="btn ghost" id="man2">📖 先看總幹事手冊</button>
     </div>`, 'k-main');
   $('#ok').onclick = () => runGame();
+  $('#man2').onclick = openManual;
 }
 
 // ---------------- 戰情室 ----------------
 function roomScreen() {
   show(`
     <div class="hud">
-      <div class="row"><span class="date" id="date"></span><span class="clock" id="clock"></span></div>
+      <div class="row"><span class="date" id="date"></span><span><button class="mbtn" id="mbtn" aria-label="總幹事手冊">📖</button> <span class="clock" id="clock"></span></span></div>
       <div class="box">
         <div class="boxtitle">👤 候選人 <b id="bx-name"></b></div>
         <div class="stats">
@@ -204,6 +208,7 @@ function roomScreen() {
       <div class="who" id="bossname"></div>
     </div>
   `, 'room');
+  $('#mbtn').onclick = openManual;
   $('#boss').innerHTML = bossFace('smile');
   $('#bossname').textContent = `${G.name}・${TYPES[G.type].party}`;
   updateHud();
@@ -271,7 +276,7 @@ function countdown(seconds, onTick, onEnd) {
   let left = seconds * 1000, last = performance.now(), stop = false;
   function loop(now) {
     if (stop) return;
-    if (!document.hidden) left -= now - last;
+    if (!document.hidden && !app.querySelector('.manual')) left -= now - last; // 看手冊時暫停
     last = now;
     onTick(Math.max(0, left) / (seconds * 1000), Math.ceil(Math.max(0, left) / 1000));
     if (left <= 0) { stop = true; onEnd(); return; }
@@ -704,6 +709,73 @@ async function shareEnding(res) {
     try { await navigator.clipboard.writeText(text); toast('已複製分享文字'); } catch (e) { toast('複製失敗，請手動輸入網址'); }
   };
   o.querySelector('#cl').onclick = closeOverlay;
+}
+
+// ---------------- 總幹事手冊 ----------------
+// 蓋在畫面最上層；遊戲中打開時，倒數計時會暫停
+function openManual() {
+  const m = document.createElement('div');
+  m.className = 'manual';
+  m.innerHTML = `<div class="mcard">
+    <div class="mhead"><b>📖 總幹事手冊</b><button id="mclose" aria-label="關閉">✕</button></div>
+    <div class="mbody">
+      <h3>🎯 選上的關鍵</h3>
+      <p><b>民調好感度高的時候，聲量越大，民調漲得越快。</b></p>
+      <ul>
+        <li>好感度高於 50、聲量又高 → 民調每週自動往上漲</li>
+        <li>好感度低於 50 → 聲量越大，扣得越多（越紅越被罵）</li>
+        <li>聲量很低 → 好感度再高，民調也幾乎不動</li>
+      </ul>
+      <p>順序是：<b>先拉好感度，再衝聲量。</b></p>
+
+      <h3>🔥 有火就滅火</h3>
+      <ul>
+        <li>突發事件只有 20 秒，最後兩週只剩 10 秒</li>
+        <li>誠實、負責的選項通常最穩：道歉、公開說明、親自到現場</li>
+        <li>「推給中央」「說是抹黑」「不回應」很常翻車</li>
+        <li>時間到沒選，就是擺爛，老闆會一直問「接下來呢？」</li>
+      </ul>
+
+      <h3>✨ 沒火就成就老闆</h3>
+      <ul>
+        <li>行程上的小標籤：💰 花錢、🫀 很累、👥 看人氣（聲量太低可能沒人來）、🎲 有風險</li>
+        <li>座談、講政見之後，要再選講什麼主題</li>
+        <li>錢少的時候記得募款；造勢、廣告效果大，但要錢</li>
+      </ul>
+
+      <h3>🤝 讓老闆聽你的</h3>
+      <p>信任太低，老闆會自己做別的事。多選他擅長的事，信任會上升，也比較不會翻車：</p>
+      <ul>
+        <li>政治世家：掃街、里長、宮廟、長輩出面</li>
+        <li>清新專業：政見、座談、白皮書</li>
+        <li>商業老闆：廣告、外商、花錢辦大事</li>
+        <li>現任市長：視察、把市政危機處理好</li>
+        <li>資深黨員：貓、國際交流、長照與住宅</li>
+        <li>草根律師：街頭演講、即興、上節目</li>
+      </ul>
+      <p>信任掉了，就陪老闆吃宵夜聊天。</p>
+
+      <h3>🧑‍💼 總幹事自己</h3>
+      <ul>
+        <li>🫀 肝的健康：太低會被強制休息一天</li>
+        <li>💪 團隊士氣：太低事情容易出包，請大家喝飲料打打氣</li>
+        <li>🔥 你的信心：太低你會慌，做決定的時間變短，老闆也不想聽</li>
+      </ul>
+
+      <h3>⚠️ 千萬別做</h3>
+      <ul>
+        <li>收黑錢、買票、境外資金：做壞事<b>一定會被抓</b>，選上也沒用</li>
+        <li>一直攻擊對手：對手會回擊</li>
+        <li>民調領先就放鬆：支持者以為穩贏，投票日不出門</li>
+      </ul>
+
+      <h3>📊 看內參民調</h3>
+      <p>每個月一次。下面有「副總幹事建議」，會告訴你現在卡在哪裡。最後 10 天民調封關，只能憑直覺。</p>
+    </div>
+  </div>`;
+  app.appendChild(m);
+  m.querySelector('#mclose').onclick = () => m.remove();
+  m.onclick = e => { if (e.target === m) m.remove(); };
 }
 
 titleScreen();
