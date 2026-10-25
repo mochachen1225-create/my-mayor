@@ -9,7 +9,8 @@ const STAT_KEYS = ['buzz', 'fav', 'money', 'trust', 'liver', 'con', 'net'];
 const FLAG_KEYS = ['warm', 'dirty1', 'dirty2', 'ledger', 'rebel', 'respect', 'script', 'cut', 'tv', 'buy', 'foreign'];
 
 const JITTER = ['s', 'r', 'fav', 'buzz', 'net', 'con'];
-const S_GAIN = 0.62; // 支持度正向效果的倍率（平衡用）
+const S_GAIN = 0.55; // 支持度正向效果的倍率（平衡用）
+const pick = (g, arr) => arr[Math.floor(g.rng() * arr.length)];
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
 function makeRng(seed) {
@@ -32,6 +33,7 @@ function newGame(type, gender, name, rng = Math.random) {
     rng, type, gender, name: name || T.names[gender],
     he: gender === 'f' ? '她' : '他',
     rivalType, rivalGender, rivalName: TYPES[rivalType].names[rivalGender],
+    thirdName: (() => { const ts = Object.keys(TYPES).filter(t => t !== type && t !== rivalType); const t = ts[Math.floor(rng() * ts.length)]; return TYPES[t].names[rng() < 0.5 ? 'm' : 'f']; })(),
     num: 1 + Math.floor(rng() * 4),
     week: 1, clock: 8,
     s: T.start.s, r: T.start.r,
@@ -57,7 +59,6 @@ function weekLabel(w) {
 
 function fill(g, text) {
   if (!text) return '';
-  const incTrash = g.type === 'D' ? '而且這是你們市府自己改的。' : '';
   const incNote = g.type === 'D' ? '更糟的是，影片裡還有市府宣傳片的畫面，被質疑公器私用。' : '';
   return text
     .replace(/\{boss\}/g, g.name)
@@ -66,8 +67,7 @@ function fill(g, text) {
     .replace(/\{party\}/g, TYPES[g.type].party)
     .replace(/\{rparty\}/g, TYPES[g.rivalType].party)
     .replace(/\{num\}/g, g.num)
-    .replace(/\{incNote\}/g, incNote)
-    .replace(/\{incTrash\}/g, incTrash);
+    .replace(/\{incNote\}/g, incNote);
 }
 
 function eligible(g, ev) {
@@ -77,6 +77,8 @@ function eligible(g, ev) {
   if (ev.types && !ev.types.includes(g.type)) return false;
   if (ev.weeks && (g.week < ev.weeks[0] || g.week > ev.weeks[1])) return false;
   if (ev.needFavor && g.favor <= 0) return false;
+  if (ev.needLow && g.s > g.r - 5) return false; // 民調太低，議員才會找藉口
+  if (ev.needBroke && g.money >= 30) return false; // 錢快花完了，才會有人找上門
   if (ev.kind === 'crisis') return false;
   return true;
 }
@@ -99,18 +101,26 @@ function planWeek(g) {
   g.pending = [];
   const main = (MAIN[g.week] || []).map(e => typeof e === 'string' ? EVENTS.find(x => x.id === e) : e);
   for (const ev of main) steps.push({ step: 'event', ev });
-  let fires = main.length ? 0 : 1;
-  if (!main.length && g.rng() < 0.35) fires++;
+  // 沒事的時候自己排行程；突發事件隨機插進來，有時候一整週都沒事
+  const slots = g.week === 13 || g.week === WEEKS ? 0 : main.length ? 1 : 2;
+  let fires = main.length ? (g.rng() < 0.3 ? 1 : 0) : (g.rng() < 0.2 ? 0 : 1);
+  if (!main.length && g.rng() < 0.3) fires++;
   if (g.week >= 9 && g.rng() < 0.2) fires++;
   if (g.week === 1) fires = 1;
+  const mix = [];
+  for (let i = 0; i < slots; i++) mix.push({ step: 'free' });
   for (let i = 0; i < fires; i++) {
     const ev = pickEvent(g);
     if (!ev) break;
     g.used.add(ev.id);
-    steps.push({ step: 'event', ev: prepare(g, ev) });
+    mix.push({ step: 'event', ev: prepare(g, ev) });
   }
-  if (g.week !== 13 && g.week !== WEEKS) steps.push({ step: 'build' });
-  return steps;
+  for (let i = mix.length - 1; i > 0; i--) {
+    const j = Math.floor(g.rng() * (i + 1));
+    [mix[i], mix[j]] = [mix[j], mix[i]];
+  }
+  if (g.week === 1 && mix.length) mix.sort((a, b) => (a.step === 'free') - (b.step === 'free')); // 第一週先遇到事件，認識玩法
+  return steps.concat(mix);
 }
 
 // 需要臨時產生內容的事件
@@ -129,13 +139,15 @@ function prepare(g, ev) {
     { t: '🧥 暫停競選，坐鎮防災中心', fx: { fav: 3, buzz: -3, s: 0.4, liver: -5 }, r: '穩重形象加分，只是曝光少了。' }] };
 }
 
-function buildChoices(g) {
-  const pool = BUILD.filter(b => !b.types || b.types.includes(g.type));
+// 戰情室行程板：每次給 6 個能做的事，「休息」一定在
+function buildChoices(g, n = 6) {
+  const pool = BUILD.filter(b => (!b.types || b.types.includes(g.type)) && b.id !== 'rest');
   const out = [];
-  while (out.length < 3 && pool.length) {
+  while (out.length < n - 1 && pool.length) {
     const i = Math.floor(g.rng() * pool.length);
     out.push(pool.splice(i, 1)[0]);
   }
+  out.push(BUILD.find(b => b.id === 'rest'));
   return out;
 }
 
@@ -196,11 +208,12 @@ function choose(g, ev, opt, isBuild = false) {
         // 成就老闆企劃：老闆不配合，效果打折
         exec = { ...opt, fx: halve(opt.fx), risk: null, ok: null };
       }
-      if (defied) lines.push({ kind: 'defy', text: opts ? fill(g, TYPES[g.type].defy) + ' ' + fill(g, exec.t) : fill(g, TYPES[g.type].half) });
+      if (defied) lines.push({ kind: 'defy', text: opts ? fill(g, pick(g, TYPES[g.type].defy)) + ' ' + fill(g, exec.t) : fill(g, pick(g, TYPES[g.type].half)) });
     }
   }
 
   let failed = false;
+  let bad = null;
   // 人潮型活動：聲量和民調不夠，就沒人來
   const crowdFail = exec.crowd && g.rng() < clamp(0.7 - g.buzz / 110 - (g.s - g.r) / 40, 0.05, 0.75);
   if (crowdFail) {
@@ -221,9 +234,9 @@ function choose(g, ev, opt, isBuild = false) {
       applyFx(g, { fav: 3, s: 0.5 }, delta);
       lines.push({ kind: 'good', text: '對手拿不出證據，反而被追問。' });
     }
-  } else if (exec.risk && g.rng() < riskP(g, exec)) {
-    applyFx(g, exec.risk.fx, delta);
-    lines.push({ kind: 'bad', text: fill(g, exec.risk.r) });
+  } else if (exec.risk && (bad = rollRisk(g, exec))) {
+    applyFx(g, bad.fx, delta);
+    lines.push({ kind: 'bad', text: fill(g, bad.r) });
     failed = true;
   } else {
     applyFx(g, exec.ok, delta);
@@ -238,17 +251,27 @@ function choose(g, ev, opt, isBuild = false) {
     else if (failed) applyFx(g, { trust: -2 }, delta);
     else applyFx(g, { trust: 1 }, delta);
   }
+  // 老闆的反應，每次都不太一樣
+  if (bossActs && !defied && g.rng() < 0.7) {
+    lines.push({ kind: 'say', mood: failed ? 'sad' : 'big', text: fill(g, pick(g, failed ? TYPES[g.type].bad : TYPES[g.type].ok)) });
+  }
   advanceClock(g, isBuild ? 3 : 1.5 + g.rng() * 2, ev && ev.late, delta);
   logSwing(g, isBuild ? fill(g, exec.t) : fill(g, ev.title), delta);
   return { exec, defied, lines, delta, failed };
 }
 
 // 老闆擅長的事比較不容易翻車，不擅長的比較容易
-function riskP(g, o) {
-  let p = o.risk.p;
-  if (o.likes && o.likes.includes(g.type)) p -= 0.15;
-  if (o.hates && o.hates.includes(g.type)) p += 0.15;
-  return clamp(p, 0.05, 0.9);
+// risk 可以是一個壞結果，也可以是好幾個（各有機率）；回傳抽中的壞結果，沒抽中就是 null
+function rollRisk(g, o) {
+  const list = Array.isArray(o.risk) ? o.risk : [o.risk];
+  const total = list.reduce((a, r) => a + r.p, 0);
+  let shift = 0;
+  if (o.likes && o.likes.includes(g.type)) shift -= 0.15;
+  if (o.hates && o.hates.includes(g.type)) shift += 0.15;
+  const scale = clamp(total + shift, 0.05, 0.9) / total;
+  let x = g.rng();
+  for (const r of list) { x -= r.p * scale; if (x < 0) return r; }
+  return null;
 }
 
 function halve(fx) {
@@ -295,7 +318,16 @@ function endWeek(g) {
   const T = g.type;
   g.s += ((g.fav - 50) / 25) * (g.buzz / 100) * 0.8;
   if (T === 'D') g.s -= 0.4;
-  g.r += 0.38 + (g.rng() - 0.5) * 0.4; // 對手也在拚
+  // 對手也在拚：每週一則對手動態
+  const rn = RIVAL_NEWS[Math.floor(g.rng() * RIVAL_NEWS.length)];
+  g.r += 0.64 + rn.r;
+  const news = [{ text: fill(g, rn.t), up: rn.r > 0 }];
+  if (g.rng() < 0.4) {
+    const tn = THIRD_NEWS[Math.floor(g.rng() * THIRD_NEWS.length)];
+    g.r += tn.r || 0;
+    g.s += tn.s || 0;
+    news.push({ text: fill(g, tn.t).replace(/\{third\}/g, g.thirdName), up: null });
+  }
   g.buzz += (40 - g.buzz) * 0.15;
   g.money += { A: 3, B: g.s >= g.r - 5 ? 4 : 1, C: 6, D: 4, E: 3, F: 2 }[T];
   g.liver += 4; // 週末補眠
@@ -315,8 +347,33 @@ function endWeek(g) {
   clampAll(g);
   g.week++;
   g.clock = 8;
-  return notes;
+  return { notes, news };
 }
+
+const RIVAL_NEWS = [
+  { t: '{rival}辦了萬人造勢晚會，現場很熱。', r: 1.2 },
+  { t: '{rival}掃街拜票跑了一整週。', r: 0.7 },
+  { t: '{rival}上政論節目被問倒，片段被瘋傳。', r: -0.6 },
+  { t: '{rival}陣營傳出內鬨，副總幹事出走。', r: -0.8 },
+  { t: '{rival}推出新政見，反應普通。', r: 0.3 },
+  { t: '{rival}的競選廣告開始大量放送。', r: 0.9 },
+  { t: '{rival}失言：「年輕人不懂政治。」', r: -0.9 },
+  { t: '{rival}請到知名企業家站台。', r: 1.0 },
+  { t: '{rival}這週很低調，只跑了幾場座談。', r: 0.2 },
+  { t: '{rival}的小編在留言區跟網友吵架。', r: -0.5 },
+  { t: '{rival}去長青據點陪長輩跳廣場舞。', r: 0.6 },
+  { t: '{rival}被爆選舉經費來源不明。', r: -1.2 },
+  { t: '{rival}抱著小狗拍了一支廣告，點閱破百萬。', r: 0.8 },
+  { t: '{rival}的家人在臉書幫忙拉票，留言區吵翻。', r: -0.3 }
+];
+
+const THIRD_NEWS = [
+  { t: '其他候選人：{third}在路口跳舞拜票，聲量暴增但沒人當真。' },
+  { t: '其他候選人：{third}說要「把 N City 變成全世界最好的城市」，被做成梗圖。' },
+  { t: '其他候選人：{third}宣布「不排除退選」，棄保話題開始發酵。', r: 0.4 },
+  { t: '其他候選人：{third}痛批兩大陣營，搶走了一點你的票。', s: -0.3 },
+  { t: '其他候選人：{third}的看板被颱風吹走了。' }
+];
 
 const CROWD_FAIL = [
   '現場只來了 7 個人，其中 3 個是記者，2 個是你們的志工。',
@@ -359,7 +416,12 @@ function doPoll(g) {
 
 function finish(g) {
   const noise = () => (g.rng() + g.rng() - 1) * 1.5;
-  const sF = g.s + noise(), rF = g.r + noise();
+  // 看起來穩贏，支持者反而不出門投票
+  const lead = g.lastPoll ? g.lastPoll.s - g.lastPoll.r : 0;
+  let turnoutDrop = 0;
+  if (lead > 5) turnoutDrop = (lead - 3) * g.rng() * 0.8;
+  if (turnoutDrop > 1.5) g.f.complacent = 1;
+  const sF = g.s - turnoutDrop + noise(), rF = g.r + noise();
   const othersF = Math.max(4, (100 - g.s - g.r) * 0.5);
   const tot = sF + rF + othersF;
   const share = { s: sF / tot * 100, r: rF / tot * 100, o: othersF / tot * 100 };

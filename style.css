@@ -78,15 +78,15 @@ input.name { width: 100%; border: 2px solid #ccc; border-radius: 12px; padding: 
 .hud .date b { font-size: 16px; }
 .hud .clock { font-variant-numeric: tabular-nums; background: rgba(255,255,255,.1); padding: 3px 10px; border-radius: 999px; }
 .hud .clock.late { background: #4b3a7a; }
-.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 10px; }
-.stat { background: rgba(255,255,255,.08); border-radius: 10px; padding: 6px 4px 7px; text-align: center; font-size: 15px; }
+.stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin-top: 10px; }
+.stat { background: rgba(255,255,255,.08); border-radius: 10px; padding: 6px 2px 7px; text-align: center; font-size: 14px; white-space: nowrap; }
 .stat i { display: block; font-style: normal; font-size: 11px; opacity: .7; }
 .stat .bar { height: 4px; background: rgba(255,255,255,.15); border-radius: 4px; margin-top: 4px; overflow: hidden; }
 .stat .bar div { height: 100%; background: #9fd3a8; transition: width .5s; }
 .stat.low .bar div { background: #ff7a7a; }
 .stat.bump { animation: bump .5s; }
 @keyframes bump { 50% { transform: scale(1.12); } }
-.stage { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; position: relative; }
+.stage { flex: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; position: relative; }
 .stage .boss svg { width: 132px; height: 132px; }
 .stage .who { margin-top: 6px; font-size: 15px; opacity: .85; }
 .bubble { background: #fff; color: var(--ink); border-radius: 16px; padding: 10px 14px; margin-bottom: 12px; font-size: 16px; position: relative; max-width: 86%; text-align: center; }
@@ -126,6 +126,8 @@ input.name { width: 100%; border: 2px solid #ccc; border-radius: 12px; padding: 
 .res.defy { background: #fff4dc; }
 .res.boss { background: #ece8ff; font-size: 18px; }
 .res.note { background: #f1f1f1; }
+.res.say { background: #f4f1fb; font-size: 15px; }
+.res .who svg { width: 40px; height: 40px; flex: none; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 2px; }
 .chip { font-size: 13px; padding: 3px 9px; border-radius: 999px; background: #f0f0f0; }
 .chip.up { background: #dff3e6; color: #1e6b45; }
@@ -160,3 +162,17 @@ input.name { width: 100%; border: 2px solid #ccc; border-radius: 12px; padding: 
 .gallery .e { font-size: 30px; display: block; }
 
 .toast { position: absolute; left: 50%; top: 14px; transform: translateX(-50%); background: #fff; color: var(--ink); padding: 8px 14px; border-radius: 999px; font-size: 14px; z-index: 20; box-shadow: 0 4px 12px rgba(0,0,0,.3); animation: pop .25s; }
+
+/* 行程板 */
+.board { width: 100%; max-width: 440px; }
+.board-head { display: flex; align-items: center; gap: 10px; font-size: 16px; }
+.board-head small { color: #bbb; font-size: 13px; }
+.board-head .mini svg { width: 46px; height: 46px; display: block; }
+.board-head .bsec { font-variant-numeric: tabular-nums; }
+.board .timer { margin: 10px 0; border-radius: 4px; overflow: hidden; background: rgba(255,255,255,.15); }
+.board .timer div { background: var(--gold); }
+.board-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.act { background: #fff; color: var(--ink); border: 0; border-radius: 14px; padding: 10px; text-align: left; font-size: 15px; line-height: 1.4; min-height: 74px; display: flex; flex-direction: column; justify-content: space-between; gap: 6px; }
+.act small { color: var(--muted); font-size: 11.5px; }
+.act:active { transform: scale(.97); }
+.act[disabled] { opacity: .45; }

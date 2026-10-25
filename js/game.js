@@ -139,7 +139,8 @@ function roomScreen() {
       <div class="row"><span class="date" id="date"></span><span class="clock" id="clock"></span></div>
       <div class="stats">
         <div class="stat" id="st-buzz"><i>聲量</i>📣 <span></span><div class="bar"><div></div></div></div>
-        <div class="stat" id="st-money"><i>資金</i>💰 <span></span><div class="bar"><div></div></div></div>
+        <div class="stat" id="st-fav"><i>好感</i>😊 <span></span><div class="bar"><div></div></div></div>
+        <div class="stat" id="st-money"><i>競選資金</i>💰 <span></span><div class="bar"><div></div></div></div>
         <div class="stat" id="st-trust"><i>信任</i>🤝 <span></span><div class="bar"><div></div></div></div>
         <div class="stat" id="st-liver"><i>你的肝</i>🫀 <span></span><div class="bar"><div></div></div></div>
       </div>
@@ -165,7 +166,7 @@ function updateHud() {
   const ck = $('#clock');
   ck.textContent = clockText(G);
   ck.classList.toggle('late', G.clock >= 24);
-  for (const k of ['buzz', 'money', 'trust', 'liver']) {
+  for (const k of ['buzz', 'fav', 'money', 'trust', 'liver']) {
     const el = $('#st-' + k);
     const v = Math.round(G[k]);
     el.querySelector('span').textContent = v;
@@ -176,7 +177,8 @@ function updateHud() {
   }
   $('#sub').textContent = `😇 良心 ${Math.round(G.con)}　📇 人脈 ${Math.round(G.net)}　🧾 欠人情 ${G.favor}`;
   const mood = G.liver < 20 || G.trust < 25 ? 'sad' : G.s > G.r + 3 ? 'big' : 'smile';
-  $('#boss').innerHTML = bossFace(mood);
+  const bossEl = $('#boss');
+  if (bossEl) bossEl.innerHTML = bossFace(mood);
 }
 
 function bossSays(text, shake) {
@@ -192,6 +194,9 @@ function overlay(inner, kind) {
   const o = document.createElement('div');
   o.className = 'overlay';
   o.innerHTML = `<div class="card ${kind || ''}">${inner}</div>`;
+  // 卡牌不蓋住上方的數值列，讓玩家邊看數值邊做決定
+  const hud = app.querySelector('.hud');
+  if (hud) o.style.top = hud.offsetHeight + 'px';
   app.appendChild(o);
   return o;
 }
@@ -218,12 +223,12 @@ function countdown(seconds, onTick, onEnd) {
 }
 
 function chipsHtml(delta) {
-  const vis = { buzz: '📣聲量', money: '💰資金', trust: '🤝信任', liver: '🫀肝', con: '😇良心', net: '📇人脈' };
+  const vis = { buzz: '📣聲量', fav: '😊好感', money: '💰資金', trust: '🤝信任', liver: '🫀肝', con: '😇良心', net: '📇人脈' };
   const out = [];
   const arrow = (v, good) => `<span class="chip ${good ? 'up' : 'down'}">`;
   if (delta.s) out.push(arrow(0, delta.s > 0) + `📈 民心 ${delta.s > 0 ? '↑' : '↓'}${Math.abs(delta.s) >= 1 ? (delta.s > 0 ? '↑' : '↓') : ''}</span>`);
   if (delta.r) out.push(arrow(0, delta.r < 0) + `🎯 對手 ${delta.r > 0 ? '↑' : '↓'}</span>`);
-  if (delta.fav) out.push(arrow(0, delta.fav > 0) + `😊 好感 ${delta.fav > 0 ? '↑' : '↓'}</span>`);
+
   for (const [k, lab] of Object.entries(vis)) {
     const v = Math.round(delta[k] || 0);
     if (v) out.push(arrow(0, v > 0) + `${lab} ${v > 0 ? '+' : ''}${v}</span>`);
@@ -235,6 +240,8 @@ function chipsHtml(delta) {
 function resultHtml(res) {
   return res.lines.map(l => l.kind === 'boss'
     ? `<div class="res boss"><div class="who" style="margin:0">${bossFace('sad')}<b>${esc(G.name)}：「${esc(l.text)}」</b></div></div>`
+    : l.kind === 'say'
+    ? `<div class="res say"><div class="who" style="margin:0">${bossFace(l.mood)}<span><b>${esc(G.name)}</b>：${esc(l.text)}</span></div></div>`
     : `<div class="res ${l.kind}">${esc(l.text)}</div>`).join('') + chipsHtml(res.delta);
 }
 
@@ -277,6 +284,77 @@ function eventCard(ev, queueLeft, isBuild) {
   });
 }
 
+// 沒火的時候：戰情室行程板，自己挑要做什麼
+function stageDefault() {
+  const st = $('.stage');
+  if (!st) return;
+  st.innerHTML = `<div class="bubble" id="bubble">接下來呢？</div><div class="boss" id="boss"></div><div class="who" id="bossname"></div>`;
+  $('#bossname').textContent = `${G.name}・${TYPES[G.type].party}`;
+  updateHud();
+}
+
+function actTags(op) {
+  const t = [];
+  const fx = op.fx || {};
+  if (fx.money < 0) t.push(`💰${fx.money}`);
+  if (fx.money > 0) t.push(`💰+${fx.money}`);
+  if (fx.liver <= -5) t.push('🫀 很累');
+  if (fx.liver > 0) t.push('🫀 回血');
+  if (op.crowd) t.push('👥 看人氣');
+  if (fx.con < 0) t.push('😈 良心');
+  if (op.risk) t.push('🎲 有風險');
+  return t.join('　');
+}
+
+function showResult(title, res) {
+  return new Promise(resolve => {
+    const o = overlay(`
+      <div class="head"><span>✨ ${esc(title)}</span></div>
+      <div class="body">${resultHtml(res)}<button class="btn" id="next">繼續</button></div>`, 'k-build');
+    o.querySelector('#next').onclick = () => { closeOverlay(); resolve(); };
+  });
+}
+
+function boardStep(left) {
+  return new Promise(resolve => {
+    const opts = buildChoices(G, 6);
+    const st = $('.stage');
+    st.innerHTML = `
+      <div class="board">
+        <div class="board-head">
+          <div class="mini">${bossFace('smile')}</div>
+          <div style="flex:1"><b>今天沒有火，要做什麼？</b><br><small>${esc(G.name)}：「接下來呢？」</small></div>
+          <div class="bsec">⏱ <span id="bsec">30</span></div>
+        </div>
+        <div class="timer"><div id="bbar"></div></div>
+        <div class="board-grid">${opts.map((op, i) => `
+          <button class="act" data-i="${i}" ${canAfford(G, op) ? '' : 'disabled'}>
+            <span>${esc(fill(G, op.t))}</span>
+            <small>${canAfford(G, op) ? actTags(op) : `資金不足（需要 ${op.need}）`}</small>
+          </button>`).join('')}
+        </div>
+        ${left > 0 ? `<p class="muted center" style="color:#aaa;margin:8px 0 0">這週還有 ${left} 件事</p>` : ''}
+      </div>`;
+    let done = false;
+    const finish = async (title, res) => {
+      if (done) return; done = true; stop();
+      updateHud();
+      await showResult(title, res);
+      stageDefault();
+      if (res.idle) bossSays(res.lines[0].text, true);
+      resolve(res);
+    };
+    const stop = countdown(30, (frac, sec) => {
+      const b = $('#bbar'); if (b) b.style.width = frac * 100 + '%';
+      const e = $('#bsec'); if (e) e.textContent = sec;
+    }, () => finish('你發呆了一整天', timeout(G, null, true)));
+    st.querySelectorAll('.act').forEach(b => b.onclick = () => {
+      const op = opts[+b.dataset.i];
+      finish(fill(G, op.t), choose(G, null, op, true));
+    });
+  });
+}
+
 function pollCard() {
   return new Promise(resolve => {
     const p = doPoll(G);
@@ -303,7 +381,9 @@ function pollCard() {
   });
 }
 
-function weekCard(notes) {
+function weekCard(info) {
+  const notes = info.notes || [];
+  const news = info.news || [];
   return new Promise(resolve => {
     const L = weekLabel(G.week);
     const blackout = G.week >= BLACKOUT_WEEK;
@@ -312,6 +392,7 @@ function weekCard(notes) {
         <div class="muted">N City 戰情室</div>
         <div class="big">${L.month}月 第${L.nth}週</div>
         <div>距離投票還有 <b>${L.daysLeft}</b> 天</div>
+        ${news.length ? `<p style="margin:12px 0 4px;text-align:left"><b>📰 上週對手動態</b></p>${news.map(n => `<div class="res ${n.up === null ? 'note' : n.up ? 'bad' : 'good'}" style="text-align:left;font-size:14px">${esc(n.text)}</div>`).join('')}` : ''}
         ${notes.map(n => `<div class="res note">${esc(n)}</div>`).join('')}
         ${blackout ? '<div class="res bad">🔒 民調封關。接下來看不到任何數字，只能憑直覺。</div>' : ''}
         <button class="btn" id="ok">開工</button>
@@ -323,7 +404,7 @@ function weekCard(notes) {
 
 async function runGame() {
   closeOverlay();
-  let notes = [];
+  let notes = {};
   while (G.week <= WEEKS) {
     await weekCard(notes);
     const steps = planWeek(G);
@@ -331,7 +412,8 @@ async function runGame() {
     for (const st of steps) {
       if (st.step === 'poll') { await pollCard(); continue; }
       left--;
-      await eventCard(st.ev, left, st.step === 'build');
+      if (st.step === 'free') await boardStep(left);
+      else await eventCard(st.ev, left, false);
     }
     notes = endWeek(G);
   }
