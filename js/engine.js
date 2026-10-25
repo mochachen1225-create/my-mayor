@@ -116,11 +116,13 @@ function planWeek(g) {
   for (const ev of main) steps.push({ step: 'event', ev });
   // 沒事的時候自己排行程；突發事件隨機插進來，有時候一整週都沒事
   // 每週有幾個空檔是隨機的：有時很閒、有時忙到沒空
-  const slots = g.week === 13 || g.week === WEEKS ? 0 : main.length ? (g.rng() < 0.7 ? 1 : 0) : (g.rng() < 0.5 ? 1 : 2);
+  let slots = g.week === 13 || g.week === WEEKS ? 0 : main.length ? (g.rng() < 0.7 ? 1 : 0) : (g.rng() < 0.5 ? 1 : 2);
   let fires = main.length ? (g.rng() < 0.3 ? 1 : 0) : (g.rng() < 0.2 ? 0 : 1);
   if (!main.length && g.rng() < 0.2) fires++;
   if (g.week >= 9 && g.rng() < 0.2) fires++;
+  if (g.type === 'D' && g.week > 1 && g.rng() < 0.5) fires++; // 現任：市政和選戰雙線作戰，事情特別多
   if (g.week === 1) fires = 1;
+  if (g.type === 'D' && slots > 0 && g.rng() < 0.35) slots--;
   const mix = [];
   for (let i = 0; i < slots; i++) mix.push({ step: 'free' });
   for (let i = 0; i < fires; i++) {
@@ -171,7 +173,7 @@ function applyFx(g, fx, delta) {
     // 同樣的選擇，每次結果都有點不一樣
     if (typeof v === 'number' && JITTER.includes(k)) v *= 0.65 + g.rng() * 0.7;
     if (k === 's' || k === 'r') {
-      const d = k === 's' && v > 0 ? v * S_GAIN : v;
+      const d = k === 's' && v > 0 ? v * S_GAIN * (g.boost || 1) : v;
       g[k] += d; delta[k] = (delta[k] || 0) + d;
     }
     else if (STAT_KEYS.includes(k) || k === 'favor') { g[k] += v; delta[k] = (delta[k] || 0) + v; }
@@ -197,6 +199,7 @@ function canAfford(g, opt) { return !opt.need || g.money >= opt.need; }
 // 玩家選了 opt；回傳發生了什麼
 function choose(g, ev, opt, isBuild = false) {
   g.idleStreak = 0;
+  g.boost = ev && ev.for === 'inc' ? 1.4 : 1; // 現任把市政危機處理好，加分比較多
   g.rPrev = g.r;
   const delta = {};
   const lines = [];
@@ -282,6 +285,7 @@ function choose(g, ev, opt, isBuild = false) {
     lines.push({ kind: 'say', mood: failed ? 'sad' : 'big', text: fill(g, pick(g, failed ? TYPES[g.type].bad : TYPES[g.type].ok)) });
   }
   advanceClock(g, isBuild ? 3 : 1.5 + g.rng() * 2, ev && ev.late, delta);
+  g.boost = 1;
   logSwing(g, isBuild ? fill(g, exec.t) : fill(g, ev.title), delta);
   if ((delta.r || 0) < -0.3) g.provoked = 1;
   if (isBuild && ['rally', 'billboard', 'ads', 'dance', 'handshake'].includes(exec.id) && !failed) g.bigMove = 1;
@@ -374,7 +378,7 @@ function endWeek(g) {
   }
   g.buzz += (40 - g.buzz) * 0.15;
   g.money += { A: 3, B: g.s >= g.r - 5 ? 4 : 1, C: 6, D: 4, E: 3, F: 2 }[T];
-  g.liver += 4; // 週末補眠
+  g.liver += T === 'D' ? 2 : 4; // 週末補眠（現任的幕僚連週末都在處理市政）
   // 睡眠
   const sleep = Math.max(0, 32 - g.clock);
   if (sleep < 3) { g.liver -= 3; g.team -= 3; notes.push(`你昨晚只睡了 ${sleep.toFixed(1)} 小時，整個團隊都很累。`); }
