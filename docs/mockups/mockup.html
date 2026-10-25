@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>我推的市長 — 畫面草圖</title>
+<style>
+  body { margin: 0; padding: 24px; background: #d9d6d0; font-family: "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif; display: flex; gap: 24px; align-items: flex-start; }
+  .phone { width: 360px; height: 720px; border-radius: 28px; overflow: hidden; position: relative; box-shadow: 0 8px 24px rgba(0,0,0,.25); }
+
+  /* 畫面一：抽老闆 */
+  .draw { background: #faf8f5; padding: 28px 20px; box-sizing: border-box; }
+  .draw h1 { font-size: 20px; margin: 8px 0 4px; text-align: center; }
+  .draw p.sub { text-align: center; color: #777; font-size: 13px; margin: 0 0 20px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .cand { background: #fff; border-radius: 16px; padding: 14px 8px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+  .cand svg { width: 96px; height: 96px; }
+  .cand b { display: block; font-size: 16px; margin-top: 6px; }
+  .cand span { font-size: 12px; color: #888; }
+  .btn { display: block; margin: 24px auto 0; background: #222; color: #fff; border: 0; border-radius: 999px; padding: 14px 32px; font-size: 16px; }
+
+  /* 畫面二：戰情室＋緊急卡牌 */
+  .room { background: #2b2f36; color: #fff; }
+  .hud { padding: 16px; font-size: 13px; }
+  .hud .top { display: flex; justify-content: space-between; opacity: .8; }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 10px; }
+  .stat { background: rgba(255,255,255,.08); border-radius: 8px; padding: 6px; text-align: center; }
+  .stat i { display: block; font-style: normal; font-size: 11px; opacity: .7; }
+  .overlay { position: absolute; inset: 0; background: rgba(0,0,0,.55); display: flex; align-items: center; justify-content: center; }
+  .card { width: 316px; background: #fff; color: #222; border-radius: 18px; overflow: hidden; box-shadow: 0 12px 32px rgba(0,0,0,.4); }
+  .card .head { background: #d93636; color: #fff; padding: 10px 16px; font-weight: bold; display: flex; justify-content: space-between; }
+  .timer { height: 6px; background: #f3d0d0; }
+  .timer div { height: 100%; width: 70%; background: #d93636; }
+  .card .body { padding: 16px; }
+  .who { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .who svg { width: 52px; height: 52px; }
+  .who small { color: #888; }
+  .card h2 { font-size: 19px; margin: 4px 0 8px; }
+  .card p { font-size: 14px; line-height: 1.6; margin: 0 0 14px; color: #444; }
+  .opt { display: block; width: 100%; text-align: left; border: 1.5px solid #ddd; background: #fafafa; border-radius: 12px; padding: 11px 12px; font-size: 14px; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<div class="phone draw">
+  <p class="sub">你接到一通電話：「明天來戰情室報到。」</p>
+  <h1>你的老闆是……</h1>
+  <p class="sub">（翻牌抽一位，你沒得選）</p>
+  <div class="grid" id="grid"></div>
+  <button class="btn">翻牌</button>
+</div>
+
+<div class="phone room">
+  <div class="hud">
+    <div class="top"><span>N City 戰情室</span><span>9月 第2週 · 距投票 81 天</span></div>
+    <div class="stats">
+      <div class="stat"><i>聲量</i>📣 62</div>
+      <div class="stat"><i>資金</i>💰 48</div>
+      <div class="stat"><i>信任</i>🤝 55</div>
+      <div class="stat"><i>肝</i>🫀 70</div>
+    </div>
+  </div>
+  <div class="overlay">
+    <div class="card">
+      <div class="head"><span>⚠ 突發狀況</span><span>⏱ 14</span></div>
+      <div class="timer"><div></div></div>
+      <div class="body">
+        <div class="who"><span id="boss"></span><div><b>常在任</b><br><small>你的老闆・現任市長</small></div></div>
+        <h2>天穹體育館又漏水了</h2>
+        <p>演唱會進行到一半，觀眾席下起小雨。網友已經做出「室內也要帶傘」的迷因，記者在市府門口等老闆回應。</p>
+        <button class="opt">🎤 立刻出面道歉，宣布全面檢修</button>
+        <button class="opt">🧑‍🔧 派局長去現場，老闆先不出面</button>
+        <button class="opt">😎 自嘲：「N City 市民本來就該帶傘」</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// 簡單扁平風頭像：圓底、圓臉、西裝
+function avatar(o) {
+  const skin = '#f6d7bd', skinD = '#e8c2a3', ink = '#2a2a2a';
+  const back = o.hair === 'bob'
+    ? `<path d="M34 58 Q34 28 60 28 Q86 28 86 58 L86 84 Q80 90 74 84 L74 60 L46 60 L46 84 Q40 90 34 84 Z" fill="${o.hairColor}"/>` : '';
+  const hair = {
+    slick: `<path d="M38 56 Q34 28 60 28 Q86 28 82 56 Q80 42 70 39 Q58 44 44 41 Q39 46 38 56 Z" fill="${o.hairColor}"/>`,
+    side:  `<path d="M38 58 Q33 27 62 28 Q87 30 82 58 Q79 41 66 37 Q52 43 40 47 Z" fill="${o.hairColor}"/>`,
+    thin:  `<path d="M37 62 Q35 42 44 37 L45 57 Z M83 62 Q85 42 76 37 L75 57 Z" fill="${o.hairColor}"/><path d="M44 37 Q60 30 76 37" stroke="${o.hairColor}" stroke-width="3" fill="none"/>`,
+    bob:   `<path d="M37 56 Q37 30 60 30 Q83 30 83 56 Q76 40 58 40 Q46 42 37 56 Z" fill="${o.hairColor}"/>`
+  }[o.hair];
+  const neckwear = o.tie
+    ? `<path d="M50 90 L60 108 L70 90 Z" fill="#fff"/><path d="M57 92 L63 92 L62 98 L65 112 L60 117 L55 112 L58 98 Z" fill="${o.tie}"/>`
+    : `<path d="M50 90 L60 104 L70 90 Z" fill="${o.inner || '#fff'}"/>`;
+  const glasses = o.glasses
+    ? `<g stroke="${ink}" stroke-width="1.6" fill="none"><circle cx="52" cy="58" r="6"/><circle cx="68" cy="58" r="6"/><path d="M58 58 L62 58"/></g>` : '';
+  return `<svg viewBox="0 0 120 120"><defs><clipPath id="c${o.id}"><circle cx="60" cy="60" r="58"/></clipPath></defs>
+  <g clip-path="url(#c${o.id})"><circle cx="60" cy="60" r="58" fill="#f1eeea"/>
+  ${back}
+  <rect x="52" y="74" width="16" height="18" fill="${skinD}"/>
+  <path d="M16 122 Q20 96 46 89 L74 89 Q100 96 104 122 Z" fill="${o.suit}"/>
+  ${neckwear}
+  <path d="M46 89 L56 106 M74 89 L64 106" stroke="rgba(0,0,0,.25)" stroke-width="1.5"/>
+  <circle cx="40" cy="59" r="4" fill="${skinD}"/><circle cx="80" cy="59" r="4" fill="${skinD}"/>
+  <ellipse cx="60" cy="56" rx="20" ry="23" fill="${skin}"/>
+  ${hair}
+  <circle cx="52" cy="58" r="2" fill="${ink}"/><circle cx="68" cy="58" r="2" fill="${ink}"/>
+  ${glasses}
+  <path d="M54 68 Q60 ${o.bigSmile ? 75 : 71} 66 68" stroke="${ink}" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+  </g></svg>`;
+}
+const cands = [
+  { id: 'A', name: '貴承恩', tag: '政治世家第三代', hair: 'slick', hairColor: '#1f2433', suit: '#2c3550', tie: '#8a8f99' },
+  { id: 'B', name: '凌晨光', tag: '清新專業人士',   hair: 'bob',   hairColor: '#2a2a2a', suit: '#c9ccd3', inner: '#fff', glasses: true },
+  { id: 'C', name: '金萬貫', tag: '商業帝國老闆',   hair: 'thin',  hairColor: '#a7a7a7', suit: '#3a3a3a', tie: '#c8a23a' },
+  { id: 'D', name: '常在任', tag: '現任市長拚連任', hair: 'side',  hairColor: '#20232b', suit: '#263a63', tie: '#7a4fb0', bigSmile: true }
+];
+document.getElementById('grid').innerHTML = cands.map(c =>
+  `<div class="cand">${avatar(c)}<b>${c.name}</b><span>${c.tag}</span></div>`).join('');
+document.getElementById('boss').innerHTML = avatar({ ...cands[3], id: 'D2' });
+</script>
+</body>
+</html>
