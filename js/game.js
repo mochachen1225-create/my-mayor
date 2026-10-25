@@ -179,11 +179,10 @@ function roomScreen() {
       </div>
       <div class="box">
         <div class="boxtitle">🧑‍💼 總幹事（你）</div>
-        <div class="stats">
+        <div class="stats three">
           <div class="stat" id="st-liver"><i>肝的健康</i>🫀 <span></span><div class="bar"><div></div></div></div>
+          <div class="stat" id="st-team"><i>團隊士氣</i>💪 <span></span><div class="bar"><div></div></div></div>
           <div class="stat" id="st-con"><i>良心</i>😇 <span></span><div class="bar"><div></div></div></div>
-          <div class="stat" id="st-net"><i>人脈</i>📇 <span></span><div class="bar"><div></div></div></div>
-          <div class="stat" id="st-favor"><i>欠人情</i>🧾 <span></span><div class="bar" style="visibility:hidden"><div></div></div></div>
         </div>
       </div>
       <div class="box rivalbox"><div class="rivalrow" id="rivalrow"></div></div>
@@ -209,7 +208,7 @@ function updateHud() {
   ck.textContent = clockText(G);
   ck.classList.toggle('late', G.clock >= 24);
   $('#bx-name').textContent = G.name;
-  for (const k of ['buzz', 'fav', 'money', 'trust', 'liver', 'con', 'net']) {
+  for (const k of ['buzz', 'fav', 'money', 'trust', 'liver', 'team', 'con']) {
     const el = $('#st-' + k);
     const v = Math.round(G[k]);
     el.querySelector('span').textContent = v;
@@ -225,7 +224,6 @@ function updateHud() {
     const tr = G.rPrev === undefined ? '' : G.r > G.rPrev + 0.05 ? '↑' : G.r < G.rPrev - 0.05 ? '↓' : '→';
     rr.innerHTML = `<span>🎯 主要對手 ${esc(G.rivalName)} 聲勢</span><div class="bar"><div style="width:${Math.min(100, G.r * 1.6)}%"></div></div><b>${lvl} ${tr}</b>`;
   }
-  $('#st-favor span').textContent = G.favor;
   const mood = G.liver < 20 || G.trust < 25 ? 'sad' : G.s > G.r + 3 ? 'big' : 'smile';
   const bossEl = $('#boss');
   if (bossEl) bossEl.innerHTML = bossFace(mood);
@@ -273,7 +271,7 @@ function countdown(seconds, onTick, onEnd) {
 }
 
 function chipsHtml(delta) {
-  const vis = { buzz: '📣聲量', fav: '😊民調好感度', money: '💰資金', trust: '🤝信任', liver: '🫀肝', con: '😇良心', net: '📇人脈' };
+  const vis = { buzz: '📣聲量', fav: '😊民調好感度', money: '💰資金', trust: '🤝信任', liver: '🫀肝', team: '💪士氣', con: '😇良心' };
   const out = [];
   const arrow = (v, good) => `<span class="chip ${good ? 'up' : 'down'}">`;
   if (delta.s) out.push(arrow(0, delta.s > 0) + `📈 民心 ${delta.s > 0 ? '↑' : '↓'}${Math.abs(delta.s) >= 1 ? (delta.s > 0 ? '↑' : '↓') : ''}</span>`);
@@ -283,16 +281,16 @@ function chipsHtml(delta) {
     const v = Math.round(delta[k] || 0);
     if (v) out.push(arrow(0, v > 0) + `${lab} ${v > 0 ? '+' : ''}${v}</span>`);
   }
-  if (delta.favor) out.push(`<span class="chip">🧾 人情 ${delta.favor > 0 ? '+' : ''}${delta.favor}</span>`);
   return out.length ? `<div class="chips">${out.join('')}</div>` : '';
 }
 
+// 結果卡：先看選民和市場的反應＋數值變化，老闆的話放在最下面小小的
 function resultHtml(res) {
-  return res.lines.map(l => l.kind === 'boss'
-    ? `<div class="res boss"><div class="who" style="margin:0">${bossFace('sad')}<b>${esc(G.name)}：「${esc(l.text)}」</b></div></div>`
-    : l.kind === 'say'
-    ? `<div class="res say"><div class="who" style="margin:0">${bossFace(l.mood)}<span><b>${esc(G.name)}</b>：${esc(l.text)}</span></div></div>`
-    : `<div class="res ${l.kind}">${esc(l.text)}</div>`).join('') + chipsHtml(res.delta);
+  const main = res.lines.filter(l => l.kind !== 'say' && l.kind !== 'boss');
+  const boss = res.lines.filter(l => l.kind === 'say' || l.kind === 'boss');
+  return main.map(l => `<div class="res ${l.kind}">${esc(l.text)}</div>`).join('')
+    + chipsHtml(res.delta)
+    + boss.map(l => `<div class="res say"><div class="who" style="margin:0">${bossFace(l.kind === 'boss' ? 'sad' : l.mood)}<span><b>${esc(G.name)}</b>：${l.kind === 'boss' ? '「' + esc(l.text) + '」' : esc(l.text)}</span></div></div>`).join('');
 }
 
 // 顯示一張事件卡，等玩家選或時間到

@@ -5,7 +5,7 @@ const POLL_WEEKS = [1, 6, 10, 14];
 const BLACKOUT_WEEK = 16; // 11/18 起民調封關
 const START = new Date(2026, 7, 3); // 8/3（週一），只用來算月日，不顯示年份
 const VOTE_DAY = new Date(2026, 10, 28);
-const STAT_KEYS = ['buzz', 'fav', 'money', 'trust', 'liver', 'con', 'net'];
+const STAT_KEYS = ['buzz', 'fav', 'money', 'trust', 'liver', 'con', 'net', 'team'];
 const FLAG_KEYS = ['donated', 'warm', 'dirty1', 'dirty2', 'ledger', 'rebel', 'respect', 'script', 'cut', 'tv', 'buy', 'foreign'];
 
 const JITTER = ['s', 'r', 'fav', 'buzz', 'net', 'con'];
@@ -47,7 +47,7 @@ function newGame(type, gender, name, rng = Math.random) {
     week: 1, clock: 8,
     s: T.start.s, r: T.start.r,
     buzz: 40, fav: 50, money: T.start.money, trust: T.start.trust,
-    liver: 80, con: 60, net: T.start.net, favor: 0,
+    liver: 80, con: 60, team: 70, net: T.start.net, favor: 0,
     f: { idle: 0 }, idleStreak: 0,
     used: new Set(), pending: [], lastPoll: null, swings: []
   };
@@ -262,6 +262,14 @@ function choose(g, ev, opt, isBuild = false) {
     else if (failed) applyFx(g, { trust: -2 }, delta);
     else applyFx(g, { trust: 1 }, delta);
   }
+  // 沒有寫好的反應時，補一句選民、市場的反應
+  if (!lines.some(l => l.kind === 'good' || l.kind === 'bad')) {
+    const v = (delta.s || 0) - (delta.r || 0) + (delta.fav || 0) * 0.15 + (delta.buzz || 0) * 0.05;
+    const pool = v > 0.4 ? MARKET.good : v < -0.2 ? MARKET.bad : MARKET.meh;
+    lines.push({ kind: v < -0.2 ? 'bad' : 'good', text: fill(g, pick(g, pool)) });
+  }
+  // 團隊士氣：做得好大家有幹勁，出包或老闆不聽話就洩氣
+  applyFx(g, { team: failed ? -3 : defied ? -2 : 1 }, delta);
   // 老闆的反應，每次都不太一樣
   if (bossActs && !defied && g.rng() < 0.6) {
     lines.push({ kind: 'say', mood: failed ? 'sad' : 'big', text: fill(g, pick(g, failed ? TYPES[g.type].bad : TYPES[g.type].ok)) });
@@ -279,6 +287,8 @@ function rollRisk(g, o) {
   let shift = 0;
   if (o.likes && o.likes.includes(g.type)) shift -= 0.15;
   if (o.hates && o.hates.includes(g.type)) shift += 0.15;
+  if (g.team < 35) shift += 0.1; // 團隊士氣低落，事情比較容易出包
+  else if (g.team > 75) shift -= 0.05;
   const scale = clamp(total + shift, 0.05, 0.9) / total;
   let x = g.rng();
   for (const r of list) { x -= r.p * scale; if (x < 0) return r; }
@@ -297,7 +307,7 @@ function timeout(g, ev, isBuild = false) {
   g.idleStreak++;
   g.f.idle = (g.f.idle || 0) + 1;
   const delta = {};
-  const fx = isBuild ? { trust: -3, buzz: -2 } : { trust: -3 - g.idleStreak, fav: -3, s: -0.6, buzz: -2 };
+  const fx = isBuild ? { trust: -3, buzz: -2, team: -4 } : { trust: -3 - g.idleStreak, fav: -3, s: -0.6, buzz: -2, team: -5 };
   applyFx(g, fx, delta);
   advanceClock(g, 1, ev && ev.late, delta);
   logSwing(g, '已讀不回：' + (isBuild ? '成就老闆企劃' : fill(g, ev.title)), delta);
@@ -346,7 +356,7 @@ function endWeek(g) {
   g.liver += 4; // 週末補眠
   // 睡眠
   const sleep = Math.max(0, 32 - g.clock);
-  if (sleep < 3) { g.liver -= 3; notes.push(`你昨晚只睡了 ${sleep.toFixed(1)} 小時。`); }
+  if (sleep < 3) { g.liver -= 3; g.team -= 3; notes.push(`你昨晚只睡了 ${sleep.toFixed(1)} 小時，整個團隊都很累。`); }
   else if (sleep < 6) notes.push(`你昨晚睡了 ${sleep.toFixed(1)} 小時。`);
   if (g.liver <= 0 && !g.f.hospital) {
     g.f.hospital = 1; g.liver = 20;
@@ -362,6 +372,34 @@ function endWeek(g) {
   g.clock = 8;
   return { notes, news };
 }
+
+// 選民和市場的反應（沒有專屬文字時用）
+const MARKET = {
+  good: [
+    '菜市場阿姨說：「這個我知道，電視上有看到！」',
+    '網友留言：「這個候選人好像真的有在做事。」',
+    'PTT 有人發文：「{boss}這招不錯。」推文比噓文多。',
+    '計程車司機跟乘客聊起{boss}，語氣是正面的。',
+    '里長群組轉傳了相關新聞，下面一排讚。',
+    '年輕人在 Threads 上分享，留言說「有被打到」。',
+    '早餐店老闆說：「這個人我有印象，不錯。」',
+    '長輩群組轉了三次，還配了一張「讚」的圖。'
+  ],
+  meh: [
+    '新聞只有一小則，沒什麼人討論。',
+    '網友反應普通：「喔，然後呢？」',
+    '社群上有人看到，但很快就被別的新聞蓋過去。',
+    '菜市場阿姨說：「誰？沒聽過。」',
+    '計程車司機說：「選舉嘛，大家都在做一樣的事。」'
+  ],
+  bad: [
+    '網友留言：「又在作秀。」',
+    'PTT 噓文一整排：「這也能當市長？」',
+    '菜市場阿姨搖頭：「這個人不行啦。」',
+    '長輩群組開始轉傳批評的貼文。',
+    '計程車司機說：「這個我不會投。」'
+  ]
+};
 
 const RIVAL_NEWS = [
   { t: '{rival}辦了萬人造勢晚會，現場很熱。', r: 1.2 },
