@@ -344,7 +344,7 @@ async function electionNight() {
   show(`
     <p class="muted" style="color:#ccc">11 月 28 日 晚上 8 點</p>
     <h2>開票夜</h2>
-    <div style="margin:10px auto">${bossFace('flat')}</div>
+    <div id="nightface" style="margin:10px auto;width:120px;height:120px">${bossFace('flat')}</div>
     <div class="votes">
       <div class="pollrow"><div class="lab"><span>${esc(G.name)}</span><b id="v1">0.0%</b></div><div class="track"><div id="b1" style="background:#e0a526"></div></div></div>
       <div class="pollrow"><div class="lab"><span>${esc(G.rivalName)}</span><b id="v2">0.0%</b></div><div class="track"><div id="b2" style="background:#7a6ba8"></div></div></div>
@@ -353,7 +353,6 @@ async function electionNight() {
     <div class="big-result" id="verdict">開票中……</div>
     <button class="btn" id="next" style="visibility:hidden">看結局</button>
   `, 'end');
-  app.querySelector('.end svg').style.cssText = 'width:110px;height:110px';
   const target = [res.share.s, res.share.r, res.share.o];
   const t0 = performance.now(), dur = 4500;
   await new Promise(done => {
@@ -372,7 +371,7 @@ async function electionNight() {
     requestAnimationFrame(step);
   });
   $('#verdict').textContent = res.win ? `🎉 ${G.name} 凍蒜！` : `😢 ${G.name} 落選`;
-  app.querySelector('.end svg').outerHTML = bossFace(res.win ? 'big' : 'sad');
+  $('#nightface').innerHTML = bossFace(res.win ? 'big' : 'sad');
   const btn = $('#next');
   btn.style.visibility = 'visible';
   btn.onclick = () => endingScreen(res, seen);
@@ -467,11 +466,20 @@ async function shareEnding(res) {
   } catch (e) {
     if (e && e.name === 'AbortError') return;
   }
-  // 不支援分享就直接下載圖片，並複製文字
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob); a.download = 'my-mayor.png';
-  document.body.appendChild(a); a.click(); a.remove();
-  try { await navigator.clipboard.writeText(text); toast('截圖已下載，分享文字已複製'); } catch (e) { toast('截圖已下載'); }
+  // 不支援分享時：直接把圖片秀出來，讓玩家長按儲存
+  const url = c.toDataURL('image/png');
+  const o = overlay(`
+    <div class="body center">
+      <h2>結局截圖</h2>
+      <img src="${url}" alt="結局截圖" style="width:100%;border-radius:12px">
+      <p class="muted">長按圖片儲存，再傳到 LINE 給朋友。</p>
+      <button class="btn" id="cp">複製分享文字</button>
+      <button class="btn ghost" id="cl">關閉</button>
+    </div>`, '');
+  o.querySelector('#cp').onclick = async () => {
+    try { await navigator.clipboard.writeText(text); toast('已複製分享文字'); } catch (e) { toast('複製失敗，請手動輸入網址'); }
+  };
+  o.querySelector('#cl').onclick = closeOverlay;
 }
 
 titleScreen();

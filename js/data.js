@@ -8,7 +8,8 @@ const TYPES = {
     names: { m: 'Andrew', f: 'Amy' },
     look: { m: { hair: 'slick', suit: '#2c3550', tie: '#8a8f99' }, f: { hair: 'long', suit: '#2c3550', inner: '#e9e9ee' } },
     start: { s: 31, r: 36, money: 55, trust: 50, net: 50 },
-    defy: '長輩一通電話打來。{boss}掛掉電話，改成了另一個方案：'
+    defy: '長輩一通電話打來。{boss}掛掉電話，改成了另一個方案：',
+    half: '長輩打電話來說這個不好，{boss}只做了一半。'
   },
   B: {
     label: '清新專業人士', party: '🐦 蜂鳥黨',
@@ -16,7 +17,8 @@ const TYPES = {
     names: { m: 'Ben', f: 'Bella' },
     look: { m: { hair: 'short', suit: '#c9ccd3', tie: '#c8a23a', glasses: true }, f: { hair: 'bob', suit: '#c9ccd3', inner: '#fff', glasses: true } },
     start: { s: 29, r: 37, money: 30, trust: 55, net: 30 },
-    defy: '{boss}說：「這題我有研究。」然後自己決定了：'
+    defy: '{boss}說：「這題我有研究。」然後自己決定了：',
+    half: '{boss}說：「這個不夠專業。」只做了一半。'
   },
   C: {
     label: '商業帝國老闆', party: '無黨籍',
@@ -24,7 +26,8 @@ const TYPES = {
     names: { m: 'Charles', f: 'Claire' },
     look: { m: { hair: 'thin', hairColor: '#a7a7a7', suit: '#3a3a3a', tie: '#c8a23a' }, f: { hair: 'bun', hairColor: '#8d8d8d', suit: '#3a3a3a', inner: '#c8a23a', glasses: true } },
     start: { s: 30, r: 36, money: 90, trust: 40, net: 20 },
-    defy: '{boss}拍桌：「我是你老闆還是你是我老闆？」直接拍板：'
+    defy: '{boss}拍桌：「我是你老闆還是你是我老闆？」直接拍板：',
+    half: '{boss}說：「這種小事不用我親自來。」只做了一半。'
   },
   D: {
     label: '現任市長拚連任', party: '🦚 孔雀黨',
@@ -32,7 +35,8 @@ const TYPES = {
     names: { m: 'Dylan', f: 'Diana' },
     look: { m: { hair: 'side', suit: '#263a63', tie: '#7a4fb0' }, f: { hair: 'bob', suit: '#263a63', inner: '#7a4fb0' } },
     start: { s: 36, r: 34, money: 50, trust: 50, net: 45 },
-    defy: '記者問 A，{boss}答了 B。實際做出來的是：'
+    defy: '記者問 A，{boss}答了 B。實際做出來的是：',
+    half: '{boss}跑去做了另一件事，這個只做了一半。'
   },
   E: {
     label: '黨內推舉的資深黨員', party: '🐦 蜂鳥黨',
@@ -40,7 +44,8 @@ const TYPES = {
     names: { m: 'Ethan', f: 'Emma' },
     look: { m: { hair: 'short', hairColor: '#333', suit: '#4a5a6a', tie: '#8fa3b8', glasses: true }, f: { hair: 'bob', hairColor: '#2a2a2a', suit: '#4a5a6a', inner: '#fff', glasses: true } },
     start: { s: 29, r: 37, money: 45, trust: 55, net: 35 },
-    defy: '{boss}推了推眼鏡：「這個我們再研究一下。」最後做的是：'
+    defy: '{boss}推了推眼鏡：「這個我們再研究一下。」最後做的是：',
+    half: '{boss}說：「我們再研究一下。」只做了一半。'
   },
   F: {
     label: '草根律師・議會戰神', party: '🐦 蜂鳥黨',
@@ -48,7 +53,8 @@ const TYPES = {
     names: { m: 'Frank', f: 'Fiona' },
     look: { m: { hair: 'side', hairColor: '#1a1a1a', suit: '#5a3b2a', tie: '#2e9e6a' }, f: { hair: 'bob', hairColor: '#1a1a1a', suit: '#5a3b2a', inner: '#2e9e6a' } },
     start: { s: 30, r: 36, money: 35, trust: 45, net: 40 },
-    defy: '{boss}把你寫的稿子丟了，自己即興發揮：'
+    defy: '{boss}把你寫的稿子丟了，自己即興發揮：',
+    half: '{boss}做到一半就開始即興，最後只完成一半。'
   }
 };
 

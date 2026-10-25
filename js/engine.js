@@ -196,7 +196,7 @@ function choose(g, ev, opt, isBuild = false) {
         // 造神企劃：老闆不配合，效果打折
         exec = { ...opt, fx: halve(opt.fx), risk: null, ok: null };
       }
-      if (defied) lines.push({ kind: 'defy', text: fill(g, TYPES[g.type].defy) + (opts ? ' ' + fill(g, exec.t) : ' 只做了一半。') });
+      if (defied) lines.push({ kind: 'defy', text: opts ? fill(g, TYPES[g.type].defy) + ' ' + fill(g, exec.t) : fill(g, TYPES[g.type].half) });
     }
   }
 
