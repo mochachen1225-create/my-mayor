@@ -182,7 +182,7 @@ function introScreen() {
 function roomScreen() {
   show(`
     <div class="hud">
-      <div class="row"><span class="date" id="date"></span><span><button class="mbtn" id="mbtn" aria-label="總幹事手冊">📖</button> <span class="clock" id="clock"></span></span></div>
+      <div class="row"><span class="date" id="date"></span><span><button class="mbtn" id="menubtn" aria-label="選單">☰</button> <span class="clock" id="clock"></span></span></div>
       <div class="box">
         <div class="boxtitle">👤 候選人 <b id="bx-name"></b></div>
         <div class="stats">
@@ -208,7 +208,7 @@ function roomScreen() {
       <div class="who" id="bossname"></div>
     </div>
   `, 'room');
-  $('#mbtn').onclick = openManual;
+  $('#menubtn').onclick = openMenu;
   $('#boss').innerHTML = bossFace('smile');
   $('#bossname').textContent = `${G.name}・${TYPES[G.type].party}`;
   updateHud();
@@ -614,10 +614,12 @@ function endingScreen(res, seen) {
     <button class="btn" id="share">📤 分享結局截圖</button>
     <button class="btn ghost" id="gal">📚 結局圖鑑</button>
     <button class="btn ghost" id="again">🔁 再當一次幕僚</button>
+    <button class="btn ghost" id="home">🏠 回首頁</button>
   `, 'end');
   $('#share').onclick = () => shareEnding(res);
   $('#gal').onclick = () => gallery(() => endingScreen(res, loadSeen()));
   $('#again').onclick = drawScreen;
+  $('#home').onclick = titleScreen;
 }
 
 function gallery(back) {
@@ -627,7 +629,7 @@ function gallery(back) {
     <p class="muted center">已解鎖 ${seen.size} / ${ENDINGS.length}</p>
     <div class="gallery">${ENDINGS.map(e => seen.has(e.id)
       ? `<div><span class="e">${e.emoji}</span>${esc(e.title)}</div>`
-      : `<div class="lock"><span class="e">🔒</span>？？？<small style="display:block;font-size:12px;margin-top:4px">${esc(e.hint || '')}</small></div>`).join('')}</div>
+      : `<div class="lock"><span class="e">🔒</span>？？？</div>`).join('')}</div>
     <button class="btn" id="back">返回</button>
   `);
   $('#back').onclick = back;
@@ -713,6 +715,46 @@ async function shareEnding(res) {
 
 // ---------------- 總幹事手冊 ----------------
 // 蓋在畫面最上層；遊戲中打開時，倒數計時會暫停
+// 遊戲中的選單：手冊、結局圖鑑、回首頁（倒數會暫停）
+function openMenu() {
+  const m = document.createElement('div');
+  m.className = 'manual';
+  const close = () => m.remove();
+  const home = () => {
+    m.querySelector('.mbody').innerHTML = `
+      <p style="margin:14px 0">確定要回首頁嗎？<br><b>這一局的進度會放棄。</b></p>
+      <button class="btn" id="yes">放棄這局，回首頁</button>
+      <button class="btn ghost" id="no">繼續打選戰</button>`;
+    m.querySelector('#yes').onclick = () => { close(); titleScreen(); };
+    m.querySelector('#no').onclick = close;
+  };
+  const gal = () => {
+    const seen = loadSeen();
+    m.querySelector('.mbody').innerHTML = `
+      <p class="muted center" style="margin-top:10px">已解鎖 ${seen.size} / ${ENDINGS.length}</p>
+      <div class="gallery">${ENDINGS.map(e => seen.has(e.id)
+        ? `<div><span class="e">${e.emoji}</span>${esc(e.title)}</div>`
+        : `<div class="lock"><span class="e">🔒</span>？？？</div>`).join('')}</div>`;
+  };
+  m.innerHTML = `<div class="mcard">
+    <div class="mhead"><b>☰ 選單</b><button id="mclose" aria-label="關閉">✕</button></div>
+    <div class="mbody">
+      <p class="muted" style="margin-top:10px">打開選單時，倒數會暫停。</p>
+      <button class="btn" id="m1">▶️ 繼續打選戰</button>
+      <button class="btn ghost" id="m2">📖 總幹事手冊</button>
+      <button class="btn ghost" id="m3">🏆 結局圖鑑</button>
+      <button class="btn ghost" id="m4">🏠 回首頁</button>
+    </div>
+  </div>`;
+  app.appendChild(m);
+  m.querySelector('#mclose').onclick = close;
+  m.querySelector('#m1').onclick = close;
+  m.querySelector('#m2').onclick = () => { close(); openManual(); };
+  m.querySelector('#m3').onclick = gal;
+  m.querySelector('#m4').onclick = home;
+  m.onclick = e => { if (e.target === m) close(); };
+}
+
 function openManual() {
   const m = document.createElement('div');
   m.className = 'manual';
