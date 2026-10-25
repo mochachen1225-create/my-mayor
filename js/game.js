@@ -431,6 +431,19 @@ async function forcedRest() {
   return res;
 }
 
+// 民調時，副總幹事給的建議：告訴玩家現在卡在哪裡
+function tipsHtml() {
+  const t = [];
+  if (G.fav < 50) t.push('好感度偏低：現在越多人討論你，反而越扣分。先做讓人有好感的事。');
+  else if (G.buzz < 45) t.push('好感度不錯，但沒什麼人在討論你：多製造話題、多曝光，民調才會動。');
+  if (G.money < 20) t.push('競選資金快見底了：可以辦募款、推募款小物。');
+  if (G.trust < 40) t.push('老闆不太信任你：陪他吃宵夜聊天，或多選他擅長的事。');
+  if (G.liver < 30) t.push('你的肝快撐不住了，排一天休息吧。');
+  if (G.team < 40) t.push('團隊士氣低落，事情容易出包。請大家喝個飲料吧。');
+  if (!t.length) t.push('數字都不錯，保持下去，好感度和聲量都高，民調就會一直往上。');
+  return `<div class="res note" style="font-size:14px;margin-top:10px">🗒️ 副總幹事：${t.slice(0, 2).map(esc).join('<br>')}</div>`;
+}
+
 function pollCard() {
   return new Promise(resolve => {
     const p = doPoll(G);
@@ -448,6 +461,7 @@ function pollCard() {
         ${row('其他候選人', p.others, '#aaa')}
         ${row('還沒決定', p.und, '#ddd')}
         ${p.top && p.top.length ? `<p style="margin:12px 0 4px"><b>這個月影響最大的事：</b></p>${p.top.map(t => `<div class="res ${t.v > 0 ? 'good' : 'bad'}" style="font-size:14px;margin:4px 0">${t.v > 0 ? '📈' : '📉'} ${esc(t.title)}</div>`).join('')}` : ''}
+        ${tipsHtml()}
         <p style="margin-top:12px">${comment}${diff !== null ? `<br>比上次 ${diff >= 0 ? '↑' : '↓'} ${Math.abs(diff).toFixed(1)}%` : ''}</p>
         <button class="btn" id="ok">知道了</button>
       </div>`, 'k-poll');

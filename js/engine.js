@@ -9,7 +9,7 @@ const STAT_KEYS = ['buzz', 'fav', 'money', 'trust', 'liver', 'con', 'net', 'team
 const FLAG_KEYS = ['donated', 'warm', 'dirty1', 'dirty2', 'ledger', 'rebel', 'respect', 'script', 'cut', 'tv', 'buy', 'foreign'];
 
 const JITTER = ['s', 'r', 'fav', 'buzz', 'net', 'con'];
-const S_GAIN = 0.55; // 支持度正向效果的倍率（平衡用）
+const S_GAIN = 0.6; // 支持度正向效果的倍率（平衡用）
 // 隨機挑一句，最近說過的先不重複
 const pick = (g, arr) => {
   g.said = g.said || [];
@@ -343,7 +343,7 @@ function endWeek(g) {
   // 對手也在拚：每週一則對手動態
   g.rPrev = g.r;
   const rn = RIVAL_NEWS[Math.floor(g.rng() * RIVAL_NEWS.length)];
-  g.r += 0.64 + rn.r;
+  g.r += 0.5 + rn.r;
   const news = [{ text: fill(g, rn.t), up: rn.r > 0 }];
   if (g.rng() < 0.4) {
     const tn = THIRD_NEWS[Math.floor(g.rng() * THIRD_NEWS.length)];
