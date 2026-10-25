@@ -5,7 +5,7 @@ const POLL_WEEKS = [1, 6, 10, 14];
 const BLACKOUT_WEEK = 16; // 11/18 起民調封關
 const START = new Date(2026, 7, 3); // 8/3（週一），只用來算月日，不顯示年份
 const VOTE_DAY = new Date(2026, 10, 28);
-const STAT_KEYS = ['buzz', 'fav', 'money', 'trust', 'liver', 'con', 'net', 'team'];
+const STAT_KEYS = ['buzz', 'fav', 'money', 'trust', 'liver', 'con', 'net', 'team', 'conf'];
 const FLAG_KEYS = ['donated', 'warm', 'dirty1', 'dirty2', 'ledger', 'rebel', 'respect', 'script', 'cut', 'tv', 'buy', 'foreign'];
 
 const JITTER = ['s', 'r', 'fav', 'buzz', 'net', 'con'];
@@ -48,9 +48,9 @@ function newGame(type, gender, name, rng = Math.random) {
     week: 1, clock: 8,
     s: T.start.s, r: T.start.r,
     buzz: 40, fav: 50, money: T.start.money, trust: T.start.trust,
-    liver: 80, con: 60, team: 70, net: T.start.net, favor: 0,
+    liver: 80, con: 60, team: 70, conf: 60, net: T.start.net, favor: 0,
     f: { idle: 0 }, idleStreak: 0,
-    used: new Set(), pending: [], lastPoll: null, swings: []
+    used: new Set(), pending: [], lastPoll: null, swings: [], history: []
   };
 }
 
@@ -97,7 +97,9 @@ function eligible(g, ev) {
 function pickEvent(g) {
   const pool = EVENTS.filter(ev => eligible(g, ev));
   if (!pool.length) return null;
-  const weight = ev => (ev.kind === 'money' ? 1.6 : ev.types ? 1.8 : ev.kind === 'daily' ? 0.8 : 1);
+  // 上一局遇過的事件，這局比較不容易再遇到
+  const seen = g.seenBefore || new Set();
+  const weight = ev => (ev.kind === 'money' ? 1.6 : ev.types ? 1.8 : ev.kind === 'daily' ? 0.8 : 1) * (seen.has(ev.id) ? 0.3 : 1);
   let total = pool.reduce((a, ev) => a + weight(ev), 0);
   let x = g.rng() * total;
   for (const ev of pool) { x -= weight(ev); if (x <= 0) return ev; }
@@ -113,9 +115,10 @@ function planWeek(g) {
   const main = (MAIN[g.week] || []).map(e => typeof e === 'string' ? EVENTS.find(x => x.id === e) : e);
   for (const ev of main) steps.push({ step: 'event', ev });
   // 沒事的時候自己排行程；突發事件隨機插進來，有時候一整週都沒事
-  const slots = g.week === 13 || g.week === WEEKS ? 0 : main.length ? 1 : 2;
+  // 每週有幾個空檔是隨機的：有時很閒、有時忙到沒空
+  const slots = g.week === 13 || g.week === WEEKS ? 0 : main.length ? (g.rng() < 0.7 ? 1 : 0) : (g.rng() < 0.5 ? 1 : 2);
   let fires = main.length ? (g.rng() < 0.3 ? 1 : 0) : (g.rng() < 0.2 ? 0 : 1);
-  if (!main.length && g.rng() < 0.3) fires++;
+  if (!main.length && g.rng() < 0.2) fires++;
   if (g.week >= 9 && g.rng() < 0.2) fires++;
   if (g.week === 1) fires = 1;
   const mix = [];
@@ -207,6 +210,8 @@ function choose(g, ev, opt, isBuild = false) {
     if (opt.likes && opt.likes.includes(g.type)) p += 0.2;
     if (opt.hates && opt.hates.includes(g.type)) p -= 0.25;
     if (g.type === 'C') p -= 0.05;
+    if (g.conf > 75) p += 0.05; // 總幹事有信心，老闆比較願意聽
+    if (g.conf < 30) p -= 0.08; // 總幹事自己都沒把握，老闆更不想聽
     p = clamp(p, 0.35, 0.96);
     if (g.rng() > p) {
       defied = true;
@@ -220,6 +225,7 @@ function choose(g, ev, opt, isBuild = false) {
         // 成就老闆企劃：老闆不配合，效果打折
         exec = { ...opt, fx: halve(opt.fx), risk: null, ok: null };
       }
+      if (defied) g.f.defied = (g.f.defied || 0) + 1;
       if (defied) lines.push({ kind: 'defy', text: opts ? fill(g, pick(g, TYPES[g.type].defy)) + ' ' + fill(g, exec.t) : fill(g, pick(g, TYPES[g.type].half)) });
     }
   }
@@ -270,13 +276,15 @@ function choose(g, ev, opt, isBuild = false) {
     lines.push({ kind: v < -0.2 ? 'bad' : 'good', text: fill(g, pick(g, pool)) });
   }
   // 團隊士氣：做得好大家有幹勁，出包或老闆不聽話就洩氣
-  applyFx(g, { team: failed ? -3 : defied ? -2 : 1 }, delta);
+  applyFx(g, { team: failed ? -3 : defied ? -2 : 1, conf: failed ? -4 : defied ? -2 : 2 }, delta);
   // 老闆的反應，每次都不太一樣
   if (bossActs && !defied && g.rng() < 0.6) {
     lines.push({ kind: 'say', mood: failed ? 'sad' : 'big', text: fill(g, pick(g, failed ? TYPES[g.type].bad : TYPES[g.type].ok)) });
   }
   advanceClock(g, isBuild ? 3 : 1.5 + g.rng() * 2, ev && ev.late, delta);
   logSwing(g, isBuild ? fill(g, exec.t) : fill(g, ev.title), delta);
+  if ((delta.r || 0) < -0.3) g.provoked = 1;
+  if (isBuild && ['rally', 'billboard', 'ads', 'dance', 'handshake'].includes(exec.id) && !failed) g.bigMove = 1;
   return { exec, defied, lines, delta, failed };
 }
 
@@ -308,7 +316,7 @@ function timeout(g, ev, isBuild = false) {
   g.idleStreak++;
   g.f.idle = (g.f.idle || 0) + 1;
   const delta = {};
-  const fx = isBuild ? { trust: -3, buzz: -2, team: -4 } : { trust: -3 - g.idleStreak, fav: -3, s: -0.6, buzz: -2, team: -5 };
+  const fx = isBuild ? { trust: -3, buzz: -2, team: -4, conf: -3 } : { trust: -3 - g.idleStreak, fav: -3, s: -0.6, buzz: -2, team: -5, conf: -4 };
   applyFx(g, fx, delta);
   advanceClock(g, 1, ev && ev.late, delta);
   logSwing(g, '已讀不回：' + (isBuild ? '成就老闆企劃' : fill(g, ev.title)), delta);
@@ -319,8 +327,8 @@ function timeout(g, ev, isBuild = false) {
 }
 
 function logSwing(g, title, delta) {
-  const v = (delta.s || 0) - (delta.r || 0);
-  if (Math.abs(v) >= 0.3) g.swings.push({ title, v });
+  const v = (delta.s || 0) - (delta.r || 0) + (delta.fav || 0) * 0.08;
+  if (Math.abs(v) >= 0.3) { g.swings.push({ title, v }); g.history.push({ title, v, week: g.week }); }
 }
 
 function advanceClock(g, hours, late, delta) {
@@ -343,9 +351,21 @@ function endWeek(g) {
   if (T === 'D') g.s -= 0.4;
   // 對手也在拚：每週一則對手動態
   g.rPrev = g.r;
+  const news = [];
+  // 對手會回擊：你打他，他就打回來；你辦大活動，他也跟著辦
+  if (g.provoked && g.rng() < 0.65) {
+    const c = pick(g, COUNTER);
+    g.s += c.s; g.r += c.r || 0;
+    news.push({ text: fill(g, c.t), up: true });
+  } else if (g.bigMove && g.rng() < 0.5) {
+    const c = pick(g, COPYCAT);
+    g.r += c.r;
+    news.push({ text: fill(g, c.t), up: true });
+  }
+  g.provoked = 0; g.bigMove = 0;
   const rn = RIVAL_NEWS[Math.floor(g.rng() * RIVAL_NEWS.length)];
-  g.r += 0.5 + rn.r;
-  const news = [{ text: fill(g, rn.t), up: rn.r > 0 }];
+  g.r += 0.32 + rn.r;
+  news.push({ text: fill(g, rn.t), up: rn.r > 0 });
   if (g.rng() < 0.4) {
     const tn = THIRD_NEWS[Math.floor(g.rng() * THIRD_NEWS.length)];
     g.r += tn.r || 0;
@@ -402,6 +422,18 @@ const MARKET = {
   ]
 };
 
+const COUNTER = [
+  { t: '{rival}陣營回擊：開記者會說你們「只會抹黑」，還拿出你們以前的發言對照。', s: -0.6 },
+  { t: '{rival}的側翼連夜做了一整套梗圖反擊你們。', s: -0.5 },
+  { t: '{rival}在政論節目上點名你們，說「選不贏就亂咬」。', s: -0.5, r: 0.2 },
+  { t: '{rival}陣營放出你們志工的對話截圖，說是「網軍」。', s: -0.7 }
+];
+const COPYCAT = [
+  { t: '{rival}看到你們辦得熱鬧，也跟著辦了一場更大的。', r: 0.5 },
+  { t: '{rival}連夜在全市加掛兩倍看板，跟你們拚曝光。', r: 0.4 },
+  { t: '{rival}也找了舞團、也辦了握手會，網友說「抄很大」。', r: 0.3 }
+];
+
 const RIVAL_NEWS = [
   { t: '{rival}辦了萬人造勢晚會，現場很熱。', r: 1.2 },
   { t: '{rival}掃街拜票跑了一整週。', r: 0.7 },
@@ -453,6 +485,8 @@ function doPoll(g) {
   const top = g.swings.slice().sort((a, b) => Math.abs(b.v) - Math.abs(a.v)).slice(0, 2);
   g.swings = [];
   const res = { s, r, others, und, prev: g.lastPoll, top };
+  // 民調漲，信心跟著漲
+  if (res.prev) g.conf = clamp(g.conf + (res.s - res.prev.s) * 3 - (res.r - res.prev.r) * 2, 0, 100);
   g.lastPoll = res;
   // 落後或領先 8% 以上觸發危機
   const gap = g.r - g.s;
@@ -481,7 +515,19 @@ function finish(g) {
   const ctx = { type: g.type, win: margin > 0, margin, trust: g.trust, con: g.con, net: g.net, f: g.f };
   const ending = ENDINGS.find(e => e.when(ctx));
   const resultLine = ctx.win ? fill(g, '好消息是，{boss}當選了。') : fill(g, '{boss}落選了。');
-  return { share, margin, win: ctx.win, ending, text: fill(g, ending.text).replace('{resultLine}', resultLine) };
+  const hist = g.history.slice();
+  const best = hist.filter(h => h.v > 0).sort((a, b) => b.v - a.v).slice(0, 3);
+  const worst = hist.filter(h => h.v < 0).sort((a, b) => a.v - b.v).slice(0, 3);
+  const notes = [];
+  if (g.fav < 50) notes.push('好感度一直不夠高，聲量越大反而越扣分。');
+  else if (g.buzz < 45) notes.push('好感度不錯，但曝光太少，很多選民根本不認識{boss}。');
+  if ((g.f.idle || 0) >= 3) notes.push('你擺爛了 ' + g.f.idle + ' 次，老闆和選民都看在眼裡。');
+  if ((g.f.defied || 0) >= 5) notes.push('{boss}有 ' + g.f.defied + ' 次沒照你的話做，信任要顧好。');
+  if (g.f.complacent) notes.push('民調領先，支持者以為穩贏，結果沒出門投票。');
+  if (g.f.took) notes.push('碰了不該碰的錢，就算選上也會出事。');
+  if (!notes.length) notes.push(margin > 0 ? '整場選戰打得很穩，好感和聲量都夠。' : '差一點點。下次多衝一點曝光，也許就翻過去了。');
+  const review = { best, worst, notes: notes.slice(0, 3).map(n => fill(g, n)) };
+  return { share, margin, win: ctx.win, ending, review, text: fill(g, ending.text).replace('{resultLine}', resultLine) };
 }
 
 if (typeof module !== 'undefined') module.exports = { newGame, planWeek, buildChoices, choose, timeout, endWeek, doPoll, finish, fill, weekLabel, clockText, canAfford, makeRng, WEEKS, BLACKOUT_WEEK };

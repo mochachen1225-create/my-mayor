@@ -1,6 +1,7 @@
 // 畫面與流程
 const app = document.getElementById('app');
 const SAVE_KEY = 'mymayor.endings';
+const EVENTS_KEY = 'mymayor.seenEvents';
 let G = null;
 
 const $ = sel => app.querySelector(sel);
@@ -10,6 +11,15 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
 function loadSeen() {
   try { return new Set(JSON.parse(localStorage.getItem(SAVE_KEY) || '[]')); } catch (e) { return new Set(); }
 }
+function loadSeenEvents() {
+  try { return new Set(JSON.parse(localStorage.getItem(EVENTS_KEY) || '[]')); } catch (e) { return new Set(); }
+}
+function saveSeenEvents() {
+  let all = new Set([...loadSeenEvents(), ...G.used]);
+  if (all.size > EVENTS.length * 0.7) all = new Set(G.used); // 大部分都看過了，就從頭輪
+  try { localStorage.setItem(EVENTS_KEY, JSON.stringify([...all])); } catch (e) { /* 沒差 */ }
+}
+
 function saveSeen(id) {
   const s = loadSeen(); s.add(id);
   try { localStorage.setItem(SAVE_KEY, JSON.stringify([...s])); } catch (e) { /* 無痕模式就算了 */ }
@@ -110,6 +120,7 @@ function setupScreen(type) {
   });
   $('#go').onclick = () => {
     G = newGame(type, gender, nm.value.trim().slice(0, 12) || T.names[gender]);
+    G.seenBefore = loadSeenEvents();
     profileScreen();
   };
 }
@@ -182,7 +193,7 @@ function roomScreen() {
         <div class="stats three">
           <div class="stat" id="st-liver"><i>肝的健康</i>🫀 <span></span><div class="bar"><div></div></div></div>
           <div class="stat" id="st-team"><i>團隊士氣</i>💪 <span></span><div class="bar"><div></div></div></div>
-          <div class="stat" id="st-con"><i>良心</i>😇 <span></span><div class="bar"><div></div></div></div>
+          <div class="stat" id="st-conf"><i>你的信心</i>🔥 <span></span><div class="bar"><div></div></div></div>
         </div>
       </div>
       <div class="box rivalbox"><div class="rivalrow" id="rivalrow"></div></div>
@@ -208,7 +219,7 @@ function updateHud() {
   ck.textContent = clockText(G);
   ck.classList.toggle('late', G.clock >= 24);
   $('#bx-name').textContent = G.name;
-  for (const k of ['buzz', 'fav', 'money', 'trust', 'liver', 'team', 'con']) {
+  for (const k of ['buzz', 'fav', 'money', 'trust', 'liver', 'team', 'conf']) {
     const el = $('#st-' + k);
     const v = Math.round(G[k]);
     el.querySelector('span').textContent = v;
@@ -271,7 +282,7 @@ function countdown(seconds, onTick, onEnd) {
 }
 
 function chipsHtml(delta) {
-  const vis = { buzz: '📣聲量', fav: '😊民調好感度', money: '💰資金', trust: '🤝信任', liver: '🫀肝', team: '💪士氣', con: '😇良心' };
+  const vis = { buzz: '📣聲量', fav: '😊民調好感度', money: '💰資金', trust: '🤝信任', liver: '🫀肝', team: '💪士氣', conf: '🔥信心', con: '😇良心' };
   const out = [];
   const arrow = (v, good) => `<span class="chip ${good ? 'up' : 'down'}">`;
   if (delta.s) out.push(arrow(0, delta.s > 0) + `📈 民心 ${delta.s > 0 ? '↑' : '↓'}${Math.abs(delta.s) >= 1 ? (delta.s > 0 ? '↑' : '↓') : ''}</span>`);
@@ -298,7 +309,8 @@ function eventCard(ev, queueLeft, isBuild) {
   return new Promise(resolve => {
     const opts = isBuild ? buildChoices(G) : ev.opts;
     const kind = isBuild ? 'build' : ev.kind;
-    const secs = isBuild ? 20 : (ev.timer || 20);
+    let secs = Math.min(isBuild ? 20 : (ev.timer || 20), G.week >= BLACKOUT_WEEK ? 10 : 99);
+    if (G.conf < 30) secs = Math.max(6, secs - 5); // 信心太低，你慌了
     const npc = isBuild ? null : NPC[ev.who];
     const whoHtml = isBuild
       ? `<div class="who">${bossFace('smile')}<div><b>${esc(G.name)}</b><br><small>「今天要做什麼？」</small></div></div>`
@@ -393,7 +405,7 @@ function boardStep(left) {
       if (res.idle) bossSays(res.lines[0].text, true);
       resolve(res);
     };
-    const stop = countdown(30, (frac, sec) => {
+    const stop = countdown(G.week >= BLACKOUT_WEEK ? 15 : 30, (frac, sec) => {
       const b = $('#bbar'); if (b) b.style.width = frac * 100 + '%';
       const e = $('#bsec'); if (e) e.textContent = sec;
     }, () => finish('你發呆了一整天', timeout(G, null, true)));
@@ -421,6 +433,7 @@ function boardStep(left) {
 
 // 肝快爆了：不管要做什麼，今天都只能休息
 async function forcedRest() {
+  G.f.rests = (G.f.rests || 0) + 1;
   const rest = BUILD.find(b => b.id === 'rest');
   const res = choose(G, null, { ...rest, fx: { liver: 18 } }, true);
   res.lines = [{ kind: 'bad', text: '你在戰情室的沙發上睡著了，叫都叫不醒。副總幹事說：「總幹事今天強制休假。」' }];
@@ -440,6 +453,7 @@ function tipsHtml() {
   if (G.trust < 40) t.push('老闆不太信任你：陪他吃宵夜聊天，或多選他擅長的事。');
   if (G.liver < 30) t.push('你的肝快撐不住了，排一天休息吧。');
   if (G.team < 40) t.push('團隊士氣低落，事情容易出包。請大家喝個飲料吧。');
+  if (G.conf < 30) t.push('總幹事，你看起來很慌。信心太低，做決定的時間會變短，老闆也不太想聽你的。');
   if (!t.length) t.push('數字都不錯，保持下去，好感度和聲量都高，民調就會一直往上。');
   return `<div class="res note" style="font-size:14px;margin-top:10px">🗒️ 副總幹事：${t.slice(0, 2).map(esc).join('<br>')}</div>`;
 }
@@ -484,7 +498,7 @@ function weekCard(info) {
         <div>距離投票還有 <b>${L.daysLeft}</b> 天</div>
         ${news.length ? `<p style="margin:12px 0 4px;text-align:left"><b>📰 上週對手動態</b></p>${news.map(n => `<div class="res ${n.up === null ? 'note' : n.up ? 'bad' : 'good'}" style="text-align:left;font-size:14px">${esc(n.text)}</div>`).join('')}` : ''}
         ${notes.map(n => `<div class="res note">${esc(n)}</div>`).join('')}
-        ${blackout ? '<div class="res bad">🔒 民調封關。接下來看不到任何數字，只能憑直覺。</div>' : ''}
+        ${blackout ? '<div class="res bad">🔥 最後衝刺！民調封關，看不到任何數字，只能憑直覺。每件事只剩 10 秒可以決定。</div>' : ''}
         <button class="btn" id="ok">開工</button>
       </div>`, '');
     updateHud();
@@ -514,6 +528,7 @@ async function runGame() {
 async function electionNight() {
   const res = finish(G);
   const seen = saveSeen(res.ending.id);
+  saveSeenEvents();
   show(`
     <p class="muted" style="color:#ccc">11 月 28 日 晚上 8 點</p>
     <h2>開票夜</h2>
@@ -547,7 +562,40 @@ async function electionNight() {
   $('#nightface').innerHTML = bossFace(res.win ? 'big' : 'sad');
   const btn = $('#next');
   btn.style.visibility = 'visible';
-  btn.onclick = () => endingScreen(res, seen);
+  btn.textContent = '選戰檢討會 →';
+  btn.onclick = () => reviewScreen(res, seen);
+}
+
+function statsOf() {
+  return [
+    ['🫀', '爆肝被強制休息', (G.f.rests || 0) + ' 次'],
+    ['😶', '擺爛（時間到沒選）', (G.f.idle || 0) + ' 次'],
+    ['🙄', '老闆不聽你的', (G.f.defied || 0) + ' 次'],
+    ['😇', '最後的良心', Math.round(G.con)]
+  ];
+}
+
+function reviewScreen(res, seen) {
+  const R = res.review;
+  const row = (h, good) => `<div class="res ${good ? 'good' : 'bad'}" style="text-align:left;font-size:14px">${good ? '📈' : '📉'} ${esc(h.title)}<span class="muted" style="font-size:12px">（${weekLabel(h.week).month}月）</span></div>`;
+  show(`
+    <h2>選戰檢討會</h2>
+    <p class="muted" style="color:#ccc">${res.win ? '贏了，但也要知道是怎麼贏的。' : '輸了，來看看問題出在哪。'}</p>
+    <div class="story">
+      <b>👍 幫最多的決定</b>
+      ${R.best.length ? R.best.map(h => row(h, true)).join('') : '<div class="muted">沒有特別突出的。</div>'}
+      <br><b>👎 傷最重的決定</b>
+      ${R.worst.length ? R.worst.map(h => row(h, false)).join('') : '<div class="muted">沒有明顯的失誤。</div>'}
+      <br><b>🗒️ 總評</b>
+      ${R.notes.map(n => `<div style="margin:4px 0">・${esc(n)}</div>`).join('')}
+    </div>
+    <div class="story" style="margin-top:10px">
+      <b>📋 這局的數據</b>
+      ${statsOf().map(([e, k, v]) => `<div class="statline"><span>${e} ${k}</span><b>${v}</b></div>`).join('')}
+    </div>
+    <button class="btn" id="go">看結局 →</button>
+  `, 'end');
+  $('#go').onclick = () => endingScreen(res, seen);
 }
 
 function endingScreen(res, seen) {
@@ -574,7 +622,7 @@ function gallery(back) {
     <p class="muted center">已解鎖 ${seen.size} / ${ENDINGS.length}</p>
     <div class="gallery">${ENDINGS.map(e => seen.has(e.id)
       ? `<div><span class="e">${e.emoji}</span>${esc(e.title)}</div>`
-      : `<div class="lock"><span class="e">🔒</span>？？？</div>`).join('')}</div>
+      : `<div class="lock"><span class="e">🔒</span>？？？<small style="display:block;font-size:12px;margin-top:4px">${esc(e.hint || '')}</small></div>`).join('')}</div>
     <button class="btn" id="back">返回</button>
   `);
   $('#back').onclick = back;
@@ -624,10 +672,13 @@ async function shareEnding(res) {
   x.fillStyle = '#fff'; x.font = font(56);
   x.fillText(`${res.ending.emoji} ${res.ending.title}`, W / 2, 810);
   x.font = font(38); x.fillStyle = '#eee';
-  const lines = wrapText(x, res.text, W - 200).slice(0, 6);
-  lines.forEach((l, i) => x.fillText(l, W / 2, 890 + i * 58));
+  const lines = wrapText(x, res.text, W - 200).slice(0, 4);
+  lines.forEach((l, i) => x.fillText(l, W / 2, 870 + i * 52));
+  x.font = font(32); x.fillStyle = '#ffd166';
+  const st = statsOf();
+  st.forEach(([e, k, v], i) => x.fillText(`${e} ${k} ${v}`, W / 2, 1090 + i * 42));
   x.fillStyle = '#e0a526'; x.font = font(36);
-  x.fillText('你也來當幕僚，看你能不能把市長送上寶座 →', W / 2, H - 70);
+  x.fillText('你也來當幕僚，看你能不能把市長送上寶座 →', W / 2, H - 45);
   const blob = await new Promise(r => c.toBlob(r, 'image/png'));
   const file = new File([blob], 'my-mayor.png', { type: 'image/png' });
   const text = `我在《我推的市長》幫 ${G.name} 打選戰，結局是「${res.ending.title}」！你也來試試：${location.href}`;
