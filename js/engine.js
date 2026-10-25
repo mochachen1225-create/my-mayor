@@ -36,7 +36,8 @@ function makeRng(seed) {
 
 function newGame(type, gender, name, rng = Math.random) {
   const T = TYPES[type];
-  const rivalType = type === 'D' ? 'B' : 'D';
+  // 主要對手一定是現任市長；抽到現任的話，對手從其他挑戰者隨機選一位
+  const rivalType = type === 'D' ? ['A', 'B', 'C', 'E', 'F'][Math.floor(rng() * 5)] : 'D';
   const rivalGender = rng() < 0.5 ? 'm' : 'f';
   return {
     rng, type, gender, name: name || T.names[gender],
