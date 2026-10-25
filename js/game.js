@@ -168,15 +168,25 @@ function roomScreen() {
   show(`
     <div class="hud">
       <div class="row"><span class="date" id="date"></span><span class="clock" id="clock"></span></div>
-      <div class="stats">
-        <div class="stat" id="st-buzz"><i>聲量</i>📣 <span></span><div class="bar"><div></div></div></div>
-        <div class="stat" id="st-fav"><i>民調好感度</i>😊 <span></span><div class="bar"><div></div></div></div>
-        <div class="stat" id="st-money"><i>競選資金</i>💰 <span></span><div class="bar"><div></div></div></div>
-        <div class="stat" id="st-trust"><i>信任</i>🤝 <span></span><div class="bar"><div></div></div></div>
-        <div class="stat" id="st-liver"><i>你的肝</i>🫀 <span></span><div class="bar"><div></div></div></div>
+      <div class="box">
+        <div class="boxtitle">👤 候選人 <b id="bx-name"></b></div>
+        <div class="stats">
+          <div class="stat" id="st-buzz"><i>聲量</i>📣 <span></span><div class="bar"><div></div></div></div>
+          <div class="stat" id="st-fav"><i>民調好感度</i>😊 <span></span><div class="bar"><div></div></div></div>
+          <div class="stat" id="st-money"><i>競選資金</i>💰 <span></span><div class="bar"><div></div></div></div>
+          <div class="stat" id="st-trust"><i>對你的信任</i>🤝 <span></span><div class="bar"><div></div></div></div>
+        </div>
       </div>
-      <div class="rivalrow" id="rivalrow"></div>
-      <div class="row muted" style="margin-top:6px;color:#bbb;font-size:13px" id="sub"></div>
+      <div class="box">
+        <div class="boxtitle">🧑‍💼 總幹事（你）</div>
+        <div class="stats">
+          <div class="stat" id="st-liver"><i>肝的健康</i>🫀 <span></span><div class="bar"><div></div></div></div>
+          <div class="stat" id="st-con"><i>良心</i>😇 <span></span><div class="bar"><div></div></div></div>
+          <div class="stat" id="st-net"><i>人脈</i>📇 <span></span><div class="bar"><div></div></div></div>
+          <div class="stat" id="st-favor"><i>欠人情</i>🧾 <span></span></div>
+        </div>
+      </div>
+      <div class="box rivalbox"><div class="rivalrow" id="rivalrow"></div></div>
     </div>
     <div class="stage">
       <div class="bubble" id="bubble">接下來呢？</div>
@@ -198,7 +208,8 @@ function updateHud() {
   const ck = $('#clock');
   ck.textContent = clockText(G);
   ck.classList.toggle('late', G.clock >= 24);
-  for (const k of ['buzz', 'fav', 'money', 'trust', 'liver']) {
+  $('#bx-name').textContent = G.name;
+  for (const k of ['buzz', 'fav', 'money', 'trust', 'liver', 'con', 'net']) {
     const el = $('#st-' + k);
     const v = Math.round(G[k]);
     el.querySelector('span').textContent = v;
@@ -211,10 +222,10 @@ function updateHud() {
   const rr = $('#rivalrow');
   if (rr) {
     const lvl = G.r >= 45 ? '很強' : G.r >= 38 ? '強' : G.r >= 32 ? '普通' : '偏弱';
-    const tr = G.rPrev === undefined ? '' : G.r > G.rPrev + 0.3 ? '↑' : G.r < G.rPrev - 0.3 ? '↓' : '→';
-    rr.innerHTML = `<span>🎯 對手 ${esc(G.rivalName)} 聲勢</span><div class="bar"><div style="width:${Math.min(100, G.r * 1.6)}%"></div></div><b>${lvl} ${tr}</b>`;
+    const tr = G.rPrev === undefined ? '' : G.r > G.rPrev + 0.05 ? '↑' : G.r < G.rPrev - 0.05 ? '↓' : '→';
+    rr.innerHTML = `<span>🎯 主要對手 ${esc(G.rivalName)} 聲勢</span><div class="bar"><div style="width:${Math.min(100, G.r * 1.6)}%"></div></div><b>${lvl} ${tr}</b>`;
   }
-  $('#sub').textContent = `😇 良心 ${Math.round(G.con)}　📇 人脈 ${Math.round(G.net)}　🧾 欠人情 ${G.favor}`;
+  $('#st-favor span').textContent = G.favor;
   const mood = G.liver < 20 || G.trust < 25 ? 'sad' : G.s > G.r + 3 ? 'big' : 'smile';
   const bossEl = $('#boss');
   if (bossEl) bossEl.innerHTML = bossFace(mood);

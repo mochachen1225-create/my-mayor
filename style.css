@@ -78,7 +78,7 @@ input.name { width: 100%; border: 2px solid #ccc; border-radius: 12px; padding: 
 .hud .date b { font-size: 16px; }
 .hud .clock { font-variant-numeric: tabular-nums; background: rgba(255,255,255,.1); padding: 3px 10px; border-radius: 999px; }
 .hud .clock.late { background: #4b3a7a; }
-.stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin-top: 10px; }
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
 .stat { background: rgba(255,255,255,.08); border-radius: 10px; padding: 6px 2px 7px; text-align: center; font-size: 14px; white-space: nowrap; }
 .stat i { display: block; font-style: normal; font-size: 10.5px; opacity: .7; letter-spacing: -0.3px; }
 .stat .bar { height: 4px; background: rgba(255,255,255,.15); border-radius: 4px; margin-top: 4px; overflow: hidden; }
@@ -182,8 +182,7 @@ input.name { width: 100%; border: 2px solid #ccc; border-radius: 12px; padding: 
 .traits .who svg { width: 48px; height: 48px; flex: none; }
 .traits .who { display: flex; align-items: center; gap: 10px; }
 
-/* 肝一律紅色，快爆時閃爍 */
-#st-liver .bar div { background: #e05555; }
+/* 肝：數字越高越健康，快爆時變紅閃爍 */
 #st-liver.low { animation: liverblink 1s infinite; }
 @keyframes liverblink { 50% { background: rgba(224, 85, 85, .35); } }
 @media (prefers-reduced-motion: reduce) { #st-liver.low { animation: none; background: rgba(224, 85, 85, .35); } }
@@ -192,3 +191,11 @@ input.name { width: 100%; border: 2px solid #ccc; border-radius: 12px; padding: 
 .rivalrow .bar { flex: 1; height: 6px; background: rgba(255,255,255,.15); border-radius: 4px; overflow: hidden; }
 .rivalrow .bar div { height: 100%; background: #a08bd6; transition: width .5s; }
 .rivalrow b { font-weight: normal; min-width: 52px; text-align: right; }
+
+/* 數值分區：候選人、總幹事、對手 */
+.box { border: 1px solid rgba(255,255,255,.14); border-radius: 12px; padding: 6px 7px 7px; margin-top: 7px; }
+.boxtitle { font-size: 12px; color: #bbb; margin: 0 0 5px 2px; }
+.boxtitle b { color: #fff; font-weight: normal; }
+.rivalbox { padding: 7px 9px; }
+.rivalbox .rivalrow { margin-top: 0; }
+#st-favor span { display: block; margin-top: 2px; }

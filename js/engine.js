@@ -193,6 +193,7 @@ function canAfford(g, opt) { return !opt.need || g.money >= opt.need; }
 // 玩家選了 opt；回傳發生了什麼
 function choose(g, ev, opt, isBuild = false) {
   g.idleStreak = 0;
+  g.rPrev = g.r;
   const delta = {};
   const lines = [];
   let exec = opt;
@@ -292,6 +293,7 @@ function halve(fx) {
 
 // 擺爛：時間到沒選
 function timeout(g, ev, isBuild = false) {
+  g.rPrev = g.r;
   g.idleStreak++;
   g.f.idle = (g.f.idle || 0) + 1;
   const delta = {};
