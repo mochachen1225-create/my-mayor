@@ -73,7 +73,7 @@ function fill(g, text) {
   return text
     .replace(/\{boss\}/g, g.name)
     .replace(/\{he\}/g, g.he)
-    .replace(/\{rival\}/g, g.rivalName)
+    .replace(/\{rival\}/g, (g.rivalType === 'D' ? '現任市長' : '') + g.rivalName)
     .replace(/\{party\}/g, TYPES[g.type].party)
     .replace(/\{rparty\}/g, TYPES[g.rivalType].party)
     .replace(/\{num\}/g, g.num)

@@ -222,7 +222,7 @@ function updateHud() {
   if (rr) {
     const lvl = G.r >= 45 ? '很強' : G.r >= 38 ? '強' : G.r >= 32 ? '普通' : '偏弱';
     const tr = G.rPrev === undefined ? '' : G.r > G.rPrev + 0.05 ? '↑' : G.r < G.rPrev - 0.05 ? '↓' : '→';
-    rr.innerHTML = `<span>🎯 主要對手 ${esc(G.rivalName)} 聲勢</span><div class="bar"><div style="width:${Math.min(100, G.r * 1.6)}%"></div></div><b>${lvl} ${tr}</b>`;
+    rr.innerHTML = `<span>🎯 主要對手 ${G.rivalType === "D" ? "現任市長 " : ""}${esc(G.rivalName)} 聲勢</span><div class="bar"><div style="width:${Math.min(100, G.r * 1.6)}%"></div></div><b>${lvl} ${tr}</b>`;
   }
   const mood = G.liver < 20 || G.trust < 25 ? 'sad' : G.s > G.r + 3 ? 'big' : 'smile';
   const bossEl = $('#boss');
