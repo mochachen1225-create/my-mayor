@@ -49,7 +49,7 @@ function newGame(type, gender, name, rng = Math.random) {
     week: 1, clock: 8,
     s: T.start.s, r: T.start.r,
     buzz: 40, fav: 50, money: T.start.money, trust: T.start.trust,
-    liver: 80, con: 60, team: 70, conf: 60, net: T.start.net, favor: 0,
+    liver: 80, con: 60, team: 70, conf: 60, show: 0, showMax: 0, net: T.start.net, favor: 0,
     f: { idle: 0 }, idleStreak: 0,
     used: new Set(), pending: [], lastPoll: null, swings: [], history: []
   };
@@ -273,6 +273,19 @@ function choose(g, ev, opt, isBuild = false) {
     else if (failed) applyFx(g, { trust: -2 }, delta);
     else applyFx(g, { trust: 1 }, delta);
   }
+  // 形象包裝：做對方向加分；包裝太多，作秀指數會讓人起疑
+  if (exec.img && !failed) {
+    const want = TYPES[g.type].image.to;
+    if (g.show > 55 && g.rng() < (g.show - 45) / 100) {
+      applyFx(g, { fav: -4, buzz: 2 }, delta);
+      lines.push({ kind: 'bad', text: fill(g, pick(g, SHOW_FAIL)) });
+      failed = true;
+    } else if (exec.img.includes(want)) {
+      applyFx(g, { fav: 3, s: 0.3 }, delta);
+      lines.push({ kind: 'good', text: '🎭 形象加分：選民開始覺得' + g.name + '很「' + want + '」。' });
+    }
+  }
+  if (exec.img) { g.show += exec.risk ? 15 : 12; g.showMax = Math.max(g.showMax, g.show); }
   // 沒有寫好的反應時，補一句選民、市場的反應
   if (!lines.some(l => l.kind === 'good' || l.kind === 'bad')) {
     const v = (delta.s || 0) - (delta.r || 0) + (delta.fav || 0) * 0.15 + (delta.buzz || 0) * 0.05;
@@ -370,7 +383,7 @@ function endWeek(g) {
   }
   g.provoked = 0; g.bigMove = 0;
   const rn = RIVAL_NEWS[Math.floor(g.rng() * RIVAL_NEWS.length)];
-  g.r += 0.32 + rn.r;
+  g.r += 0.38 + rn.r;
   news.push({ text: fill(g, rn.t), up: rn.r > 0 });
   if (g.rng() < 0.4) {
     const tn = THIRD_NEWS[Math.floor(g.rng() * THIRD_NEWS.length)];
@@ -379,6 +392,7 @@ function endWeek(g) {
     news.push({ text: fill(g, tn.t).replace(/\{third\}/g, g.thirdName), up: null });
   }
   g.buzz += (40 - g.buzz) * 0.15;
+  g.show = Math.max(0, g.show - 10); // 一陣子沒包裝，大家就忘了
   g.money += { A: 3, B: g.s >= g.r - 5 ? 4 : 1, C: 6, D: 4, E: 3, F: 2 }[T];
   g.liver += 4; // 週末補眠（現任事情比較多，自然比較累）
   // 睡眠
@@ -465,6 +479,13 @@ const THIRD_NEWS = [
   { t: '其他候選人：{third}的看板被颱風吹走了。' }
 ];
 
+const SHOW_FAIL = [
+  '網友留言：「最近怎麼天天都在演親民？」這次沒人買單。',
+  '脆上有人整理了{boss}這個月的「親民影片合集」，標題是〈演技大賞〉。',
+  '名嘴說：「包裝得太用力了，看得出來是幕僚設計的。」',
+  '長輩群組轉傳：「選前才這麼勤勞。」'
+];
+
 const CROWD_FAIL = [
   '現場只來了 7 個人，其中 3 個是記者，2 個是你們的志工。',
   '空蕩蕩的椅子被對手拍下來，配文：「民氣在哪裡？」',
@@ -531,6 +552,7 @@ function finish(g) {
   if ((g.f.defied || 0) >= 5) notes.push('{boss}有 ' + g.f.defied + ' 次沒照你的話做，信任要顧好。');
   if (g.f.complacent) notes.push('民調領先，支持者以為穩贏，結果沒出門投票。');
   if (g.f.took) notes.push('碰了不該碰的錢，就算選上也會出事。');
+  if (g.showMax >= 70) notes.push('形象包裝做得太密集，選民開始覺得{boss}在作秀。');
   if (!notes.length) notes.push(margin > 0 ? '整場選戰打得很穩，好感和聲量都夠。' : '差一點點。下次多衝一點曝光，也許就翻過去了。');
   const review = { best, worst, notes: notes.slice(0, 3).map(n => fill(g, n)) };
   return { share, margin, win: ctx.win, ending, review, text: fill(g, ending.text).replace('{resultLine}', resultLine) };

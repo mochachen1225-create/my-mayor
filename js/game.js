@@ -152,6 +152,7 @@ function profileScreen() {
       ${pos}<br>
       <small class="muted">另外還有一位小黨候選人 ${esc(G.thirdName)}，票不多，但可能搶走你的票。</small>
     </div>
+    <div class="traits"><b>🎭 形象任務</b><br>選民覺得${esc(G.name)}「${T.image.from}」。你要把${G.he}包裝成「<b>${T.image.to}</b>」。<br><small class="muted">行程上標著「🎭 ${T.image.to}✨」的最有效。但包裝太密集，會被說作秀。</small></div>
     <div class="traits"><b>💡 總幹事筆記</b><br>${esc(fill(G, T.tip))}</div>
     <button class="btn" id="go">我了解了，進戰情室 →</button>
   `);
@@ -368,6 +369,7 @@ function actTags(op) {
   if (op.crowd) t.push('👥 看人氣');
   if (fx.con < 0) t.push('😈 良心');
   if (op.risk) t.push('🎲 有風險');
+  if (op.img) t.unshift(op.img.includes(TYPES[G.type].image.to) ? `🎭 ${TYPES[G.type].image.to}✨` : '🎭 形象');
   return t.join('　');
 }
 
@@ -458,6 +460,7 @@ function tipsHtml() {
   if (G.trust < 40) t.push('老闆不太信任你：陪他吃宵夜聊天，或多選他擅長的事。');
   if (G.liver < 30) t.push('你的肝快撐不住了，排一天休息吧。');
   if (G.team < 40) t.push('團隊士氣低落，事情容易出包。請大家喝個飲料吧。');
+  if (G.show > 55) t.push('最近形象包裝太密集了，小心被說作秀。先做點實事，隔幾週再包裝。');
   if (G.conf < 30) t.push('總幹事，你看起來很慌。信心太低，做決定的時間會變短，老闆也不太想聽你的。');
   if (!t.length) t.push('數字都不錯，保持下去，好感度和聲量都高，民調就會一直往上。');
   return `<div class="res note" style="font-size:14px;margin-top:10px">🗒️ 副總幹事：${t.slice(0, 2).map(esc).join('<br>')}</div>`;
