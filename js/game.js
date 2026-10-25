@@ -219,7 +219,7 @@ function updateHud() {
   if (!$('#date')) return;
   const w = Math.min(G.week, WEEKS);
   const L = weekLabel(w);
-  $('#date').innerHTML = `N City 戰情室　<b>${L.month}月 第${L.nth}週</b>・距投票 ${L.daysLeft} 天`;
+  $('#date').innerHTML = `<b>${L.month}月 第${L.nth}週</b>・距投票 <b>${L.daysLeft}</b> 天`;
   const ck = $('#clock');
   ck.textContent = clockText(G);
   ck.classList.toggle('late', G.clock >= 24);
