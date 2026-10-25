@@ -670,7 +670,7 @@ const EVENTS = [
   // ===== 金主 / 壞事 =====
   { id: 'donor1', kind: 'money', staff: true, who: 'donor', weeks: [2, 8],
     title: '金主來訪',
-    text: '某建設公司老闆拎著紙袋來：「一點心意，交個朋友。」',
+    text: '某建設公司老闆來接洽：「有機會合作嗎？這是一點心意，交個朋友。」',
     opts: [
       { t: '🧾 公開收、依法申報', fx: { money: 8, fav: -1, donated: 1 }, r: '帳目清楚，只是被說跟建商好。' },
       { t: '🧩 請他讓員工分批小額捐', fx: { money: 18, con: -10, dirty1: 1 }, r: '帳面上很漂亮。（這件事遲早會被發現）' },
@@ -1122,12 +1122,12 @@ const EVENTS = [
       { t: '🧘 不理數字，照原計畫走', fx: { trust: 3 }, risk: [{ p: 0.4, fx: { s: -0.5 }, r: '支持者覺得你們沒有危機意識。' }], r: '團隊穩住了。' }
     ] },
   { id: 'behind_donor', kind: 'crisis', crisis: 'behind', who: 'donor', weeks: [1, 17],
-    title: '金主：「還有機會嗎？」',
-    text: '大金主打電話來：「民調這樣，我要考慮一下。」',
+    title: '去找大金主拉贊助',
+    text: '民調落後，資金吃緊。你帶著內參數字去拜訪大金主，他看完皺眉：「民調這樣，我要考慮一下。」',
     opts: [
-      { t: '📈 熬夜做翻盤簡報給他看', fx: { liver: -6 }, risk: { p: 0.4, fx: { money: -10 }, r: '金主看完還是撤了。' }, r: '金主被說服，繼續支持。' },
-      { t: '🙏 請{boss}親自打電話', fx: { trust: -2 }, risk: { p: 0.3, fx: { money: -8 }, r: '{boss}在電話裡說錯話。' }, r: '金主感受到誠意。', ok: { money: 5 } },
-      { t: '👋 放手', fx: { money: -12 }, r: '少了一筆錢。' },
+      { t: '📈 熬夜做翻盤簡報給他看', fx: { liver: -6 }, risk: { p: 0.4, fx: {}, r: '金主看完還是說：「再看看吧。」' }, r: '金主被說服，答應贊助。', ok: { money: 12, donated: 1 } },
+      { t: '🙏 請{boss}親自打電話', fx: { trust: -2 }, risk: { p: 0.3, fx: { fav: -2 }, r: '{boss}在電話裡說錯話，金主直接掛電話。' }, r: '金主感受到誠意，答應贊助。', ok: { money: 10, donated: 1 } },
+      { t: '🙅 不勉強，謝謝他的時間', fx: { con: 3 }, r: '空手而回，但也不欠誰人情。' },
       { t: '📱 改推小額募款衝一波', fx: { money: 6, fav: 2 }, r: '很多人捐了一百元，留言說「撐住」。' }
     ] },
   { id: 'behind_cut', kind: 'crisis', crisis: 'behind', who: 'councilor', weeks: [1, 17],
