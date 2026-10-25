@@ -71,7 +71,7 @@ const NPC = {
   volunteer: { name: '志工大姐', role: '群組管理員', look: { hair: 'bun', hairColor: '#333', suit: '#d4a373', inner: '#fff' } },
   foreign: { name: '外商代表', role: '來考察投資', look: { hair: 'short', hairColor: '#c9a15b', suit: '#1d3557', tie: '#e63946', skin: '#f3d6c6' } },
   shady: { name: '某商會會長', role: '「我們來自 X 國」', look: { hair: 'slick', hairColor: '#111', suit: '#6d1a1a', tie: '#c8a23a', glasses: true } },
-  staff: { name: '競選總幹事', role: '你的直屬上司', look: { hair: 'short', hairColor: '#333', suit: '#444', inner: '#fff', glasses: true } }
+  staff: { name: '副總幹事', role: '「總幹事，這怎麼辦？」', look: { hair: 'short', hairColor: '#333', suit: '#444', inner: '#fff', glasses: true } }
 };
 
 // ---------------- 事件 ----------------
@@ -105,10 +105,10 @@ const EVENTS = [
     ] },
   { id: 'temple_attack', kind: 'fire', who: 'staff', weeks: [3, 16],
     title: '對手拜拜影片外流',
-    text: '有人傳來一段{rival}在廟裡動作很隨便的影片。總幹事問：「要不要放出去？」',
+    text: '有人傳來一段{rival}在廟裡動作很隨便的影片。副總幹事問：「要不要放出去？」',
     opts: [
       { t: '📤 讓側翼放出去', fx: { r: -1, buzz: 4, con: -6 }, risk: { p: 0.3, fx: { fav: -5, s: -1 }, r: '被查出是你們放的，廟方兩邊都不爽。' }, r: '對手忙著道歉。' },
-      { t: '🚫 不放：「我們不打這種仗」', fx: { con: 5, trust: 2 }, r: '總幹事嘆氣，但老闆點點頭。' },
+      { t: '🚫 不放：「我們不打這種仗」', fx: { con: 5, trust: 2 }, r: '副總幹事嘆氣，但老闆點點頭。' },
       { t: '🙏 改成安排老闆去同一間廟好好參拜', fx: { fav: 3, s: 0.5, liver: -3 }, r: '不戰而勝的對比畫面。' }
     ] },
   { id: 'typhoon_inc', kind: 'fire', for: 'inc', who: 'director', weeks: [4, 11], timer: 15, dynamic: 'typhoon',
@@ -270,7 +270,7 @@ const EVENTS = [
     ] },
   { id: 'notelite', kind: 'fire', types: ['A'], who: 'staff', weeks: [2, 12],
     title: '證明我不是權貴',
-    text: '總幹事提案拍親民影片，要甩掉權貴標籤。哪一個？',
+    text: '副總幹事提案拍親民影片，要甩掉權貴標籤。哪一個？',
     opts: [
       { t: '🍊 徒手捏爆一顆橘子', fx: { buzz: 7 }, risk: { p: 0.7, fx: { fav: -5 }, r: '「捏爆橘子身分就會改變嗎？」被酸到不行。' }, r: '居然很療癒。' },
       { t: '🚇 拍搭捷運通勤', fx: { buzz: 4 }, risk: { p: 0.5, fx: { fav: -4 }, r: '被拍到車廂裡有三個隨扈。' }, r: '樸實可愛。' },
@@ -376,7 +376,7 @@ const EVENTS = [
     ] },
   { id: 'oversleep', kind: 'daily', staff: true, who: 'staff', weeks: [6, 16], timer: 15,
     title: '你已經 36 小時沒睡了',
-    text: '總幹事看著你：「你臉色好差。」桌上還有三份新聞稿要改。',
+    text: '副總幹事看著你：「你臉色好差。」桌上還有三份新聞稿要改。',
     opts: [
       { t: '☕ 再喝一杯咖啡，撐下去', fx: { liver: -10, buzz: 2 }, r: '新聞稿準時發出。' },
       { t: '😴 回家睡一覺', fx: { liver: 12, buzz: -2 }, r: '醒來世界沒有毀滅。' },
@@ -466,10 +466,10 @@ const EVENTS = [
   // ===== 選戰路線 =====
   { id: 'family', kind: 'fire', who: 'staff', weeks: [6, 16],
     title: '對手家人的八卦',
-    text: '有人提供{rival}家人的爆料：小孩出國留學的錢來源不明。總幹事眼睛發亮。',
+    text: '有人提供{rival}家人的爆料：小孩出國留學的錢來源不明。副總幹事眼睛發亮。',
     opts: [
       { t: '💣 開記者會爆料', fx: { r: -1.5, buzz: 8, con: -12 }, risk: { p: 0.45, fx: { fav: -8, s: -1.5 }, r: '證據不足，被告加重誹謗，網友說「打家人太low」。' }, r: '對手陣營大亂。' },
-      { t: '🕊️ 拒絕：「我們打政策，不打家人」', fx: { con: 8, fav: 3 }, r: '總幹事碎念，但這段話被媒體引用。' },
+      { t: '🕊️ 拒絕：「我們打政策，不打家人」', fx: { con: 8, fav: 3 }, r: '副總幹事碎念，但這段話被媒體引用。' },
       { t: '🤫 交給側翼「不小心」流出', fx: { r: -0.8, con: -8 }, risk: { p: 0.4, fx: { fav: -6, s: -1 }, r: '側翼帳號被查出跟你們有關。' }, r: '神不知鬼不覺。' }
     ] },
   { id: 'designer', kind: 'daily', staff: true, who: 'intern', weeks: [1, 6],
@@ -478,7 +478,7 @@ const EVENTS = [
     opts: [
       { t: '🎨 花錢請專業設計公司', fx: { money: -14, fav: 4, buzz: 4 }, need: 14, r: '質感一流，被設計圈稱讚。' },
       { t: '🤖 用 AI 免費生成', fx: {}, risk: { p: 0.6, fx: { fav: -4, buzz: 6 }, r: '看板上的人有六根手指。' }, r: '居然還不錯看。' },
-      { t: '👦 讓總幹事的姪子做（他說他會）', fx: {}, risk: { p: 0.5, fx: { fav: -3, buzz: 4 }, r: '被抓到抄襲國外設計。' }, r: '樸實的手作感，意外有親和力。' }
+      { t: '👦 讓副總幹事的姪子做（他說他會）', fx: {}, risk: { p: 0.5, fx: { fav: -3, buzz: 4 }, r: '被抓到抄襲國外設計。' }, r: '樸實的手作感，意外有親和力。' }
     ] },
   { id: 'corp', kind: 'money', staff: true, who: 'donor', weeks: [4, 14],
     title: '財團要贊助造勢晚會',
@@ -629,7 +629,7 @@ const EVENTS = [
     ] },
   { id: 'prompter', kind: 'main', who: 'staff', weeks: [99, 99], timer: 10,
     title: '電視辯論・提詞機壞了',
-    text: '辯論開始前五分鐘，{boss}的提詞機黑屏了。總幹事臉色發白。',
+    text: '辯論開始前五分鐘，{boss}的提詞機黑屏了。副總幹事臉色發白。',
     opts: [
       { t: '🧠 讓{boss}脫稿上陣', fx: { buzz: 4 }, risk: { p: 0.4, fx: { fav: -5, s: -0.8 }, r: '{boss}講到一半忘詞，空白了五秒。' }, r: '脫稿反而更真誠！', ok: { fav: 4, s: 0.6 }, likes: ['F'] },
       { t: '📝 你在鏡頭外舉大字報', fx: { liver: -3 }, r: '平穩過關，你的手舉到抽筋。' },
@@ -646,7 +646,7 @@ const EVENTS = [
     ] },
   { id: 'rat_chal', kind: 'fire', for: 'chal', who: 'staff', weeks: [2, 16], timer: 15,
     title: '老鼠成了選戰話題',
-    text: '市區鼠患的影片到處都是。總幹事說：「這題可以打，但要打得漂亮。」',
+    text: '市區鼠患的影片到處都是。副總幹事說：「這題可以打，但要打得漂亮。」',
     opts: [
       { t: '🐀 帶記者去後巷「抓老鼠實境秀」', fx: { buzz: 8 }, risk: { p: 0.35, fx: { fav: -3 }, r: '{boss}看到老鼠尖叫的畫面被做成迷因。' }, r: '畫面超有梗，各台都播。' },
       { t: '📐 提出「垃圾不落地 2.0」政見', fx: { fav: 4, s: 0.6 }, r: '專業又具體。', likes: ['B', 'E'] },
@@ -663,7 +663,7 @@ const EVENTS = [
 
   { id: 'familyshow', kind: 'fire', who: 'staff', weeks: [3, 14],
     title: '要不要讓家人亮相？',
-    text: '總幹事說：「選民想看{boss}的另一面。造勢晚會，要不要請家人上台？」',
+    text: '副總幹事說：「選民想看{boss}的另一面。造勢晚會，要不要請家人上台？」',
     opts: [
       { t: '👨‍👩‍👧 全家一起上台', fx: { fav: 4, buzz: 5, s: 0.5 }, risk: { p: 0.35, fx: { fav: -4, buzz: 4 }, r: '小孩在台上說：「爸媽在家都在吵選舉的事。」' }, r: '溫馨畫面，好感大增。', likes: ['A', 'F'], hates: ['E'] },
       { t: '💌 只請另一半拍一支暖心影片', fx: { fav: 3, buzz: 3 }, r: '「原來{he}在家是這樣的人。」' },

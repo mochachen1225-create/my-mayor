@@ -54,7 +54,7 @@ function titleScreen() {
 function drawScreen() {
   const order = Object.keys(TYPES);
   show(`
-    <p class="muted center">你接到一通電話：「明天來戰情室報到。」</p>
+    <p class="muted center">你接到一通電話：「明天來戰情室報到，你是總幹事。」</p>
     <h2 class="center" style="margin:6px 0">你的老闆是……</h2>
     <p class="muted center">翻牌決定，你沒得選。</p>
     <div class="grid">${order.map(t => `
@@ -120,7 +120,7 @@ function introScreen() {
     <div class="head" style="background:#3a5ba0"><span>📋 報到須知</span></div>
     <div class="body">
       <div class="who">${bossFace('big')}<div><b>${esc(G.name)}</b><br><small>${TYPES[G.type].label}・${TYPES[G.type].party}</small></div></div>
-      <p>距離投票還有 <b>4 個月</b>。你的工作：</p>
+      <p>你是<b>競選總幹事</b>，整個戰情室都會來問你「怎麼辦？」距離投票還有 <b>4 個月</b>：</p>
       <p>🔥 <b>有火就滅火</b>：緊急卡牌跳出來，<b>20 秒內</b>決定。<br>
       ✨ <b>沒火就造神</b>：挑一個企劃，把老闆推出去。<br>
       🤝 <b>老闆不一定聽你的</b>：信任越高，越聽話。<br>
