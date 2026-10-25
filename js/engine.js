@@ -91,7 +91,7 @@ function pickEvent(g) {
   return pool[pool.length - 1];
 }
 
-// 一週的行程：民調、主線、突發（可能好幾件）、造神
+// 一週的行程：民調、主線、突發（可能好幾件）、成就老闆
 function planWeek(g) {
   const steps = [];
   if (POLL_WEEKS.includes(g.week)) steps.push({ step: 'poll' });
@@ -193,7 +193,7 @@ function choose(g, ev, opt, isBuild = false) {
         if (from.length) exec = from[Math.floor(g.rng() * from.length)];
         else defied = false;
       } else {
-        // 造神企劃：老闆不配合，效果打折
+        // 成就老闆企劃：老闆不配合，效果打折
         exec = { ...opt, fx: halve(opt.fx), risk: null, ok: null };
       }
       if (defied) lines.push({ kind: 'defy', text: opts ? fill(g, TYPES[g.type].defy) + ' ' + fill(g, exec.t) : fill(g, TYPES[g.type].half) });
@@ -265,7 +265,7 @@ function timeout(g, ev, isBuild = false) {
   const fx = isBuild ? { trust: -3, buzz: -2 } : { trust: -3 - g.idleStreak, fav: -3, s: -0.6, buzz: -2 };
   applyFx(g, fx, delta);
   advanceClock(g, 1, ev && ev.late, delta);
-  logSwing(g, '已讀不回：' + (isBuild ? '造神企劃' : fill(g, ev.title)), delta);
+  logSwing(g, '已讀不回：' + (isBuild ? '成就老闆企劃' : fill(g, ev.title)), delta);
   const q = '接下來呢' + '？'.repeat(Math.min(g.idleStreak, 4));
   const lines = [{ kind: 'boss', text: g.idleStreak >= 3 ? `${q}……你還在嗎？` : q }];
   if (!isBuild) lines.push({ kind: 'bad', text: '媒體寫：「' + g.name + '陣營已讀不回。」' });

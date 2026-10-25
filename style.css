@@ -10,10 +10,16 @@
   --card: #fff;
   --line: #e4e0da;
 }
+/* 表情符號一律用系統彩色 emoji，避免被圓體字型換成黑白圖示 */
+@font-face {
+  font-family: 'ColorEmoji';
+  src: local('Apple Color Emoji'), local('Segoe UI Emoji'), local('Noto Color Emoji');
+  unicode-range: U+1F000-1FAFF, U+2600-27BF, U+2B00-2BFF, U+FE0F;
+}
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; height: 100%; }
 body {
-  font-family: 'Huninn', 'PingFang TC', 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
+  font-family: 'ColorEmoji', 'Huninn', 'PingFang TC', 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
   background: #1d2026;
   color: var(--ink);
   overscroll-behavior: none;
@@ -107,6 +113,7 @@ input.name { width: 100%; border: 2px solid #ccc; border-radius: 12px; padding: 
 .card .who { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
 .card .who svg { width: 50px; height: 50px; flex: none; }
 .card .who small { color: var(--muted); }
+.card .eyebrow { font-size: 13px; color: var(--muted); margin-bottom: 4px; letter-spacing: 1px; }
 .card h2 { font-size: 21px; margin: 2px 0 8px; line-height: 1.35; }
 .card p { font-size: 15px; line-height: 1.65; margin: 0 0 12px; color: #444; }
 .opt { display: block; width: 100%; text-align: left; border: 2px solid #e6e2dc; background: #faf9f7; border-radius: 14px; padding: 12px; font-size: 16px; line-height: 1.45; margin-bottom: 8px; color: var(--ink); }

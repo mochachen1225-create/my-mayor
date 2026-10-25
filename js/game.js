@@ -119,10 +119,11 @@ function introScreen() {
   overlay(`
     <div class="head" style="background:#3a5ba0"><span>📋 報到須知</span></div>
     <div class="body">
+      <div class="eyebrow">你要輔選的市長候選人</div>
       <div class="who">${bossFace('big')}<div><b>${esc(G.name)}</b><br><small>${TYPES[G.type].label}・${TYPES[G.type].party}</small></div></div>
-      <p>你是<b>競選總幹事</b>，整個戰情室都會來問你「怎麼辦？」距離投票還有 <b>4 個月</b>：</p>
+      <p>而你是<b>競選總幹事</b>，整個戰情室都會來問你「怎麼辦？」距離投票還有 <b>4 個月</b>：</p>
       <p>🔥 <b>有火就滅火</b>：緊急卡牌跳出來，<b>20 秒內</b>決定。<br>
-      ✨ <b>沒火就造神</b>：挑一個企劃，把老闆推出去。<br>
+      ✨ <b>沒火就成就老闆</b>：挑一個企劃，把老闆推出去。<br>
       🤝 <b>老闆不一定聽你的</b>：信任越高，越聽話。<br>
       📊 每月一次內參民調，最後 10 天民調封關。<br>
       🫀 顧好你的肝。</p>
@@ -198,7 +199,7 @@ function closeOverlay() { const o = app.querySelector('.overlay'); if (o) o.remo
 
 const KIND_LABEL = {
   fire: '⚠ 突發狀況', main: '📌 選戰大事', money: '💰 有人來訪', tv: '📺 政論節目',
-  daily: '☕ 戰情室日常', crisis: '🚨 危機', build: '✨ 沒有火，來造神'
+  daily: '☕ 戰情室日常', crisis: '🚨 危機', build: '✨ 沒有火，來成就老闆'
 };
 
 // 倒數計時：切到背景時暫停
@@ -432,7 +433,7 @@ async function shareEnding(res) {
   c.width = W; c.height = H;
   const x = c.getContext('2d');
   try { await document.fonts.ready; } catch (e) { /* 沒差 */ }
-  const font = (s) => `${s}px Huninn, "PingFang TC", "Noto Sans TC", sans-serif`;
+  const font = (s) => `${s}px ColorEmoji, Huninn, "PingFang TC", "Noto Sans TC", sans-serif`;
   const g = x.createLinearGradient(0, 0, 0, H);
   g.addColorStop(0, '#2b2f36'); g.addColorStop(1, '#3d3150');
   x.fillStyle = g; x.fillRect(0, 0, W, H);
