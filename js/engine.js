@@ -6,11 +6,20 @@ const BLACKOUT_WEEK = 16; // 11/18 起民調封關
 const START = new Date(2026, 7, 3); // 8/3（週一），只用來算月日，不顯示年份
 const VOTE_DAY = new Date(2026, 10, 28);
 const STAT_KEYS = ['buzz', 'fav', 'money', 'trust', 'liver', 'con', 'net'];
-const FLAG_KEYS = ['warm', 'dirty1', 'dirty2', 'ledger', 'rebel', 'respect', 'script', 'cut', 'tv', 'buy', 'foreign'];
+const FLAG_KEYS = ['donated', 'warm', 'dirty1', 'dirty2', 'ledger', 'rebel', 'respect', 'script', 'cut', 'tv', 'buy', 'foreign'];
 
 const JITTER = ['s', 'r', 'fav', 'buzz', 'net', 'con'];
 const S_GAIN = 0.55; // 支持度正向效果的倍率（平衡用）
-const pick = (g, arr) => arr[Math.floor(g.rng() * arr.length)];
+// 隨機挑一句，最近說過的先不重複
+const pick = (g, arr) => {
+  g.said = g.said || [];
+  let pool = arr.filter(x => !g.said.includes(x));
+  if (!pool.length) pool = arr;
+  const x = pool[Math.floor(g.rng() * pool.length)];
+  g.said.push(x);
+  if (g.said.length > 30) g.said.shift();
+  return x;
+};
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
 function makeRng(seed) {
@@ -77,6 +86,7 @@ function eligible(g, ev) {
   if (ev.types && !ev.types.includes(g.type)) return false;
   if (ev.weeks && (g.week < ev.weeks[0] || g.week > ev.weeks[1])) return false;
   if (ev.needFavor && g.favor <= 0) return false;
+  if (ev.needDonor && !g.f.donated) return false;
   if (ev.needLow && g.s > g.r - 5) return false; // 民調太低，議員才會找藉口
   if (ev.needBroke && g.money >= 30) return false; // 錢快花完了，才會有人找上門
   if (ev.kind === 'crisis') return false;
@@ -252,7 +262,7 @@ function choose(g, ev, opt, isBuild = false) {
     else applyFx(g, { trust: 1 }, delta);
   }
   // 老闆的反應，每次都不太一樣
-  if (bossActs && !defied && g.rng() < 0.7) {
+  if (bossActs && !defied && g.rng() < 0.6) {
     lines.push({ kind: 'say', mood: failed ? 'sad' : 'big', text: fill(g, pick(g, failed ? TYPES[g.type].bad : TYPES[g.type].ok)) });
   }
   advanceClock(g, isBuild ? 3 : 1.5 + g.rng() * 2, ev && ev.late, delta);
@@ -319,6 +329,7 @@ function endWeek(g) {
   g.s += ((g.fav - 50) / 25) * (g.buzz / 100) * 0.8;
   if (T === 'D') g.s -= 0.4;
   // 對手也在拚：每週一則對手動態
+  g.rPrev = g.r;
   const rn = RIVAL_NEWS[Math.floor(g.rng() * RIVAL_NEWS.length)];
   g.r += 0.64 + rn.r;
   const news = [{ text: fill(g, rn.t), up: rn.r > 0 }];

@@ -110,8 +110,39 @@ function setupScreen(type) {
   });
   $('#go').onclick = () => {
     G = newGame(type, gender, nm.value.trim().slice(0, 12) || T.names[gender]);
-    introScreen();
+    profileScreen();
   };
+}
+
+// 候選人檔案：先認識你抽到的老闆
+function profileScreen() {
+  const T = TYPES[G.type];
+  const gap = Math.round(G.r - G.s);
+  const pos = gap > 0 ? `起跑時，民調大約落後${esc(G.rivalName)} ${gap} 個百分點。` : `起跑時，民調大約領先${esc(G.rivalName)} ${-gap} 個百分點。`;
+  show(`
+    <p class="muted center">候選人檔案</p>
+    <div class="profile-face">${bossFace('big')}</div>
+    <h2 class="center" style="margin:4px 0">${esc(G.name)}</h2>
+    <div class="center"><span class="badge">${T.label}・${T.party}</span></div>
+    <div class="traits">${esc(fill(G, T.bio))}</div>
+    <div class="traits">
+      <b>👍 強項</b><br>${T.pros.map(x => '・' + esc(fill(G, x))).join('<br>')}<br><br>
+      <b>👎 弱點</b><br>${T.cons.map(x => '・' + esc(fill(G, x))).join('<br>')}<br><br>
+      <b>🙄 不聽話的時候</b><br>・${esc(T.trait)}
+    </div>
+    <div class="traits">
+      <b>🎯 主要對手</b>
+      <div class="who" style="margin:8px 0">${avatar({ ...TYPES[G.rivalType].look[G.rivalGender], mood: 'smile' })}<div><b>${esc(G.rivalName)}</b><br><small>${TYPES[G.rivalType].label}・${TYPES[G.rivalType].party}</small></div></div>
+      ${esc(TYPES[G.rivalType].short)}<br>
+      ・強項：${esc(TYPES[G.rivalType].pros[0].replace(/\{he\}/g, G.rivalGender === 'f' ? '她' : '他'))}<br>
+      ・弱點：${esc(TYPES[G.rivalType].cons[0].replace(/\{he\}/g, G.rivalGender === 'f' ? '她' : '他'))}<br><br>
+      ${pos}<br>
+      <small class="muted">另外還有一位小黨候選人 ${esc(G.thirdName)}，票不多，但可能搶走你的票。</small>
+    </div>
+    <div class="traits"><b>💡 總幹事筆記</b><br>${esc(fill(G, T.tip))}</div>
+    <button class="btn" id="go">我了解了，進戰情室 →</button>
+  `);
+  $('#go').onclick = introScreen;
 }
 
 function introScreen() {
@@ -139,12 +170,13 @@ function roomScreen() {
       <div class="row"><span class="date" id="date"></span><span class="clock" id="clock"></span></div>
       <div class="stats">
         <div class="stat" id="st-buzz"><i>聲量</i>📣 <span></span><div class="bar"><div></div></div></div>
-        <div class="stat" id="st-fav"><i>好感</i>😊 <span></span><div class="bar"><div></div></div></div>
+        <div class="stat" id="st-fav"><i>民調好感度</i>😊 <span></span><div class="bar"><div></div></div></div>
         <div class="stat" id="st-money"><i>競選資金</i>💰 <span></span><div class="bar"><div></div></div></div>
         <div class="stat" id="st-trust"><i>信任</i>🤝 <span></span><div class="bar"><div></div></div></div>
         <div class="stat" id="st-liver"><i>你的肝</i>🫀 <span></span><div class="bar"><div></div></div></div>
       </div>
-      <div class="row muted" style="margin-top:8px;color:#bbb;font-size:13px" id="sub"></div>
+      <div class="rivalrow" id="rivalrow"></div>
+      <div class="row muted" style="margin-top:6px;color:#bbb;font-size:13px" id="sub"></div>
     </div>
     <div class="stage">
       <div class="bubble" id="bubble">接下來呢？</div>
@@ -175,6 +207,13 @@ function updateHud() {
     if (lastHud[k] !== undefined && lastHud[k] !== v) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
     lastHud[k] = v;
   }
+  // 對手聲勢：看不到確切數字，只看得到大概強弱和趨勢
+  const rr = $('#rivalrow');
+  if (rr) {
+    const lvl = G.r >= 45 ? '很強' : G.r >= 38 ? '強' : G.r >= 32 ? '普通' : '偏弱';
+    const tr = G.rPrev === undefined ? '' : G.r > G.rPrev + 0.3 ? '↑' : G.r < G.rPrev - 0.3 ? '↓' : '→';
+    rr.innerHTML = `<span>🎯 對手 ${esc(G.rivalName)} 聲勢</span><div class="bar"><div style="width:${Math.min(100, G.r * 1.6)}%"></div></div><b>${lvl} ${tr}</b>`;
+  }
   $('#sub').textContent = `😇 良心 ${Math.round(G.con)}　📇 人脈 ${Math.round(G.net)}　🧾 欠人情 ${G.favor}`;
   const mood = G.liver < 20 || G.trust < 25 ? 'sad' : G.s > G.r + 3 ? 'big' : 'smile';
   const bossEl = $('#boss');
@@ -204,7 +243,7 @@ function closeOverlay() { const o = app.querySelector('.overlay'); if (o) o.remo
 
 const KIND_LABEL = {
   fire: '⚠ 突發狀況', main: '📌 選戰大事', money: '💰 有人來訪', tv: '📺 政論節目',
-  daily: '☕ 戰情室日常', crisis: '🚨 危機', build: '✨ 沒有火，來成就老闆'
+  daily: '☕ 戰情室日常', crisis: '🚨 危機', topic: '🎤 座談主題', build: '✨ 沒有火，來成就老闆'
 };
 
 // 倒數計時：切到背景時暫停
@@ -223,7 +262,7 @@ function countdown(seconds, onTick, onEnd) {
 }
 
 function chipsHtml(delta) {
-  const vis = { buzz: '📣聲量', fav: '😊好感', money: '💰資金', trust: '🤝信任', liver: '🫀肝', con: '😇良心', net: '📇人脈' };
+  const vis = { buzz: '📣聲量', fav: '😊民調好感度', money: '💰資金', trust: '🤝信任', liver: '🫀肝', con: '😇良心', net: '📇人脈' };
   const out = [];
   const arrow = (v, good) => `<span class="chip ${good ? 'up' : 'down'}">`;
   if (delta.s) out.push(arrow(0, delta.s > 0) + `📈 民心 ${delta.s > 0 ? '↑' : '↓'}${Math.abs(delta.s) >= 1 ? (delta.s > 0 ? '↑' : '↓') : ''}</span>`);
@@ -316,6 +355,7 @@ function showResult(title, res) {
 }
 
 function boardStep(left) {
+  if (G.liver <= 8) return forcedRest();
   return new Promise(resolve => {
     const opts = buildChoices(G, 6);
     const st = $('.stage');
@@ -348,11 +388,38 @@ function boardStep(left) {
       const b = $('#bbar'); if (b) b.style.width = frac * 100 + '%';
       const e = $('#bsec'); if (e) e.textContent = sec;
     }, () => finish('你發呆了一整天', timeout(G, null, true)));
-    st.querySelectorAll('.act').forEach(b => b.onclick = () => {
+    st.querySelectorAll('.act').forEach(b => b.onclick = async () => {
       const op = opts[+b.dataset.i];
-      finish(fill(G, op.t), choose(G, null, op, true));
+      const res = choose(G, null, op, true);
+      if (op.followup === 'topic' && !res.lines.some(l => l.kind === 'bad' || l.kind === 'defy')) {
+        // 座談、講政見：再選要講的主題
+        if (done) return; done = true; stop();
+        updateHud();
+        await showResult(fill(G, op.t), res);
+        const pool = TOPICS.slice();
+        const pick4 = [];
+        while (pick4.length < 4) pick4.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+        await eventCard({ id: 'topic', kind: 'topic', who: 'staff', timer: 15,
+          title: '今天要講哪個主題？', text: '台下坐滿了人，主持人看向{boss}。你在旁邊比手勢提示……', opts: pick4 }, left, false);
+        stageDefault();
+        resolve(res);
+        return;
+      }
+      finish(fill(G, op.t), res);
     });
   });
+}
+
+// 肝快爆了：不管要做什麼，今天都只能休息
+async function forcedRest() {
+  const rest = BUILD.find(b => b.id === 'rest');
+  const res = choose(G, null, { ...rest, fx: { liver: 18 } }, true);
+  res.lines = [{ kind: 'bad', text: '你在戰情室的沙發上睡著了，叫都叫不醒。副總幹事說：「總幹事今天強制休假。」' }];
+  updateHud();
+  bossSays('總幹事呢？接下來呢？', true);
+  await showResult('你爆肝了，被強制休息一天', res);
+  stageDefault();
+  return res;
 }
 
 function pollCard() {
