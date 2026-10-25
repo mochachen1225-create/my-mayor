@@ -65,7 +65,7 @@
       <div class="head"><span>⚠ 突發狀況</span><span>⏱ 14</span></div>
       <div class="timer"><div></div></div>
       <div class="body">
-        <div class="who"><span id="boss"></span><div><b>常在任</b><br><small>你的老闆・現任市長</small></div></div>
+        <div class="who"><span id="boss"></span><div><b>Dylan</b><br><small>你的老闆・現任市長</small></div></div>
         <h2>天穹體育館又漏水了</h2>
         <p>演唱會進行到一半，觀眾席下起小雨。網友已經做出「室內也要帶傘」的迷因，記者在市府門口等老闆回應。</p>
         <button class="opt">🎤 立刻出面道歉，宣布全面檢修</button>
@@ -109,10 +109,10 @@ function avatar(o) {
   </g></svg>`;
 }
 const cands = [
-  { id: 'A', name: '貴承恩', tag: '政治世家第三代', hair: 'slick', hairColor: '#1f2433', suit: '#2c3550', tie: '#8a8f99' },
-  { id: 'B', name: '凌晨光', tag: '清新專業人士',   hair: 'bob',   hairColor: '#2a2a2a', suit: '#c9ccd3', inner: '#fff', glasses: true },
-  { id: 'C', name: '金萬貫', tag: '商業帝國老闆',   hair: 'thin',  hairColor: '#a7a7a7', suit: '#3a3a3a', tie: '#c8a23a' },
-  { id: 'D', name: '常在任', tag: '現任市長拚連任', hair: 'side',  hairColor: '#20232b', suit: '#263a63', tie: '#7a4fb0', bigSmile: true }
+  { id: 'A', name: 'Andrew', tag: '政治世家第三代', hair: 'slick', hairColor: '#1f2433', suit: '#2c3550', tie: '#8a8f99' },
+  { id: 'B', name: 'Blair', tag: '清新專業人士',   hair: 'bob',   hairColor: '#2a2a2a', suit: '#c9ccd3', inner: '#fff', glasses: true },
+  { id: 'C', name: 'Charles', tag: '商業帝國老闆',   hair: 'thin',  hairColor: '#a7a7a7', suit: '#3a3a3a', tie: '#c8a23a' },
+  { id: 'D', name: 'Dylan', tag: '現任市長拚連任', hair: 'side',  hairColor: '#20232b', suit: '#263a63', tie: '#7a4fb0', bigSmile: true }
 ];
 document.getElementById('grid').innerHTML = cands.map(c =>
   `<div class="cand">${avatar(c)}<b>${c.name}</b><span>${c.tag}</span></div>`).join('');
