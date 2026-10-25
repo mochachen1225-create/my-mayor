@@ -9,6 +9,7 @@ const STAT_KEYS = ['buzz', 'fav', 'money', 'trust', 'liver', 'con', 'net', 'team
 const FLAG_KEYS = ['donated', 'warm', 'dirty1', 'dirty2', 'ledger', 'rebel', 'respect', 'script', 'cut', 'tv', 'buy', 'foreign'];
 
 const JITTER = ['s', 'r', 'fav', 'buzz', 'net', 'con'];
+const LIVER_WORK = 2, LIVER_LATE = 4;
 const S_GAIN = 0.6; // 支持度正向效果的倍率（平衡用）
 // 隨機挑一句，最近說過的先不重複
 const pick = (g, arr) => {
@@ -338,7 +339,8 @@ function logSwing(g, title, delta) {
 function advanceClock(g, hours, late, delta) {
   if (late) g.clock = Math.max(g.clock, 26);
   g.clock += hours;
-  if (g.clock >= 25) applyFx(g, { liver: -1 }, delta); // 過了午夜還在工作
+  // 每件事都在燃燒總幹事的肝；過了午夜燒得更快
+  applyFx(g, { liver: g.clock >= 24 ? -LIVER_LATE : -LIVER_WORK }, delta);
 }
 
 function clockText(g) {
@@ -378,7 +380,7 @@ function endWeek(g) {
   }
   g.buzz += (40 - g.buzz) * 0.15;
   g.money += { A: 3, B: g.s >= g.r - 5 ? 4 : 1, C: 6, D: 4, E: 3, F: 2 }[T];
-  g.liver += T === 'D' ? 2 : 4; // 週末補眠（現任的幕僚連週末都在處理市政）
+  g.liver += 4; // 週末補眠（現任事情比較多，自然比較累）
   // 睡眠
   const sleep = Math.max(0, 32 - g.clock);
   if (sleep < 3) { g.liver -= 3; g.team -= 3; notes.push(`你昨晚只睡了 ${sleep.toFixed(1)} 小時，整個團隊都很累。`); }
