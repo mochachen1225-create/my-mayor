@@ -19,7 +19,18 @@
   .cand span { font-size: 12px; color: #888; }
   .btn { display: block; margin: 24px auto 0; background: #222; color: #fff; border: 0; border-radius: 999px; padding: 14px 32px; font-size: 16px; }
 
-  /* 畫面二：戰情室＋緊急卡牌 */
+  /* 畫面二：取名、選性別 */
+  .name { background: #faf8f5; padding: 28px 20px; box-sizing: border-box; text-align: center; }
+  .name .type { display: inline-block; background: #263a63; color: #fff; border-radius: 999px; padding: 6px 14px; font-size: 13px; }
+  .name .trait { font-size: 13px; color: #666; margin: 10px 0 18px; line-height: 1.6; }
+  .pick { display: flex; gap: 14px; justify-content: center; }
+  .pick div { background: #fff; border: 2px solid #eee; border-radius: 16px; padding: 10px; width: 120px; }
+  .pick div.on { border-color: #222; }
+  .pick svg { width: 96px; height: 96px; }
+  .field { margin: 22px 0 6px; text-align: left; font-size: 13px; color: #666; }
+  .input { border: 1.5px solid #ccc; border-radius: 12px; padding: 12px; font-size: 18px; text-align: left; background: #fff; }
+
+  /* 畫面三：戰情室＋緊急卡牌 */
   .room { background: #2b2f36; color: #fff; }
   .hud { padding: 16px; font-size: 13px; }
   .hud .top { display: flex; justify-content: space-between; opacity: .8; }
@@ -48,6 +59,17 @@
   <p class="sub">（翻牌抽一位，你沒得選）</p>
   <div class="grid" id="grid"></div>
   <button class="btn">翻牌</button>
+</div>
+
+<div class="phone name">
+  <p class="sub" style="color:#777;font-size:13px">翻牌結果</p>
+  <span class="type">現任市長・拚連任</span>
+  <p class="trait">性格：問 A 答 B<br>優勢：知名度高　弱點：四年沒什麼政績</p>
+  <b>選擇外觀</b>
+  <div class="pick"><div class="on" id="m"></div><div id="f"></div></div>
+  <p class="field">幫你的老闆取個名字</p>
+  <div class="input">Dylan</div>
+  <button class="btn">進入戰情室 →</button>
 </div>
 
 <div class="phone room">
@@ -115,8 +137,10 @@ const cands = [
   { id: 'D', name: 'Dylan', tag: '現任市長拚連任', hair: 'side',  hairColor: '#20232b', suit: '#263a63', tie: '#7a4fb0', bigSmile: true }
 ];
 document.getElementById('grid').innerHTML = cands.map(c =>
-  `<div class="cand">${avatar(c)}<b>${c.name}</b><span>${c.tag}</span></div>`).join('');
+  `<div class="cand">${avatar(c)}<b>${c.tag}</b><span>?</span></div>`).join('');
 document.getElementById('boss').innerHTML = avatar({ ...cands[3], id: 'D2' });
+document.getElementById('m').innerHTML = avatar({ ...cands[3], id: 'Dm' }) + '<br>男';
+document.getElementById('f').innerHTML = avatar({ ...cands[3], id: 'Df', hair: 'bob', tie: null, inner: '#fff', bigSmile: true }) + '<br>女';
 </script>
 </body>
 </html>
