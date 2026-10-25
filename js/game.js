@@ -183,7 +183,7 @@ function roomScreen() {
           <div class="stat" id="st-liver"><i>肝的健康</i>🫀 <span></span><div class="bar"><div></div></div></div>
           <div class="stat" id="st-con"><i>良心</i>😇 <span></span><div class="bar"><div></div></div></div>
           <div class="stat" id="st-net"><i>人脈</i>📇 <span></span><div class="bar"><div></div></div></div>
-          <div class="stat" id="st-favor"><i>欠人情</i>🧾 <span></span></div>
+          <div class="stat" id="st-favor"><i>欠人情</i>🧾 <span></span><div class="bar" style="visibility:hidden"><div></div></div></div>
         </div>
       </div>
       <div class="box rivalbox"><div class="rivalrow" id="rivalrow"></div></div>

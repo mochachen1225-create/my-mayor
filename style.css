@@ -198,4 +198,5 @@ input.name { width: 100%; border: 2px solid #ccc; border-radius: 12px; padding: 
 .boxtitle b { color: #fff; font-weight: normal; }
 .rivalbox { padding: 7px 9px; }
 .rivalbox .rivalrow { margin-top: 0; }
-#st-favor span { display: block; margin-top: 2px; }
+#st-favor span { display: inline; }
+#st-favor { white-space: nowrap; }
