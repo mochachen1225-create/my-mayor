@@ -1262,7 +1262,7 @@ const BUILD = [
   { id: 'clean', t: '🕊️ 宣布「正向選戰，不打負面」', fx: { con: 6, fav: 3 }, risk: { p: 0.3, fx: { buzz: -3 }, r: '太溫和，沒有新聞。' } },
   { id: 'catvlog', t: '🐱 拍{boss}和貓的日常 vlog', types: ['E'], fx: { buzz: 6, fav: 3, warm: 1 } },
   { id: 'soapbox', t: '🎤 站上肥皂箱街頭演講', types: ['F'], fx: { s: 0.9, buzz: 5, liver: -5 }, risk: { p: 0.3, fx: { fav: -3 }, r: '講太嗨，把路過的阿伯罵哭了。' } },
-  { id: 'townhall', followup: 'topic', crowd: true, t: '📣 辦「市長你給我聽好」市民對談', fx: { fav: 4, s: 0.6, liver: -3 }, likes: ['B', 'F'] },
+  { id: 'townhall', followup: 'topic', crowd: true, t: '🪑 辦「巷口開講」市民對談', fx: { fav: 4, s: 0.6, liver: -3 }, likes: ['B', 'F'] },
   { id: 'elders', t: '👵 去長青據點陪長輩跳廣場舞', fx: { fav: 3, s: 0.5, liver: -3 }, risk: { p: 0.3, fx: { buzz: 5, fav: -1 }, r: '{boss}閃到腰，被阿嬤扶著走。' }, likes: ['A', 'D', 'F'] },
   { id: 'kids', t: '🧒 到親子館講故事給小朋友聽', fx: { fav: 4, buzz: 3 }, risk: { p: 0.3, fx: { fav: -3 }, r: '小朋友當場大哭，還被說「消費兒童」。' }, hates: ['C'] },
   { id: 'dogeza', t: '🧎 學日本候選人「跪地拜託」', fx: { s: 0.7, buzz: 5 }, risk: { p: 0.4, fx: { fav: -4 }, r: '被說太誇張，「選舉不是苦肉計」。' }, hates: ['C', 'A'] },
