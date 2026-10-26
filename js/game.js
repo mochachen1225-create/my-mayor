@@ -13,6 +13,16 @@ function loadSeen() {
 }
 const SAVE_GAME_KEY = 'mymayor.save';
 const VERSION_KEY = 'mymayor.version';
+const PACE_KEY = 'mymayor.pace';
+
+// 節奏：slow＝我想慢慢來（不倒數），其他＝極限爆肝（照常倒數）
+function isSlow() {
+  try { return localStorage.getItem(PACE_KEY) === 'slow'; } catch (e) { return false; }
+}
+function setPace(p) {
+  try { localStorage.setItem(PACE_KEY, p); } catch (e) { /* 沒辦法存就算了 */ }
+  document.body.classList.toggle('slow', p === 'slow');
+}
 
 // 中途存檔：每週開始時存一次（不存亂數產生器，讀檔後重新接上）
 function saveGame(notes) {
@@ -96,12 +106,22 @@ function titleScreen() {
     <h1>我推的市長</h1>
     <p class="muted">爆肝的幕僚團隊，想辦法把你的市長送上寶座。<br>一局約 10 分鐘。</p>
     ${newsHtml}
+    <div class="pace" role="radiogroup" aria-label="遊戲節奏">
+      <button class="pace-opt" data-p="slow" role="radio">🐢 我想慢慢來<small>不倒數，慢慢看劇情</small></button>
+      <button class="pace-opt" data-p="busy" role="radio">🔥 極限爆肝模式<small>每件事都在倒數</small></button>
+    </div>
     ${save ? `<button class="btn" id="resume">▶️ 繼續上一局：${esc(save.name)} ${weekLabel(save.week).month}月第${weekLabel(save.week).nth}週</button>` : ''}
     <button class="btn ${save ? 'ghost' : ''}" id="go">${save ? '重新開始（放棄上一局）' : '開始上班'}</button>
     <button class="btn ghost" id="manual">📖 總幹事手冊</button>
     <button class="btn ghost" id="gal">結局圖鑑（${seen.size} / ${ENDINGS.length}）</button>
     <p class="muted" style="margin-top:22px;font-size:12px">本遊戲純屬虛構，人物、政黨、城市皆非真實。<button class="verlink" id="ver">v${VERSION} 更新內容</button></p>
   `, 'title');
+  const paintPace = () => app.querySelectorAll('.pace-opt').forEach(b => {
+    const on = (b.dataset.p === 'slow') === isSlow();
+    b.classList.toggle('on', on); b.setAttribute('aria-checked', on);
+  });
+  app.querySelectorAll('.pace-opt').forEach(b => b.onclick = () => { setPace(b.dataset.p); paintPace(); });
+  paintPace();
   $('#go').onclick = () => { clearGame(); drawScreen(); };
   if (save) $('#resume').onclick = () => resumeGame(save);
   const showNews = () => layer(`🆕 v${VERSION} 更新內容`, `<ul class="newslist">${CHANGES.map(c => `<li>${esc(c)}</li>`).join('')}</ul>`);
@@ -217,7 +237,7 @@ function introScreen() {
       <div class="eyebrow">你要輔選的市長候選人</div>
       <div class="who">${bossFace('big')}<div><b>${esc(G.name)}</b><br><small>${TYPES[G.type].label}・${TYPES[G.type].party}</small></div></div>
       <p>而你是<b>競選總幹事</b>，整個戰情室都會來問你「怎麼辦？」距離投票還有 <b>4 個月</b>：</p>
-      <p>🔥 <b>有火就滅火</b>：緊急卡牌跳出來，<b>20 秒內</b>決定。<br>
+      <p>🔥 <b>有火就滅火</b>：緊急卡牌跳出來，${isSlow() ? '慢慢想沒關係（🐢 慢慢來模式）' : '<b>20 秒內</b>決定'}。<br>
       ✨ <b>沒火就成就老闆</b>：挑一個企劃，把老闆推出去。<br>
       🤝 <b>老闆不一定聽你的</b>：信任越高，越聽話。<br>
       📊 每月一次內參民調，最後 10 天民調封關。<br>
@@ -327,9 +347,10 @@ function countdown(seconds, onTick, onEnd) {
   let left = seconds * 1000, last = performance.now(), stop = false;
   function loop(now) {
     if (stop) return;
-    if (!document.hidden && !app.querySelector('.manual')) left -= now - last; // 看手冊時暫停
+    const slow = isSlow();
+    if (!slow && !document.hidden && !app.querySelector('.manual')) left -= now - last; // 看手冊時暫停；慢慢來模式不倒數
     last = now;
-    onTick(Math.max(0, left) / (seconds * 1000), Math.ceil(Math.max(0, left) / 1000));
+    onTick(Math.max(0, left) / (seconds * 1000), slow ? '慢慢來' : Math.ceil(Math.max(0, left) / 1000));
     if (left <= 0) { stop = true; onEnd(); return; }
     requestAnimationFrame(loop);
   }
@@ -965,6 +986,7 @@ function openMenu() {
     <div class="mbody">
       <p class="muted" style="margin-top:10px">打開選單時，倒數會暫停。</p>
       <button class="btn" id="m1">▶️ 繼續打選戰</button>
+      <button class="btn ghost" id="m5"></button>
       <button class="btn ghost" id="m2">📖 總幹事手冊</button>
       <button class="btn ghost" id="m3">🏆 結局圖鑑</button>
       <button class="btn ghost" id="m4">🏠 回首頁</button>
@@ -976,6 +998,10 @@ function openMenu() {
   m.querySelector('#m2').onclick = () => { close(); openManual(); };
   m.querySelector('#m3').onclick = gal;
   m.querySelector('#m4').onclick = home;
+  const paceBtn = m.querySelector('#m5');
+  const paintPace = () => { paceBtn.textContent = isSlow() ? '🔥 切換成極限爆肝模式' : '🐢 切換成慢慢來模式（不倒數）'; };
+  paceBtn.onclick = () => { setPace(isSlow() ? 'busy' : 'slow'); paintPace(); };
+  paintPace();
   m.onclick = e => { if (e.target === m) close(); };
 }
 
@@ -996,7 +1022,7 @@ function openManual() {
 
       <h3>🔥 有火就滅火</h3>
       <ul>
-        <li>突發事件只有 20 秒，最後兩週只剩 10 秒</li>
+        <li>突發事件只有 20 秒，最後兩週只剩 10 秒（首頁選「🐢 我想慢慢來」就不倒數；玩到一半也可以在選單切換）</li>
         <li>誠實、負責的選項通常最穩：道歉、公開說明、親自到現場</li>
         <li>「推給中央」「說是抹黑」「不回應」很常翻車</li>
         <li>時間到沒選，就是擺爛，老闆會一直問「接下來呢？」</li>
@@ -1044,4 +1070,5 @@ function openManual() {
   m.onclick = e => { if (e.target === m) m.remove(); };
 }
 
+document.body.classList.toggle('slow', isSlow());
 titleScreen();

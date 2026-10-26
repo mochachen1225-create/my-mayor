@@ -264,3 +264,10 @@ input.name { width: 100%; border: 2px solid #ccc; border-radius: 12px; padding: 
 .newslink { background: none; border: 0; color: #9a6a00; font-size: 14px; text-decoration: underline; margin-top: 10px; }
 .verlink { background: none; border: 0; color: inherit; font-size: 12px; text-decoration: underline; padding: 0 0 0 4px; }
 .newslist { padding-left: 20px; line-height: 1.8; }
+
+/* 節奏選擇：慢慢來／極限爆肝 */
+.pace { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; max-width: 340px; margin: 14px auto 2px; }
+.pace-opt { background: var(--card); border: 2px solid var(--line); border-radius: 14px; padding: 10px 6px; font: inherit; font-size: 15px; color: var(--ink); line-height: 1.3; }
+.pace-opt small { display: block; color: var(--muted); font-size: 11px; margin-top: 3px; }
+.pace-opt.on { border-color: var(--ink); background: #fff7e3; box-shadow: 0 2px 0 var(--ink); }
+.slow .timer { visibility: hidden; }
