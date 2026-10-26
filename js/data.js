@@ -24,7 +24,7 @@ const TYPES = {
     tip: '多讓{he}自己做決定，有機會解鎖真結局。',
     names: { m: 'Andrew', f: 'Amy' },
     look: { m: { hair: 'slick', suit: '#2c3550', tie: '#8a8f99' }, f: { hair: 'long', suit: '#2c3550', inner: '#e9e9ee' } },
-    start: { s: 31, r: 36, money: 55, trust: 50, net: 50 },
+    start: { s: 30, r: 36, money: 55, trust: 50, net: 50 },
     defy: [
       '長輩一通電話打來。{boss}掛掉電話，改成了：',
       '{boss}說：「我爸說這樣不行。」改成：',
