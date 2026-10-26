@@ -885,7 +885,10 @@ async function shareEnding(res) {
   x.fillText('你也來當幕僚，看你能不能把市長送上寶座 →', W / 2, H - 45);
   const blob = await new Promise(r => c.toBlob(r, 'image/png'));
   const file = new File([blob], 'my-mayor.png', { type: 'image/png' });
-  const text = `我在《我推的市長》幫 ${G.name} 打選戰，結局是「${res.ending.title}」，我自己則是「${res.mgr.title}」！你也來試試：${location.href}`;
+  const winWord = res.win ? '凍蒜' : '落選';
+  const eShare = (res.ending.share || res.ending.title).replace('%W', winWord);
+  const mShare = res.mgr.share || res.mgr.title;
+  const text = `我在《我推的市長》幫 ${G.name} 打選戰，市長選戰結局是「${eShare}」，我自己則是「${mShare}」！你要玩玩看嗎？👉 ${location.href}`;
   try {
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       await navigator.share({ files: [file], text });
