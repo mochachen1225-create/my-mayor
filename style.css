@@ -228,3 +228,7 @@ input.name { width: 100%; border: 2px solid #ccc; border-radius: 12px; padding: 
 .story.mgr { background: rgba(160, 139, 214, .18); border: 1px solid rgba(201, 184, 255, .35); }
 .story.mgr .memoji { font-size: 40px; text-align: center; }
 #closebox .opt { color: var(--ink); }
+
+/* 首頁的新版提醒 */
+.news { text-align: left; background: #fff; border: 2px solid #e0a526; border-radius: 14px; padding: 10px 14px; margin: 14px auto 0; max-width: 340px; font-size: 14px; line-height: 1.7; }
+.news b { display: block; margin-bottom: 2px; }

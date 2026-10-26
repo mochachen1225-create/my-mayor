@@ -11,6 +11,33 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
 function loadSeen() {
   try { return new Set(JSON.parse(localStorage.getItem(SAVE_KEY) || '[]')); } catch (e) { return new Set(); }
 }
+const SAVE_GAME_KEY = 'mymayor.save';
+const VERSION_KEY = 'mymayor.version';
+
+// 中途存檔：每週開始時存一次（不存亂數產生器，讀檔後重新接上）
+function saveGame(notes) {
+  try {
+    const data = { ...G, rng: undefined, used: [...G.used], seenBefore: [...(G.seenBefore || [])], notes, version: VERSION };
+    localStorage.setItem(SAVE_GAME_KEY, JSON.stringify(data));
+  } catch (e) { /* 沒辦法存就算了 */ }
+}
+function loadGame() {
+  try {
+    const d = JSON.parse(localStorage.getItem(SAVE_GAME_KEY) || 'null');
+    if (!d || !TYPES[d.type]) return null;
+    return d;
+  } catch (e) { return null; }
+}
+function clearGame() { try { localStorage.removeItem(SAVE_GAME_KEY); } catch (e) { /* 沒差 */ } }
+function resumeGame(d) {
+  G = { ...newGame(d.type, d.gender, d.name), ...d };
+  G.rng = Math.random;
+  G.used = new Set(d.used);
+  G.seenBefore = new Set(d.seenBefore);
+  roomScreen();
+  runGame(d.notes || {});
+}
+
 const MGR_KEY = 'mymayor.mgrEndings';
 function loadMgr() {
   try { return new Set(JSON.parse(localStorage.getItem(MGR_KEY) || '[]')); } catch (e) { return new Set(); }
@@ -55,18 +82,27 @@ function toast(text, ms = 2200) {
 // ---------------- 標題 ----------------
 function titleScreen() {
   const seen = loadSeen();
+  const save = loadGame();
+  // 新版提醒：玩過舊版的人回來，才顯示一次
+  let last = null;
+  try { last = localStorage.getItem(VERSION_KEY); localStorage.setItem(VERSION_KEY, VERSION); } catch (e) { /* 沒差 */ }
+  const newsHtml = last && last !== VERSION
+    ? `<div class="news"><b>🆕 遊戲更新到 v${VERSION}</b>${CHANGES.slice(0, 5).map(c => `<div>・${esc(c)}</div>`).join('')}</div>` : '';
   const faces = Object.keys(TYPES).map(t => avatar(TYPES[t].look[t === 'B' || t === 'E' ? 'f' : 'm'])).join('');
   show(`
     <div class="faces">${faces}</div>
     <div class="tag">市長不是神，是幕僚造出來的神。</div>
     <h1>我推的市長</h1>
     <p class="muted">爆肝的幕僚團隊，想辦法把你的市長送上寶座。<br>一局約 10 分鐘。</p>
-    <button class="btn" id="go">開始上班</button>
+    ${newsHtml}
+    ${save ? `<button class="btn" id="resume">▶️ 繼續上一局：${esc(save.name)} ${weekLabel(save.week).month}月第${weekLabel(save.week).nth}週</button>` : ''}
+    <button class="btn ${save ? 'ghost' : ''}" id="go">${save ? '重新開始（放棄上一局）' : '開始上班'}</button>
     <button class="btn ghost" id="manual">📖 總幹事手冊</button>
     <button class="btn ghost" id="gal">結局圖鑑（${seen.size} / ${ENDINGS.length}）</button>
-    <p class="muted" style="margin-top:22px;font-size:12px">本遊戲純屬虛構，人物、政黨、城市皆非真實。</p>
+    <p class="muted" style="margin-top:22px;font-size:12px">本遊戲純屬虛構，人物、政黨、城市皆非真實。v${VERSION}</p>
   `, 'title');
-  $('#go').onclick = drawScreen;
+  $('#go').onclick = () => { clearGame(); drawScreen(); };
+  if (save) $('#resume').onclick = () => resumeGame(save);
   $('#gal').onclick = () => gallery(titleScreen);
   $('#manual').onclick = openManual;
 }
@@ -524,10 +560,10 @@ function weekCard(info) {
   });
 }
 
-async function runGame() {
+async function runGame(notes = {}) {
   closeOverlay();
-  let notes = {};
   while (G.week <= WEEKS) {
+    saveGame(notes);
     await weekCard(notes);
     const steps = planWeek(G);
     let left = steps.filter(s => s.step !== 'poll').length;
@@ -544,6 +580,7 @@ async function runGame() {
 
 // ---------------- 開票 ----------------
 async function electionNight() {
+  clearGame();
   const res = finish(G);
   saveSeenEvents();
   show(`
@@ -778,7 +815,7 @@ function openMenu() {
       <p style="margin:14px 0">確定要回首頁嗎？<br><b>這一局的進度會放棄。</b></p>
       <button class="btn" id="yes">放棄這局，回首頁</button>
       <button class="btn ghost" id="no">繼續打選戰</button>`;
-    m.querySelector('#yes').onclick = () => { close(); titleScreen(); };
+    m.querySelector('#yes').onclick = () => { close(); clearGame(); titleScreen(); };
     m.querySelector('#no').onclick = close;
   };
   const gal = () => { m.querySelector('.mbody').innerHTML = galleryHtml(); };
