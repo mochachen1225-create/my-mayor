@@ -86,8 +86,9 @@ function titleScreen() {
   // 新版提醒：玩過舊版的人回來，才顯示一次
   let last = null;
   try { last = localStorage.getItem(VERSION_KEY); localStorage.setItem(VERSION_KEY, VERSION); } catch (e) { /* 沒差 */ }
+  // 有新版就只顯示一個小連結，想看再點開
   const newsHtml = last && last !== VERSION
-    ? `<div class="news"><b>🆕 遊戲更新到 v${VERSION}</b>${CHANGES.slice(0, 5).map(c => `<div>・${esc(c)}</div>`).join('')}</div>` : '';
+    ? `<button class="newslink" id="news">🆕 遊戲更新了・看看有什麼新的</button>` : '';
   const faces = Object.keys(TYPES).map(t => avatar(TYPES[t].look[t === 'B' || t === 'E' ? 'f' : 'm'])).join('');
   show(`
     <div class="faces">${faces}</div>
@@ -99,10 +100,13 @@ function titleScreen() {
     <button class="btn ${save ? 'ghost' : ''}" id="go">${save ? '重新開始（放棄上一局）' : '開始上班'}</button>
     <button class="btn ghost" id="manual">📖 總幹事手冊</button>
     <button class="btn ghost" id="gal">結局圖鑑（${seen.size} / ${ENDINGS.length}）</button>
-    <p class="muted" style="margin-top:22px;font-size:12px">本遊戲純屬虛構，人物、政黨、城市皆非真實。v${VERSION}</p>
+    <p class="muted" style="margin-top:22px;font-size:12px">本遊戲純屬虛構，人物、政黨、城市皆非真實。<button class="verlink" id="ver">v${VERSION} 更新內容</button></p>
   `, 'title');
   $('#go').onclick = () => { clearGame(); drawScreen(); };
   if (save) $('#resume').onclick = () => resumeGame(save);
+  const showNews = () => layer(`🆕 v${VERSION} 更新內容`, `<ul class="newslist">${CHANGES.map(c => `<li>${esc(c)}</li>`).join('')}</ul>`);
+  if ($('#news')) $('#news').onclick = showNews;
+  $('#ver').onclick = showNews;
   $('#gal').onclick = () => gallery(titleScreen);
   $('#manual').onclick = openManual;
 }

@@ -259,3 +259,8 @@ input.name { width: 100%; border: 2px solid #ccc; border-radius: 12px; padding: 
 .runrow b { display: block; }
 .runrow small { color: var(--muted); }
 .statline.dark { border-bottom-color: #e2ddd5; }
+
+/* 首頁的更新小連結 */
+.newslink { background: none; border: 0; color: #9a6a00; font-size: 14px; text-decoration: underline; margin-top: 10px; }
+.verlink { background: none; border: 0; color: inherit; font-size: 12px; text-decoration: underline; padding: 0 0 0 4px; }
+.newslist { padding-left: 20px; line-height: 1.8; }
