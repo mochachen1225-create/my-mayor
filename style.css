@@ -223,3 +223,8 @@ input.name { width: 100%; border: 2px solid #ccc; border-radius: 12px; padding: 
 .hud .date { flex: 1; min-width: 0; font-size: 13px; line-height: 1.4; }
 .hud .row > span:last-child { white-space: nowrap; flex: none; }
 .hud .clock { white-space: nowrap; }
+
+/* 總幹事的結局 */
+.story.mgr { background: rgba(160, 139, 214, .18); border: 1px solid rgba(201, 184, 255, .35); }
+.story.mgr .memoji { font-size: 40px; text-align: center; }
+#closebox .opt { color: var(--ink); }

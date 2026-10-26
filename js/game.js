@@ -11,6 +11,15 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
 function loadSeen() {
   try { return new Set(JSON.parse(localStorage.getItem(SAVE_KEY) || '[]')); } catch (e) { return new Set(); }
 }
+const MGR_KEY = 'mymayor.mgrEndings';
+function loadMgr() {
+  try { return new Set(JSON.parse(localStorage.getItem(MGR_KEY) || '[]')); } catch (e) { return new Set(); }
+}
+function saveMgr(id) {
+  const s = loadMgr(); s.add(id);
+  try { localStorage.setItem(MGR_KEY, JSON.stringify([...s])); } catch (e) { /* 無痕模式就算了 */ }
+}
+
 function loadSeenEvents() {
   try { return new Set(JSON.parse(localStorage.getItem(EVENTS_KEY) || '[]')); } catch (e) { return new Set(); }
 }
@@ -141,7 +150,8 @@ function profileScreen() {
     <div class="traits">
       <b>👍 強項</b><br>${T.pros.map(x => '・' + esc(fill(G, x))).join('<br>')}<br><br>
       <b>👎 弱點</b><br>${T.cons.map(x => '・' + esc(fill(G, x))).join('<br>')}<br><br>
-      <b>🙄 不聽話的時候</b><br>・${esc(T.trait)}
+      <b>🙄 不聽話的時候</b><br>・${esc(T.trait)}<br><br>
+      <b>💭 ${esc(G.name)}最在意的</b><br>・${esc(T.values.care)}
     </div>
     <div class="traits">
       <b>🎯 主要對手</b>
@@ -535,7 +545,6 @@ async function runGame() {
 // ---------------- 開票 ----------------
 async function electionNight() {
   const res = finish(G);
-  const seen = saveSeen(res.ending.id);
   saveSeenEvents();
   show(`
     <p class="muted" style="color:#ccc">11 月 28 日 晚上 8 點</p>
@@ -547,6 +556,8 @@ async function electionNight() {
       <div class="pollrow"><div class="lab"><span>其他</span><b id="v3">0.0%</b></div><div class="track"><div id="b3" style="background:#aaa"></div></div></div>
     </div>
     <div class="big-result" id="verdict">開票中……</div>
+    <p class="muted" id="turnout" style="color:#ccc;visibility:hidden">投票率 ${res.turnout}%</p>
+    <div id="closebox"></div>
     <button class="btn" id="next" style="visibility:hidden">看結局</button>
   `, 'end');
   const target = [res.share.s, res.share.r, res.share.o];
@@ -568,10 +579,40 @@ async function electionNight() {
   });
   $('#verdict').textContent = res.win ? `🎉 ${G.name} 凍蒜！` : `😢 ${G.name} 落選`;
   $('#nightface').innerHTML = bossFace(res.win ? 'big' : 'sad');
+  $('#turnout').style.visibility = 'visible';
+  if (G.f.complacent) $('#turnout').textContent += '　支持者以為穩贏，很多人沒出門……';
+  // 差距不到 1%：要驗票、嗆聲還是認輸？
+  if (res.close) await closeRace(res);
+  const seen = saveSeen(res.ending.id);
+  saveMgr(res.mgr.id);
   const btn = $('#next');
   btn.style.visibility = 'visible';
   btn.textContent = '選戰檢討會 →';
   btn.onclick = () => reviewScreen(res, seen);
+}
+
+function closeRace(res) {
+  return new Promise(resolve => {
+    const opts = res.win
+      ? [['accept', '🗳️ 「歡迎驗票，我們有信心」'], ['fight', '📣 嗆回去：「輸不起就不要選」'], ['calm', '🙏 請支持者冷靜，先回家休息']]
+      : [['recount', '🗳️ 申請驗票'], ['protest', '📣 號召支持者到選委會'], ['concede', '🤝 打電話恭喜對手']];
+    const box = $('#closebox');
+    box.innerHTML = `<div class="story" style="margin-top:8px">
+      <b>⚠️ 差距只有 ${(Math.floor(Math.abs(res.margin) * 100) / 100).toFixed(2)}%！</b><br>
+      ${res.win ? esc(G.rivalName) + '陣營不認輸，要求驗票。' : '只差一點點，支持者在競選總部外面不肯走。'}總幹事，怎麼辦？
+      ${opts.map(([k, t]) => `<button class="opt" data-k="${k}" style="margin-top:8px">${t}</button>`).join('')}
+    </div>`;
+    box.querySelectorAll('.opt').forEach(b => b.onclick = () => {
+      const wasWin = res.win;
+      const lines = resolveClose(G, res, b.dataset.k);
+      box.innerHTML = `<div class="story" style="margin-top:8px">${lines.map(esc).join('<br>')}</div>`;
+      if (res.win !== wasWin) {
+        $('#verdict').textContent = `🎉 ${G.name} 驗票翻盤，凍蒜！`;
+        $('#nightface').innerHTML = bossFace('big');
+      }
+      resolve();
+    });
+  });
 }
 
 function statsOf() {
@@ -613,7 +654,9 @@ function endingScreen(res, seen) {
     <p class="muted" style="color:#ccc">${res.win ? '當選' : '落選'}・得票 ${res.share.s.toFixed(1)}% vs ${res.share.r.toFixed(1)}%</p>
     <h2>${esc(e.title)}</h2>
     <div class="story">${esc(res.text)}</div>
-    <p class="muted" style="color:#ccc">已解鎖結局 ${seen.size} / ${ENDINGS.length}</p>
+    <p class="muted" style="color:#ccc;margin-top:18px">🧑‍💼 而你，總幹事……</p>
+    <div class="story mgr"><div class="memoji">${res.mgr.emoji}</div><b>${esc(res.mgr.title)}</b><br>${esc(res.mgrText)}</div>
+    <p class="muted" style="color:#ccc">已解鎖結局 ${seen.size} / ${ENDINGS.length}・總幹事結局 ${loadMgr().size} / ${MGR_ENDINGS.length}</p>
     <button class="btn" id="share">📤 分享結局截圖</button>
     <button class="btn ghost" id="gal">📚 結局圖鑑</button>
     <button class="btn ghost" id="again">🔁 再當一次幕僚</button>
@@ -625,14 +668,19 @@ function endingScreen(res, seen) {
   $('#home').onclick = titleScreen;
 }
 
+function galleryHtml() {
+  const seen = loadSeen(), mseen = loadMgr();
+  const grid = (list, got) => `<div class="gallery">${list.map(e => got.has(e.id)
+    ? `<div><span class="e">${e.emoji}</span>${esc(e.title)}</div>`
+    : `<div class="lock"><span class="e">🔒</span>？？？</div>`).join('')}</div>`;
+  return `<p class="muted center" style="margin-top:10px"><b>🗳️ 選舉結局</b>　${seen.size} / ${ENDINGS.length}</p>${grid(ENDINGS, seen)}
+    <p class="muted center" style="margin-top:18px"><b>🧑‍💼 總幹事結局</b>　${mseen.size} / ${MGR_ENDINGS.length}</p>${grid(MGR_ENDINGS, mseen)}`;
+}
+
 function gallery(back) {
-  const seen = loadSeen();
   show(`
     <h2 class="center">結局圖鑑</h2>
-    <p class="muted center">已解鎖 ${seen.size} / ${ENDINGS.length}</p>
-    <div class="gallery">${ENDINGS.map(e => seen.has(e.id)
-      ? `<div><span class="e">${e.emoji}</span>${esc(e.title)}</div>`
-      : `<div class="lock"><span class="e">🔒</span>？？？</div>`).join('')}</div>
+    ${galleryHtml()}
     <button class="btn" id="back">返回</button>
   `);
   $('#back').onclick = back;
@@ -684,14 +732,16 @@ async function shareEnding(res) {
   x.font = font(38); x.fillStyle = '#eee';
   const lines = wrapText(x, res.text, W - 200).slice(0, 4);
   lines.forEach((l, i) => x.fillText(l, W / 2, 870 + i * 52));
-  x.font = font(32); x.fillStyle = '#ffd166';
-  const st = statsOf();
-  st.forEach(([e, k, v], i) => x.fillText(`${e} ${k} ${v}`, W / 2, 1090 + i * 42));
+  x.font = font(34); x.fillStyle = '#c9b8ff';
+  x.fillText(`🧑‍💼 總幹事：${res.mgr.emoji} ${res.mgr.title}`, W / 2, 1090);
+  x.font = font(30); x.fillStyle = '#ffd166';
+  const st = statsOf().slice(0, 3);
+  st.forEach(([e, k, v], i) => x.fillText(`${e} ${k} ${v}`, W / 2, 1150 + i * 40));
   x.fillStyle = '#e0a526'; x.font = font(36);
   x.fillText('你也來當幕僚，看你能不能把市長送上寶座 →', W / 2, H - 45);
   const blob = await new Promise(r => c.toBlob(r, 'image/png'));
   const file = new File([blob], 'my-mayor.png', { type: 'image/png' });
-  const text = `我在《我推的市長》幫 ${G.name} 打選戰，結局是「${res.ending.title}」！你也來試試：${location.href}`;
+  const text = `我在《我推的市長》幫 ${G.name} 打選戰，結局是「${res.ending.title}」，我自己則是「${res.mgr.title}」！你也來試試：${location.href}`;
   try {
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       await navigator.share({ files: [file], text });
@@ -731,14 +781,7 @@ function openMenu() {
     m.querySelector('#yes').onclick = () => { close(); titleScreen(); };
     m.querySelector('#no').onclick = close;
   };
-  const gal = () => {
-    const seen = loadSeen();
-    m.querySelector('.mbody').innerHTML = `
-      <p class="muted center" style="margin-top:10px">已解鎖 ${seen.size} / ${ENDINGS.length}</p>
-      <div class="gallery">${ENDINGS.map(e => seen.has(e.id)
-        ? `<div><span class="e">${e.emoji}</span>${esc(e.title)}</div>`
-        : `<div class="lock"><span class="e">🔒</span>？？？</div>`).join('')}</div>`;
-  };
+  const gal = () => { m.querySelector('.mbody').innerHTML = galleryHtml(); };
   m.innerHTML = `<div class="mcard">
     <div class="mhead"><b>☰ 選單</b><button id="mclose" aria-label="關閉">✕</button></div>
     <div class="mbody">

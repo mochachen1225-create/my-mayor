@@ -5,8 +5,8 @@ const POLL_WEEKS = [1, 6, 10, 14];
 const BLACKOUT_WEEK = 16; // 11/18 起民調封關
 const START = new Date(2026, 7, 3); // 8/3（週一），只用來算月日，不顯示年份
 const VOTE_DAY = new Date(2026, 10, 28);
-const STAT_KEYS = ['buzz', 'fav', 'money', 'trust', 'liver', 'con', 'net', 'team', 'conf'];
-const FLAG_KEYS = ['donated', 'warm', 'dirty1', 'dirty2', 'ledger', 'rebel', 'respect', 'script', 'cut', 'tv', 'buy', 'foreign'];
+const STAT_KEYS = ['buzz', 'fav', 'money', 'trust', 'liver', 'con', 'net', 'team', 'conf', 'self', 'pocket'];
+const FLAG_KEYS = ['smear', 'insider', 'askedJob', 'book', 'gotv', 'ktv', 'students', 'unionDeal', 'donated', 'warm', 'dirty1', 'dirty2', 'ledger', 'rebel', 'respect', 'script', 'cut', 'tv', 'buy', 'foreign'];
 
 const JITTER = ['s', 'r', 'fav', 'buzz', 'net', 'con'];
 const LIVER_WORK = 2, LIVER_LATE = 4;
@@ -49,7 +49,7 @@ function newGame(type, gender, name, rng = Math.random) {
     week: 1, clock: 8,
     s: T.start.s, r: T.start.r,
     buzz: 40, fav: 50, money: T.start.money, trust: T.start.trust,
-    liver: 80, con: 60, team: 70, conf: 60, show: 0, showMax: 0, net: T.start.net, favor: 0,
+    liver: 80, con: 60, team: 70, conf: 60, show: 0, showMax: 0, self: 0, pocket: 0, net: T.start.net, favor: 0,
     f: { idle: 0 }, idleStreak: 0,
     used: new Set(), pending: [], lastPoll: null, swings: [], history: []
   };
@@ -158,7 +158,7 @@ function prepare(g, ev) {
 
 // 戰情室行程板：每次給 6 個能做的事，「休息」一定在
 function buildChoices(g, n = 6) {
-  const pool = BUILD.filter(b => (!b.types || b.types.includes(g.type)) && b.id !== 'rest');
+  const pool = BUILD.filter(b => (!b.types || b.types.includes(g.type)) && b.id !== 'rest' && (!b.minWeek || g.week >= b.minWeek));
   const out = [];
   while (out.length < n - 1 && pool.length) {
     const i = Math.floor(g.rng() * pool.length);
@@ -273,6 +273,15 @@ function choose(g, ev, opt, isBuild = false) {
     else if (failed) applyFx(g, { trust: -2 }, delta);
     else applyFx(g, { trust: 1 }, delta);
   }
+  // 總幹事替自己撈：有機會被老闆發現（私心越高越容易被發現）
+  if (exec.selfish) {
+    if (g.rng() < 0.15 + g.self / 150) {
+      g.f.caught = (g.f.caught || 0) + 1;
+      applyFx(g, { trust: -12, conf: -5, team: -3 }, delta);
+      lines.push({ kind: 'bad', text: fill(g, pick(g, SELF_CAUGHT)) });
+      if (g.trust < 30 && g.week >= 12) g.f.fired = 1;
+    }
+  }
   // 形象包裝：做對方向加分；包裝太多，作秀指數會讓人起疑
   if (exec.img && !failed) {
     const want = TYPES[g.type].image.to;
@@ -294,8 +303,23 @@ function choose(g, ev, opt, isBuild = false) {
   }
   // 團隊士氣：做得好大家有幹勁，出包或老闆不聽話就洩氣
   applyFx(g, { team: failed ? -3 : defied ? -2 : 1, conf: failed ? -4 : defied ? -2 : 2 }, delta);
+  // 老闆在意的是乾淨還是贏？你的做法會影響他對你的信任（隱藏）
+  const V = TYPES[g.type].values;
+  const conMove = (exec.fx && exec.fx.con) || 0;
+  let vt = 0, vline = null;
+  if (conMove <= -5) {
+    vt = V.win >= 0.8 && !failed ? 2 : -Math.round(V.clean * 6);
+    vline = vt > 0 ? 'dirtyGood' : 'dirtyBad';
+  } else if (conMove >= 4) {
+    vt = V.clean >= 0.8 ? 3 : V.win >= 0.8 ? -2 : 1;
+    vline = vt > 0 ? 'cleanGood' : 'cleanBad';
+  }
+  if (vt) {
+    applyFx(g, { trust: vt }, delta);
+    if (Math.abs(vt) >= 2 && g.rng() < 0.7) lines.push({ kind: 'say', mood: vt > 0 ? 'big' : 'sad', text: fill(g, pick(g, VALUE_LINES[vline])) });
+  }
   // 老闆的反應，每次都不太一樣
-  if (bossActs && !defied && g.rng() < 0.6) {
+  if (bossActs && !defied && !lines.some(l => l.kind === 'say') && g.rng() < 0.6) {
     lines.push({ kind: 'say', mood: failed ? 'sad' : 'big', text: fill(g, pick(g, failed ? TYPES[g.type].bad : TYPES[g.type].ok)) });
   }
   advanceClock(g, isBuild ? 3 : 1.5 + g.rng() * 2, ev && ev.late, delta);
@@ -486,6 +510,13 @@ const SHOW_FAIL = [
   '長輩群組轉傳：「選前才這麼勤勞。」'
 ];
 
+const SELF_CAUGHT = [
+  '{boss}看到你的手機跳出一則訊息：「仲介費已入帳。」{boss}什麼都沒說，但眼神變了。',
+  '副總幹事在茶水間小聲說：「總幹事最近好像很忙，忙的都不是選舉。」話傳到了{boss}耳裡。',
+  '{boss}問你：「你最近是不是在接別的案子？」你說沒有。{boss}笑了一下。',
+  '記者打電話來問：「總幹事是不是有在幫廠商牽線？」{boss}剛好在旁邊。'
+];
+
 const CROWD_FAIL = [
   '現場只來了 7 個人，其中 3 個是記者，2 個是你們的志工。',
   '空蕩蕩的椅子被對手拍下來，配文：「民氣在哪裡？」',
@@ -529,19 +560,49 @@ function doPoll(g) {
 
 function finish(g) {
   const noise = () => (g.rng() + g.rng() - 1) * 1.5;
-  // 看起來穩贏，支持者反而不出門投票
+  // 看起來穩贏，支持者反而不出門投票；最後一週有催票可以抵銷
   const lead = g.lastPoll ? g.lastPoll.s - g.lastPoll.r : 0;
   let turnoutDrop = 0;
-  if (lead > 5) turnoutDrop = (lead - 3) * g.rng() * 0.8;
+  if (lead > 4) turnoutDrop = (lead - 2) * g.rng() * 0.8;
+  if (g.f.gotv) turnoutDrop *= 0.3;
   if (turnoutDrop > 1.5) g.f.complacent = 1;
   const sF = g.s - turnoutDrop + noise(), rF = g.r + noise();
   const othersF = Math.max(4, (100 - g.s - g.r) * 0.5);
   const tot = sF + rF + othersF;
   const share = { s: sF / tot * 100, r: rF / tot * 100, o: othersF / tot * 100 };
   const margin = share.s - share.r;
-  const ctx = { type: g.type, win: margin > 0, margin, trust: g.trust, con: g.con, net: g.net, f: g.f };
+  const turnout = Math.round((63 - turnoutDrop * 1.6 + (g.rng() - 0.5) * 4) * 10) / 10;
+  const res = { share, margin, turnout, win: margin > 0, close: Math.abs(margin) < 1 };
+  if (!res.close) decide(g, res);
+  return res;
+}
+
+// 差距不到 1%：驗票、嗆聲或認輸
+function resolveClose(g, res, choice) {
+  const m = Math.abs(res.margin);
+  const lines = [];
+  if (res.win) {
+    if (choice === 'accept') { g.f.graceWin = 1; lines.push('驗票結果出爐：維持原判，' + g.name + '當選。你的「歡迎驗票」被稱讚很有風度。'); }
+    else if (choice === 'fight') { g.f.siege = 1; lines.push('兩邊支持者在選委會外面對嗆到半夜，驗票結果還是維持原判，但畫面很難看。'); }
+    else { lines.push('支持者冷靜回家。驗票結果維持原判，' + g.name + '險勝。'); }
+  } else {
+    if (choice === 'recount') {
+      g.f.recounted = 1;
+      if (g.rng() < 0.3 * (1 - m)) { res.win = true; g.f.flipped = 1; lines.push('驗票驗出一整箱誤判的票！結果翻盤，' + g.name + '當選！'); }
+      else lines.push('驗了三個星期，結果維持原判。');
+    } else if (choice === 'protest') { g.f.siege = 1; lines.push('支持者包圍選委會三天三夜，結果沒有改變，還多了一堆罰單。'); }
+    else { g.f.graceful = 1; lines.push(g.name + '打電話恭喜對手，敗選感言被說是「這次選舉最好看的一段」。'); }
+  }
+  decide(g, res);
+  return lines;
+}
+
+function decide(g, res) {
+  const margin = res.margin;
+  const ctx = { type: g.type, win: res.win, margin, trust: g.trust, con: g.con, net: g.net, f: g.f, self: g.self, pocket: g.pocket, liver: g.liver, team: g.team };
   const ending = ENDINGS.find(e => e.when(ctx));
-  const resultLine = ctx.win ? fill(g, '好消息是，{boss}當選了。') : fill(g, '{boss}落選了。');
+  const mgr = MGR_ENDINGS.find(e => e.when(ctx));
+  const resultLine = res.win ? fill(g, '好消息是，{boss}當選了。') : fill(g, '{boss}落選了。');
   const hist = g.history.slice();
   const best = hist.filter(h => h.v > 0).sort((a, b) => b.v - a.v).slice(0, 3);
   const worst = hist.filter(h => h.v < 0).sort((a, b) => a.v - b.v).slice(0, 3);
@@ -550,12 +611,18 @@ function finish(g) {
   else if (g.buzz < 45) notes.push('好感度不錯，但曝光太少，很多選民根本不認識{boss}。');
   if ((g.f.idle || 0) >= 3) notes.push('你擺爛了 ' + g.f.idle + ' 次，老闆和選民都看在眼裡。');
   if ((g.f.defied || 0) >= 5) notes.push('{boss}有 ' + g.f.defied + ' 次沒照你的話做，信任要顧好。');
-  if (g.f.complacent) notes.push('民調領先，支持者以為穩贏，結果沒出門投票。');
+  if (g.f.complacent) notes.push('民調領先，支持者以為穩贏沒出門，投票率只有 ' + res.turnout + '%。');
   if (g.f.took) notes.push('碰了不該碰的錢，就算選上也會出事。');
+  if (g.f.smear) notes.push('用了奧步。就算一時有效，選後官司也跑不掉。');
   if (g.showMax >= 70) notes.push('形象包裝做得太密集，選民開始覺得{boss}在作秀。');
+  if (g.f.caught >= 2) notes.push('你替自己撈的事被老闆發現了 ' + g.f.caught + ' 次。');
   if (!notes.length) notes.push(margin > 0 ? '整場選戰打得很穩，好感和聲量都夠。' : '差一點點。下次多衝一點曝光，也許就翻過去了。');
-  const review = { best, worst, notes: notes.slice(0, 3).map(n => fill(g, n)) };
-  return { share, margin, win: ctx.win, ending, review, text: fill(g, ending.text).replace('{resultLine}', resultLine) };
+  res.review = { best, worst, notes: notes.slice(0, 3).map(n => fill(g, n)) };
+  res.ending = ending;
+  res.text = fill(g, ending.text).replace('{resultLine}', resultLine);
+  res.mgr = mgr;
+  res.mgrText = fill(g, mgr.text).replace(/\{pocket\}/g, Math.round(g.pocket * 10));
+  return res;
 }
 
-if (typeof module !== 'undefined') module.exports = { newGame, planWeek, buildChoices, choose, timeout, endWeek, doPoll, finish, fill, weekLabel, clockText, canAfford, makeRng, WEEKS, BLACKOUT_WEEK };
+if (typeof module !== 'undefined') module.exports = { newGame, planWeek, buildChoices, choose, timeout, endWeek, doPoll, finish, resolveClose, decide, fill, weekLabel, clockText, canAfford, makeRng, WEEKS, BLACKOUT_WEEK };
