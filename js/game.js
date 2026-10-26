@@ -888,7 +888,7 @@ async function shareEnding(res) {
   const winWord = res.win ? '凍蒜' : '落選';
   const eShare = (res.ending.share || res.ending.title).replace('%W', winWord);
   const mShare = res.mgr.share || res.mgr.title;
-  const text = `我在《我推的市長》幫 ${G.name} 打選戰，市長選戰結局是「${eShare}」，我自己則是「${mShare}」！你要玩玩看嗎？👉 ${location.href}`;
+  const text = `我在《我推的市長》幫 ${G.name} 打選戰，市長選戰結局是「${eShare}」，我自己則是「${mShare}」！你要玩玩看嗎？👉 https://mochachen1225-create.github.io/my-mayor/`;
   try {
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       await navigator.share({ files: [file], text });
