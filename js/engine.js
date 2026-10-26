@@ -229,6 +229,7 @@ function choose(g, ev, opt, isBuild = false) {
     if (opt.likes && opt.likes.includes(g.type)) p += 0.2;
     if (opt.hates && opt.hates.includes(g.type)) p -= 0.25;
     if (g.type === 'C') p -= 0.05;
+    if (isBuild) p += 0.12; // 自己排的行程，老闆比較願意配合
     if (g.conf > 75) p += 0.05; // 總幹事有信心，老闆比較願意聽
     if (g.conf < 30) p -= 0.08; // 總幹事自己都沒把握，老闆更不想聽
     p = clamp(p, 0.35, 0.96);
