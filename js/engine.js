@@ -2,11 +2,12 @@
 
 const WEEKS = 17;
 const POLL_WEEKS = [1, 6, 10, 14];
+const POLICY_WEEKS = [3, 7, 11, 15]; // 每月一次政見發表
 const BLACKOUT_WEEK = 16; // 11/18 起民調封關
 const START = new Date(2026, 7, 3); // 8/3（週一），只用來算月日，不顯示年份
 const VOTE_DAY = new Date(2026, 10, 28);
 const STAT_KEYS = ['buzz', 'fav', 'money', 'trust', 'liver', 'con', 'net', 'team', 'conf', 'self', 'pocket'];
-const FLAG_KEYS = ['smear', 'insider', 'askedJob', 'book', 'gotv', 'ktv', 'students', 'unionDeal', 'donated', 'warm', 'dirty1', 'dirty2', 'ledger', 'rebel', 'respect', 'script', 'cut', 'tv', 'buy', 'foreign'];
+const FLAG_KEYS = ['promise', 'nerve', 'smear', 'insider', 'askedJob', 'book', 'gotv', 'ktv', 'students', 'unionDeal', 'donated', 'warm', 'dirty1', 'dirty2', 'ledger', 'rebel', 'respect', 'script', 'cut', 'tv', 'buy', 'foreign'];
 
 const JITTER = ['s', 'r', 'fav', 'buzz', 'net', 'con'];
 const LIVER_WORK = 2, LIVER_LATE = 4;
@@ -90,7 +91,9 @@ function eligible(g, ev) {
   if (ev.needFavor && g.favor <= 0) return false;
   if (ev.needDonor && !g.f.donated) return false;
   if (ev.needLow && g.s > g.r - 5) return false; // 民調太低，議員才會找藉口
-  if (ev.needBroke && g.money >= 30) return false; // 錢快花完了，才會有人找上門
+  if (ev.needBroke && g.money >= 30) return false;
+  if (ev.needPromise && (g.f.promise || 0) < ev.needPromise) return false;
+  if (ev.needNerve && (g.f.nerve || 0) < ev.needNerve) return false; // 錢快花完了，才會有人找上門
   if (ev.kind === 'crisis') return false;
   return true;
 }
@@ -111,6 +114,7 @@ function pickEvent(g) {
 function planWeek(g) {
   const steps = [];
   if (POLL_WEEKS.includes(g.week)) steps.push({ step: 'poll' });
+  if (POLICY_WEEKS.includes(g.week)) steps.push({ step: 'event', ev: policyEvent(g) });
   for (const ev of g.pending) steps.push({ step: 'event', ev });
   g.pending = [];
   const main = (MAIN[g.week] || []).map(e => typeof e === 'string' ? EVENTS.find(x => x.id === e) : e);
@@ -138,6 +142,17 @@ function planWeek(g) {
   }
   if (g.week === 1 && mix.length) mix.sort((a, b) => (a.step === 'free') - (b.step === 'free')); // 第一週先遇到事件，認識玩法
   return steps.concat(mix);
+}
+
+// 政見發表：諂媚、逆風各抽兩個，順序打亂
+function policyEvent(g) {
+  const take = (arr, n) => { const a = arr.slice(), out = []; while (out.length < n) out.push(a.splice(Math.floor(g.rng() * a.length), 1)[0]); return out; };
+  const opts = take(POLICIES.sweet, 2).concat(take(POLICIES.headwind, 2));
+  for (let i = opts.length - 1; i > 0; i--) { const j = Math.floor(g.rng() * (i + 1)); [opts[i], opts[j]] = [opts[j], opts[i]]; }
+  // 支票開越多，諂媚政策越容易被打「政策買票」
+  const p = g.f.promise || 0;
+  const withRisk = opts.map(o => o.fx.promise && p >= 2 ? { ...o, risk: { p: Math.min(0.65, 0.18 * (p - 1)), fx: { fav: -4, s: -0.5 }, r: '「又一張支票？」名嘴說這是政策買票。' } } : o);
+  return { id: 'policy', kind: 'policy', who: 'staff', title: '本月政見發表', text: '今天要發表一個新政見。副總幹事問：「總幹事，要討好選民，還是說真話？」', opts: withRisk };
 }
 
 // 需要臨時產生內容的事件
@@ -407,7 +422,7 @@ function endWeek(g) {
   }
   g.provoked = 0; g.bigMove = 0;
   const rn = RIVAL_NEWS[Math.floor(g.rng() * RIVAL_NEWS.length)];
-  g.r += 0.38 + rn.r;
+  g.r += 0.42 + rn.r;
   news.push({ text: fill(g, rn.t), up: rn.r > 0 });
   if (g.rng() < 0.4) {
     const tn = THIRD_NEWS[Math.floor(g.rng() * THIRD_NEWS.length)];
@@ -417,6 +432,10 @@ function endWeek(g) {
   }
   g.buzz += (40 - g.buzz) * 0.15;
   g.show = Math.max(0, g.show - 10); // 一陣子沒包裝，大家就忘了
+  if (g.week >= 11) {
+    g.s += 0.15 * Math.min(g.f.nerve || 0, 4); // 逆風政策：選民慢慢理解
+    g.s -= 0.06 * Math.max(0, (g.f.promise || 0) - 2); // 支票開太多：選民開始懷疑做不做得到
+  }
   g.money += { A: 3, B: g.s >= g.r - 5 ? 4 : 1, C: 6, D: 4, E: 3, F: 2 }[T];
   g.liver += 4; // 週末補眠（現任事情比較多，自然比較累）
   // 睡眠
@@ -613,6 +632,8 @@ function decide(g, res) {
   if ((g.f.defied || 0) >= 5) notes.push('{boss}有 ' + g.f.defied + ' 次沒照你的話做，信任要顧好。');
   if (g.f.complacent) notes.push('民調領先，支持者以為穩贏沒出門，投票率只有 ' + res.turnout + '%。');
   if (g.f.took) notes.push('碰了不該碰的錢，就算選上也會出事。');
+  if ((g.f.promise || 0) >= 6) notes.push('開了太多討好的支票，名嘴和財政局都在算帳。');
+  if ((g.f.nerve || 0) >= 3) notes.push('推了不少逆風政策，被罵，但也被記住了。');
   if (g.f.smear) notes.push('用了奧步。就算一時有效，選後官司也跑不掉。');
   if (g.showMax >= 70) notes.push('形象包裝做得太密集，選民開始覺得{boss}在作秀。');
   if (g.f.caught >= 2) notes.push('你替自己撈的事被老闆發現了 ' + g.f.caught + ' 次。');

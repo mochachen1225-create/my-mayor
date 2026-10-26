@@ -108,6 +108,7 @@ input.name { width: 100%; border: 2px solid #ccc; border-radius: 12px; padding: 
 .k-build .head { background: #6b4fa0; }
 .k-poll .head { background: #2e6f8e; }
 .k-topic .head { background: #b5651d; }
+.k-policy .head { background: #1f7a6d; }
 .timer { height: 7px; background: #eee; }
 .timer div { height: 100%; background: var(--red); width: 100%; }
 .card .body { padding: 14px 16px 16px; }
@@ -234,8 +235,9 @@ input.name { width: 100%; border: 2px solid #ccc; border-radius: 12px; padding: 
 .news b { display: block; margin-bottom: 2px; }
 
 /* 圖鑑分頁、稀有度、結局小卡 */
-.tabs { display: flex; gap: 6px; overflow-x: auto; padding: 10px 0 4px; -webkit-overflow-scrolling: touch; }
-.tab { flex: none; border: 1.5px solid #ddd; background: #fff; border-radius: 999px; padding: 6px 12px; font-size: 14px; color: var(--ink); }
+/* 分頁全部攤開（換行），不用左右滑，點了也不會跳回第一個 */
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 0 4px; }
+.tab { flex: 0 0 auto; border: 1.5px solid #ddd; background: #fff; border-radius: 999px; padding: 6px 12px; font-size: 14px; color: var(--ink); }
 .tab small { margin-left: 4px; color: var(--muted); font-size: 11px; }
 .tab.on { background: var(--ink); color: #fff; border-color: var(--ink); }
 .tab.on small { color: #ddd; }

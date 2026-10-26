@@ -315,7 +315,7 @@ function closeOverlay() { const o = app.querySelector('.overlay'); if (o) o.remo
 
 const KIND_LABEL = {
   fire: '⚠ 突發狀況', main: '📌 選戰大事', money: '💰 有人來訪', tv: '📺 政論節目',
-  daily: '☕ 戰情室日常', crisis: '🚨 危機', topic: '🎤 座談主題', build: '✨ 沒有火，來成就老闆'
+  daily: '☕ 戰情室日常', crisis: '🚨 危機', topic: '🎤 座談主題', policy: '📜 政見發表', build: '✨ 沒有火，來成就老闆'
 };
 
 // 倒數計時：切到背景時暫停
