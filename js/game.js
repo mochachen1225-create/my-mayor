@@ -855,34 +855,61 @@ async function shareEnding(res) {
   c.width = W; c.height = H;
   const x = c.getContext('2d');
   try { await document.fonts.ready; } catch (e) { /* 沒差 */ }
-  const font = (s) => `${s}px ColorEmoji, Huninn, "PingFang TC", "Noto Sans TC", sans-serif`;
+  // 文字和 emoji 分開畫：手機上 emoji 的寬度常常量不準，一起置中就會歪
+  const font = (s) => `${s}px Huninn, "PingFang TC", "Noto Sans TC", sans-serif`;
+  const efont = (s) => `${s}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
+  const line = (emoji, text, y, size, color) => {
+    x.font = font(size);
+    const tw = x.measureText(text).width;
+    const ew = emoji ? size * 1.15 : 0, gap = emoji ? size * 0.3 : 0;
+    const start = (W - ew - gap - tw) / 2;
+    x.textAlign = 'left';
+    if (emoji) { x.font = efont(size); x.fillStyle = '#fff'; x.fillText(emoji, start, y); }
+    x.font = font(size); x.fillStyle = color; x.fillText(text, start + ew + gap, y);
+  };
+  const box = (y, h, stroke, fill) => {
+    x.beginPath(); x.roundRect ? x.roundRect(60, y, W - 120, h, 36) : x.rect(60, y, W - 120, h);
+    x.fillStyle = fill; x.fill(); x.lineWidth = 3; x.strokeStyle = stroke; x.stroke();
+  };
+  const label = (text, y, color) => {
+    x.font = font(30); const w = x.measureText(text).width + 48;
+    x.fillStyle = color; x.beginPath();
+    x.roundRect ? x.roundRect(W / 2 - w / 2, y - 34, w, 50, 25) : x.rect(W / 2 - w / 2, y - 34, w, 50);
+    x.fill(); x.fillStyle = '#2b2f36'; x.textAlign = 'center'; x.fillText(text, W / 2, y);
+  };
   const g = x.createLinearGradient(0, 0, 0, H);
   g.addColorStop(0, '#2b2f36'); g.addColorStop(1, '#3d3150');
   x.fillStyle = g; x.fillRect(0, 0, W, H);
-  x.textAlign = 'center'; x.fillStyle = '#e0a526';
-  x.font = font(40); x.fillText('市長不是神，是幕僚造出來的神。', W / 2, 100);
-  x.fillStyle = '#fff'; x.font = font(84); x.fillText('我推的市長', W / 2, 200);
+  x.textAlign = 'center';
+  x.fillStyle = '#e0a526'; x.font = font(36); x.fillText('市長不是神，是幕僚造出來的神。', W / 2, 80);
+  x.fillStyle = '#fff'; x.font = font(76); x.fillText('我推的市長', W / 2, 170);
+
+  // ---- 候選人的框
+  box(220, 640, 'rgba(224,165,38,.7)', 'rgba(224,165,38,.08)');
+  label('候選人', 225, '#e0a526');
   try {
     const img = await svgToImage(bossFace(res.win ? 'big' : 'sad'));
-    x.drawImage(img, W / 2 - 130, 240, 260, 260);
+    x.drawImage(img, W / 2 - 95, 270, 190, 190);
   } catch (e) { /* 頭像畫不出來就略過 */ }
-  x.font = font(46); x.fillText(`${G.name}・${TYPES[G.type].label}`, W / 2, 560);
-  x.font = font(64); x.fillStyle = res.win ? '#ffd166' : '#ff9a9a';
-  x.fillText(res.win ? '🎉 凍蒜！' : '😢 落選', W / 2, 650);
-  x.font = font(38); x.fillStyle = '#ccc';
-  x.fillText(`得票 ${res.share.s.toFixed(1)}% vs ${res.share.r.toFixed(1)}%`, W / 2, 710);
-  x.fillStyle = '#fff'; x.font = font(56);
-  x.fillText(`${res.ending.emoji} ${res.ending.title}`, W / 2, 810);
-  x.font = font(38); x.fillStyle = '#eee';
-  const lines = wrapText(x, res.text, W - 200).slice(0, 4);
-  lines.forEach((l, i) => x.fillText(l, W / 2, 870 + i * 52));
-  x.font = font(34); x.fillStyle = '#c9b8ff';
-  x.fillText(`🧑‍💼 總幹事：${res.mgr.emoji} ${res.mgr.title}`, W / 2, 1090);
-  x.font = font(30); x.fillStyle = '#ffd166';
-  const st = statsOf().slice(0, 3);
-  st.forEach(([e, k, v], i) => x.fillText(`${e} ${k} ${v}`, W / 2, 1150 + i * 40));
-  x.fillStyle = '#e0a526'; x.font = font(36);
-  x.fillText('你也來當幕僚，看你能不能把市長送上寶座 →', W / 2, H - 45);
+  x.textAlign = 'center'; x.fillStyle = '#fff'; x.font = font(42);
+  x.fillText(`${G.name}・${TYPES[G.type].label}`, W / 2, 510);
+  line(res.win ? '🎉' : '😢', res.win ? '凍蒜！' : '落選', 585, 58, res.win ? '#ffd166' : '#ff9a9a');
+  x.textAlign = 'center'; x.font = font(34); x.fillStyle = '#ccc';
+  x.fillText(`得票 ${res.share.s.toFixed(1)}% vs ${res.share.r.toFixed(1)}%`, W / 2, 640);
+  line(res.ending.emoji, res.ending.title, 715, 48, '#fff');
+  x.textAlign = 'center'; x.font = font(32); x.fillStyle = '#eee';
+  wrapText(x, res.text, W - 220).slice(0, 2).forEach((l, i) => x.fillText(l, W / 2, 775 + i * 46));
+
+  // ---- 總幹事的框
+  box(900, 330, 'rgba(201,184,255,.7)', 'rgba(160,139,214,.12)');
+  label('總幹事（我）', 905, '#c9b8ff');
+  line(res.mgr.emoji, res.mgr.title, 990, 46, '#e6dcff');
+  x.textAlign = 'center'; x.font = font(30); x.fillStyle = '#ddd';
+  x.fillText(`「${res.mgr.quip || ''}」`, W / 2, 1045);
+  statsOf().slice(0, 3).forEach(([e, k, v], i) => line(e, `${k} ${v}`, 1105 + i * 42, 28, '#ffd166'));
+
+  x.textAlign = 'center'; x.fillStyle = '#e0a526'; x.font = font(34);
+  x.fillText('你也來當總幹事，看能不能把市長送上寶座 →', W / 2, H - 50);
   const blob = await new Promise(r => c.toBlob(r, 'image/png'));
   const file = new File([blob], 'my-mayor.png', { type: 'image/png' });
   const winWord = res.win ? '凍蒜' : '落選';
