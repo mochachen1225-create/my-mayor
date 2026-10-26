@@ -622,6 +622,7 @@ async function electionNight() {
   if (res.close) await closeRace(res);
   const seen = saveSeen(res.ending.id);
   saveMgr(res.mgr.id);
+  saveRun(res);
   const btn = $('#next');
   btn.style.visibility = 'visible';
   btn.textContent = '選戰檢討會 →';
@@ -705,21 +706,127 @@ function endingScreen(res, seen) {
   $('#home').onclick = titleScreen;
 }
 
-function galleryHtml() {
+// ---------------- 選戰紀錄 ----------------
+const RECORDS_KEY = 'mymayor.records';
+function loadRecords() {
+  try { return JSON.parse(localStorage.getItem(RECORDS_KEY) || 'null') || { endings: {}, runs: [] }; } catch (e) { return { endings: {}, runs: [] }; }
+}
+function saveRun(res) {
+  const R = loadRecords();
+  const d = new Date();
+  const run = {
+    id: Date.now(), date: `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`,
+    boss: G.name, label: TYPES[G.type].label, type: G.type, gender: G.gender, rival: G.rivalName,
+    win: res.win, s: +res.share.s.toFixed(1), r: +res.share.r.toFixed(1), turnout: res.turnout,
+    ending: res.ending.id, endingText: res.text, mgr: res.mgr.id, mgrText: res.mgrText,
+    review: res.review, stats: statsOf()
+  };
+  R.runs.unshift(run);
+  R.runs = R.runs.slice(0, 30);
+  for (const id of [res.ending.id, res.mgr.id]) {
+    const e = R.endings[id] || { first: run.date, boss: `${G.name}（${run.label}）`, count: 0 };
+    e.count++; e.last = run.id;
+    R.endings[id] = e;
+  }
+  try { localStorage.setItem(RECORDS_KEY, JSON.stringify(R)); } catch (e) { /* 存不了就算了 */ }
+}
+
+// ---------------- 結局圖鑑 ----------------
+const CATS = [
+  ['true', '⭐ 真結局'], ['win', '🏆 選上'], ['lose', '🌃 落選'], ['close', '🗳️ 險勝驗票'],
+  ['crime', '🚔 被抓'], ['special', '🎲 特殊'], ['mgr', '🧑‍💼 總幹事']
+];
+const RARE = { common: ['普通', 'r-common'], rare: ['稀有', 'r-rare'], legend: ['傳說', 'r-legend'] };
+const allEndings = () => ENDINGS.concat(MGR_ENDINGS.map(e => ({ ...e, cat: 'mgr' })));
+let galTab = 'true';
+
+// 把圖鑑畫進某個容器裡（圖鑑頁和遊戲中的選單共用）
+function renderGallery(box) {
   const seen = loadSeen(), mseen = loadMgr();
-  const grid = (list, got) => `<div class="gallery">${list.map(e => got.has(e.id)
-    ? `<div><span class="e">${e.emoji}</span>${esc(e.title)}</div>`
-    : `<div class="lock"><span class="e">🔒</span>？？？</div>`).join('')}</div>`;
-  return `<p class="muted center" style="margin-top:10px"><b>🗳️ 選舉結局</b>　${seen.size} / ${ENDINGS.length}</p>${grid(ENDINGS, seen)}
-    <p class="muted center" style="margin-top:18px"><b>🧑‍💼 總幹事結局</b>　${mseen.size} / ${MGR_ENDINGS.length}</p>${grid(MGR_ENDINGS, mseen)}`;
+  const has = e => (e.cat === 'mgr' ? mseen : seen).has(e.id);
+  const list = allEndings().filter(e => e.cat === galTab);
+  const count = c => { const l = allEndings().filter(e => e.cat === c); return `${l.filter(has).length}/${l.length}`; };
+  box.innerHTML = `
+    <p class="muted center" style="margin:8px 0 0">選舉結局 ${seen.size}/${ENDINGS.length}・總幹事結局 ${mseen.size}/${MGR_ENDINGS.length}</p>
+    <div class="tabs">${CATS.map(([c, n]) => `<button class="tab ${c === galTab ? 'on' : ''}" data-c="${c}">${n}<small>${count(c)}</small></button>`).join('')}</div>
+    <div class="gallery">${list.map(e => has(e)
+      ? `<button class="gcell" data-id="${e.id}"><span class="rtag ${RARE[e.rare][1]}">${RARE[e.rare][0]}</span><span class="e">${e.emoji}</span>${esc(e.title)}</button>`
+      : `<button class="gcell lock" data-id="${e.id}"><span class="rtag ${RARE[e.rare][1]}">${RARE[e.rare][0]}</span><span class="e">🔒</span>？？？</button>`).join('')}</div>
+    <button class="btn ghost" id="runsbtn">📜 我的選戰紀錄</button>`;
+  box.querySelectorAll('.tab').forEach(b => b.onclick = () => { galTab = b.dataset.c; renderGallery(box); });
+  box.querySelectorAll('.gcell').forEach(b => b.onclick = () => {
+    const e = allEndings().find(x => x.id === b.dataset.id);
+    if (has(e)) endingCard(e); else toast('還沒解鎖，再當幾次總幹事吧');
+  });
+  box.querySelector('#runsbtn').onclick = runsList;
+}
+
+// 疊在最上層的小視窗（遊戲中打開時，倒數會暫停）
+function layer(title, html) {
+  const m = document.createElement('div');
+  m.className = 'manual';
+  m.innerHTML = `<div class="mcard"><div class="mhead"><b>${title}</b><button class="mx" aria-label="關閉">✕</button></div><div class="mbody">${html}</div></div>`;
+  app.appendChild(m);
+  m.querySelector('.mx').onclick = () => m.remove();
+  m.onclick = ev => { if (ev.target === m) m.remove(); };
+  return m;
+}
+
+function endingCard(e) {
+  const R = loadRecords();
+  const rec = R.endings[e.id];
+  const run = rec && R.runs.find(r => r.id === rec.last);
+  const story = run ? (e.cat === 'mgr' ? run.mgrText : run.endingText) : '';
+  const m = layer(`${e.emoji} 結局小卡`, `
+    <div class="ecard">
+      <div class="big-e">${e.emoji}</div>
+      <h3>${esc(e.title)}</h3>
+      <span class="rtag ${RARE[e.rare][1]}">${RARE[e.rare][0]}</span>
+      <p class="quip">「${esc(e.quip)}」</p>
+      <div class="einfo"><b>🔓 怎麼拿到的</b><br>${esc(e.how)}</div>
+      <div class="einfo"><b>🗂️ 你的紀錄</b><br>${rec ? `第一次解鎖：${esc(rec.first)}・${esc(rec.boss)}<br>總共拿過 ${rec.count} 次` : '這是舊版玩到的結局，還沒有詳細紀錄。'}</div>
+      ${story ? `<button class="btn ghost" id="storybtn">📖 看完整故事</button><div class="einfo" id="story" hidden>${esc(story)}</div>` : ''}
+      ${run ? `<button class="btn" id="runbtn">📜 看那一局的檢討會</button>` : ''}
+    </div>`);
+  const sb = m.querySelector('#storybtn');
+  if (sb) sb.onclick = () => { m.querySelector('#story').hidden = false; sb.remove(); };
+  const rb = m.querySelector('#runbtn');
+  if (rb) rb.onclick = () => runDetail(run);
+}
+
+function runsList() {
+  const R = loadRecords();
+  const all = allEndings();
+  const em = id => (all.find(e => e.id === id) || {}).emoji || '';
+  const tt = id => (all.find(e => e.id === id) || {}).title || '';
+  const m = layer('📜 我的選戰紀錄', R.runs.length
+    ? `<p class="muted">最近 ${R.runs.length} 局，點一下可以看那一局的檢討會。</p>${R.runs.map(r => `
+      <button class="runrow" data-id="${r.id}">
+        <span>${esc(r.date)}・${esc(r.boss)}（${esc(r.label)}）</span>
+        <b>${r.win ? '🎉 當選' : '😢 落選'} ${r.s}% vs ${r.r}%</b>
+        <small>${em(r.ending)} ${esc(tt(r.ending))}　🧑‍💼 ${em(r.mgr)} ${esc(tt(r.mgr))}</small>
+      </button>`).join('')}`
+    : '<p class="muted">還沒有紀錄。玩完一局就會出現在這裡。</p>');
+  m.querySelectorAll('.runrow').forEach(b => b.onclick = () => runDetail(R.runs.find(r => String(r.id) === b.dataset.id)));
+}
+
+function runDetail(r) {
+  const all = allEndings();
+  const e = all.find(x => x.id === r.ending) || {}, mg = all.find(x => x.id === r.mgr) || {};
+  const row = (h, good) => `<div class="res ${good ? 'good' : 'bad'}" style="font-size:14px">${good ? '📈' : '📉'} ${esc(h.title)}（${weekLabel(h.week).month}月）</div>`;
+  layer(`📜 ${esc(r.date)} 那一局`, `
+    <p><b>${esc(r.boss)}</b>（${esc(r.label)}）vs ${esc(r.rival)}<br>${r.win ? '🎉 當選' : '😢 落選'}・得票 ${r.s}% vs ${r.r}%・投票率 ${r.turnout}%</p>
+    <div class="einfo"><b>${e.emoji || ''} ${esc(e.title || '')}</b><br>${esc(r.endingText)}</div>
+    <div class="einfo"><b>🧑‍💼 ${mg.emoji || ''} ${esc(mg.title || '')}</b><br>${esc(r.mgrText)}</div>
+    <h3>👍 幫最多的決定</h3>${r.review.best.length ? r.review.best.map(h => row(h, true)).join('') : '<p class="muted">沒有特別突出的。</p>'}
+    <h3>👎 傷最重的決定</h3>${r.review.worst.length ? r.review.worst.map(h => row(h, false)).join('') : '<p class="muted">沒有明顯的失誤。</p>'}
+    <h3>🗒️ 總評</h3>${r.review.notes.map(n => `<p>・${esc(n)}</p>`).join('')}
+    <h3>📋 這局的數據</h3>${r.stats.map(([a, k, v]) => `<div class="statline dark"><span>${a} ${k}</span><b>${v}</b></div>`).join('')}`);
 }
 
 function gallery(back) {
-  show(`
-    <h2 class="center">結局圖鑑</h2>
-    ${galleryHtml()}
-    <button class="btn" id="back">返回</button>
-  `);
+  show(`<h2 class="center">結局圖鑑</h2><div id="galbox"></div><button class="btn" id="back">返回</button>`);
+  renderGallery($('#galbox'));
   $('#back').onclick = back;
 }
 
@@ -818,7 +925,7 @@ function openMenu() {
     m.querySelector('#yes').onclick = () => { close(); clearGame(); titleScreen(); };
     m.querySelector('#no').onclick = close;
   };
-  const gal = () => { m.querySelector('.mbody').innerHTML = galleryHtml(); };
+  const gal = () => renderGallery(m.querySelector('.mbody'));
   m.innerHTML = `<div class="mcard">
     <div class="mhead"><b>☰ 選單</b><button id="mclose" aria-label="關閉">✕</button></div>
     <div class="mbody">

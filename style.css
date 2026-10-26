@@ -232,3 +232,28 @@ input.name { width: 100%; border: 2px solid #ccc; border-radius: 12px; padding: 
 /* 首頁的新版提醒 */
 .news { text-align: left; background: #fff; border: 2px solid #e0a526; border-radius: 14px; padding: 10px 14px; margin: 14px auto 0; max-width: 340px; font-size: 14px; line-height: 1.7; }
 .news b { display: block; margin-bottom: 2px; }
+
+/* 圖鑑分頁、稀有度、結局小卡 */
+.tabs { display: flex; gap: 6px; overflow-x: auto; padding: 10px 0 4px; -webkit-overflow-scrolling: touch; }
+.tab { flex: none; border: 1.5px solid #ddd; background: #fff; border-radius: 999px; padding: 6px 12px; font-size: 14px; color: var(--ink); }
+.tab small { margin-left: 4px; color: var(--muted); font-size: 11px; }
+.tab.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+.tab.on small { color: #ddd; }
+.gcell { position: relative; background: #fff; border: 0; border-radius: 12px; padding: 18px 8px 10px; font-size: 14px; text-align: center; min-height: 96px; color: var(--ink); width: 100%; }
+.gcell.lock { background: #e9e6e1; color: #aaa; }
+.gcell .e { font-size: 30px; display: block; }
+.rtag { position: absolute; top: 6px; right: 6px; font-size: 10px; padding: 1px 6px; border-radius: 999px; }
+.ecard .rtag { position: static; display: inline-block; font-size: 12px; padding: 2px 10px; }
+.r-common { background: #eceae6; color: #777; }
+.r-rare { background: #dbe7ff; color: #2d5bbf; }
+.r-legend { background: #fff0c2; color: #9a6a00; }
+.gcell.lock .rtag { opacity: .7; }
+.ecard { text-align: center; }
+.ecard .big-e { font-size: 56px; margin-top: 8px; }
+.ecard h3 { margin: 4px 0 6px; }
+.ecard .quip { font-size: 18px; margin: 14px 0; color: #5a3b8c; }
+.einfo { text-align: left; background: #fff; border-radius: 12px; padding: 10px 12px; margin: 8px 0; font-size: 14px; line-height: 1.7; }
+.runrow { display: block; width: 100%; text-align: left; background: #fff; border: 1.5px solid #e6e2dc; border-radius: 12px; padding: 10px 12px; margin: 8px 0; font-size: 14px; line-height: 1.6; color: var(--ink); }
+.runrow b { display: block; }
+.runrow small { color: var(--muted); }
+.statline.dark { border-bottom-color: #e2ddd5; }
