@@ -1,7 +1,17 @@
 // 扁平風圓形頭像（圓底、圓臉、西裝）
 let avatarSeq = 0;
 
+// 有插畫就用插畫（art/*.webp），裝在一樣的圓形 SVG 裡，原本的尺寸設定都能沿用
 function avatar(o) {
+  if (!o.art) return avatarSvg(o);
+  const id = 'av' + (avatarSeq++);
+  const src = 'art/' + o.art + (o.art.startsWith('npc_') ? '' : '_' + (o.mood || 'smile')) + '.webp';
+  return `<svg viewBox="0 0 120 120" aria-hidden="true"><defs><clipPath id="${id}"><circle cx="60" cy="60" r="58"/></clipPath></defs>`
+    + `<circle cx="60" cy="60" r="58" fill="#f6efe0"/><image href="${src}" x="2" y="2" width="116" height="116" clip-path="url(#${id})" preserveAspectRatio="xMidYMid slice"/></svg>`;
+}
+
+// 扁平風 SVG 頭像（沒有插畫時用，分享截圖也用這個當備用）
+function avatarSvg(o) {
   const id = 'av' + (avatarSeq++);
   const skin = o.skin || '#f6d7bd', skinD = '#e8c2a3', ink = '#2a2a2a';
   const hc = o.hairColor || '#22252c';

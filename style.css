@@ -321,3 +321,10 @@ input.name { width: 100%; border: 2px solid #ccc; border-radius: 12px; padding: 
 .vn { display: block; text-align: right; color: #aaa; font-size: 12px; font-variant-numeric: tabular-nums; }
 .ticker { margin: 12px auto 0; max-width: 340px; background: rgba(255,255,255,.08); border-radius: 10px; padding: 10px 12px; color: #fff; font-size: 14px; min-height: 42px; }
 .ticker.flash { animation: pop .3s; }
+
+/* 語言切換 */
+.langbar { display: flex; justify-content: center; gap: 6px; margin-bottom: 10px; }
+.langbar button { background: transparent; border: 1.5px solid var(--line); border-radius: 999px; padding: 4px 12px; font: inherit; font-size: 13px; color: var(--muted); }
+.langbar button.on { border-color: var(--ink); color: var(--ink); background: #fff7e3; }
+html[lang="en"] .title h1 { font-size: 42px; white-space: nowrap; }
+html[lang="en"] .title .tag { font-size: 15px; }

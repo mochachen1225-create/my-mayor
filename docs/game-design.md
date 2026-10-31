@@ -246,6 +246,10 @@
 | `js/avatar.js` | SVG 頭像產生器（髮型、表情、服裝） |
 | `js/data.js` | 老闆、配角、事件、行程、座談主題、結局、脆留言、掃街角色 |
 | `js/fx.js` | 音效、震動、彩帶、飄字（只管手感） |
+| `js/i18n.js` | 語言判斷、`T()` 翻譯函式、資料整批翻譯 |
+| `js/i18n.en.js` | 英文對照表（中文原文 → English） |
+| `art/` | 角色插畫（WebP，256×256） |
+| `scripts/build-itch.sh` | 打包 itch.io 用的 zip |
 | `js/engine.js` | 遊戲邏輯（不碰畫面，可用來模擬平衡） |
 | `js/game.js` | 畫面與流程、手冊、選單、分享截圖 |
 | `og.png` | 連結預覽圖 |

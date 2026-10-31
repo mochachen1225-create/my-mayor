@@ -37,20 +37,20 @@ function makeRng(seed) {
 }
 
 function newGame(type, gender, name, rng = Math.random) {
-  const T = TYPES[type];
+  const TY = TYPES[type];
   // 主要對手一定是現任市長；抽到現任的話，對手從其他挑戰者隨機選一位
   const rivalType = type === 'D' ? ['A', 'B', 'C', 'E', 'F'][Math.floor(rng() * 5)] : 'D';
   const rivalGender = rng() < 0.5 ? 'm' : 'f';
   return {
-    rng, type, gender, name: name || T.names[gender],
-    he: gender === 'f' ? '她' : '他',
+    rng, type, gender, name: name || TY.names[gender],
+    he: gender === 'f' ? T('她') : T('他'),
     rivalType, rivalGender, rivalName: TYPES[rivalType].names[rivalGender],
     thirdName: (() => { const ts = Object.keys(TYPES).filter(t => t !== type && t !== rivalType); const t = ts[Math.floor(rng() * ts.length)]; return TYPES[t].names[rng() < 0.5 ? 'm' : 'f']; })(),
     num: 1 + Math.floor(rng() * 4),
     week: 1, clock: 8,
-    s: T.start.s, r: T.start.r,
-    buzz: 40, fav: 50, money: T.start.money, trust: T.start.trust,
-    liver: 80, con: 60, team: 70, conf: 60, show: 0, showMax: 0, self: 0, pocket: 0, net: T.start.net, favor: 0,
+    s: TY.start.s, r: TY.start.r,
+    buzz: 40, fav: 50, money: TY.start.money, trust: TY.start.trust,
+    liver: 80, con: 60, team: 70, conf: 60, show: 0, showMax: 0, self: 0, pocket: 0, net: TY.start.net, favor: 0,
     f: { idle: 0 }, idleStreak: 0, streak: 0, maxStreak: 0, miniTier: null,
     used: new Set(), pending: [], lastPoll: null, swings: [], history: []
   };
@@ -71,11 +71,14 @@ function weekLabel(w) {
 
 function fill(g, text) {
   if (!text) return '';
-  const incNote = g.type === 'D' ? '更糟的是，影片裡還有市府宣傳片的畫面，被質疑公器私用。' : '';
+  const incNote = g.type === 'D' ? T('更糟的是，影片裡還有市府宣傳片的畫面，被質疑公器私用。') : '';
   return text
     .replace(/\{boss\}/g, g.name)
     .replace(/\{he\}/g, g.he)
-    .replace(/\{rival\}/g, (g.rivalType === 'D' ? '現任市長 ' : '') + g.rivalName)
+    .replace(/\{He\}/g, g.gender === 'f' ? 'She' : 'He') // 英文用
+    .replace(/\{him\}/g, g.gender === 'f' ? 'her' : 'him')
+    .replace(/\{his\}/g, g.gender === 'f' ? 'her' : 'his')
+    .replace(/\{rival\}/g, (g.rivalType === 'D' ? `${T('現任市長')} ` : '') + g.rivalName)
     .replace(/\{party\}/g, TYPES[g.type].party)
     .replace(/\{rparty\}/g, TYPES[g.rivalType].party)
     .replace(/\{num\}/g, g.num)
@@ -151,8 +154,8 @@ function policyEvent(g) {
   for (let i = opts.length - 1; i > 0; i--) { const j = Math.floor(g.rng() * (i + 1)); [opts[i], opts[j]] = [opts[j], opts[i]]; }
   // 支票開越多，諂媚政策越容易被打「政策買票」
   const p = g.f.promise || 0;
-  const withRisk = opts.map(o => o.fx.promise && p >= 2 ? { ...o, risk: { p: Math.min(0.65, 0.18 * (p - 1)), fx: { fav: -4, s: -0.5 }, r: '「又一張支票？」名嘴說這是政策買票。' } } : o);
-  return { id: 'policy', kind: 'policy', who: 'staff', title: '本月政見發表', text: '今天要發表一個新政見。副總幹事問：「總幹事，要討好選民，還是說真話？」', opts: withRisk };
+  const withRisk = opts.map(o => o.fx.promise && p >= 2 ? { ...o, risk: { p: Math.min(0.65, 0.18 * (p - 1)), fx: { fav: -4, s: -0.5 }, r: T('「又一張支票？」名嘴說這是政策買票。') } } : o);
+  return { id: 'policy', kind: 'policy', who: 'staff', title: T('本月政見發表'), text: T('今天要發表一個新政見。副總幹事問：「總幹事，要討好選民，還是說真話？」'), opts: withRisk };
 }
 
 // 需要臨時產生內容的事件
@@ -162,13 +165,13 @@ function prepare(g, ev) {
   const right = g.rng() < 0.75; // 氣象署有七成五會對
   const storm = recOff ? right : !right;
   const good = { fav: 4, s: 0.6 }, bad = { fav: -6, s: -1, buzz: 6 };
-  const offRes = storm ? ['晚上風雨交加，大家稱讚果斷。', good] : ['結果出大太陽，「月亮颱」迷因洗版。', bad];
-  const onRes = storm ? ['上班尖峰暴雨，滿街翻傘照片。', bad] : ['風雨普通，沒人抱怨。', { fav: 2 }];
-  const off = { t: recOff ? '✅ 聽氣象署的：放假' : '🏖️ 不管建議，放假！', fx: {}, ok: offRes[1], r: offRes[0] };
-  const on = { t: recOff ? '🏢 不管建議，照常上班上課' : '✅ 聽氣象署的：照常上班上課', fx: {}, ok: onRes[1], r: onRes[0] };
-  const rec = recOff ? '風雨可能達標，建議放假' : '風雨應該不會達標，建議不放';
+  const offRes = storm ? [T('晚上風雨交加，大家稱讚果斷。'), good] : [T('結果出大太陽，「月亮颱」迷因洗版。'), bad];
+  const onRes = storm ? [T('上班尖峰暴雨，滿街翻傘照片。'), bad] : [T('風雨普通，沒人抱怨。'), { fav: 2 }];
+  const off = { t: recOff ? T('✅ 聽氣象署的：放假') : T('🏖️ 不管建議，放假！'), fx: {}, ok: offRes[1], r: offRes[0] };
+  const on = { t: recOff ? T('🏢 不管建議，照常上班上課') : T('✅ 聽氣象署的：照常上班上課'), fx: {}, ok: onRes[1], r: onRes[0] };
+  const rec = recOff ? T('風雨可能達標，建議放假') : T('風雨應該不會達標，建議不放');
   return { ...ev, text: ev.text.replace('{rec}', rec), opts: [off, on,
-    { t: '🧥 暫停競選，坐鎮防災中心', fx: { fav: 3, buzz: -3, s: 0.4, liver: -5 }, r: '穩重形象加分，只是曝光少了。' }] };
+    { t: T('🧥 暫停競選，坐鎮防災中心'), fx: { fav: 3, buzz: -3, s: 0.4, liver: -5 }, r: T('穩重形象加分，只是曝光少了。') }] };
 }
 
 // 戰情室行程板：每次給 6 個能做的事，「休息」一定在
@@ -282,11 +285,11 @@ function choose(g, ev, opt, isBuild = false) {
   else if (exec.dirtyCheck) {
     if (g.f.dirty1 || g.f.dirty2 || g.f.foreign) {
       applyFx(g, { fav: -6, s: -1.5 }, delta);
-      lines.push({ kind: 'bad', text: fill(g, '對手當場拿出捐款名單，{boss}愣在台上。') });
+      lines.push({ kind: 'bad', text: fill(g, T('對手當場拿出捐款名單，{boss}愣在台上。')) });
       failed = true;
     } else {
       applyFx(g, { fav: 3, s: 0.5 }, delta);
-      lines.push({ kind: 'good', text: '對手拿不出證據，反而被追問。' });
+      lines.push({ kind: 'good', text: T('對手拿不出證據，反而被追問。') });
     }
   } else if (exec.risk && (bad = rollRisk(g, exec))) {
     applyFx(g, bad.fx, delta);
@@ -323,7 +326,7 @@ function choose(g, ev, opt, isBuild = false) {
       failed = true;
     } else if (exec.img.includes(want)) {
       applyFx(g, { fav: 3, s: 0.3 }, delta);
-      lines.push({ kind: 'good', text: '🎭 形象加分：選民開始覺得' + g.name + '很「' + want + '」。' });
+      lines.push({ kind: 'good', text: T('🎭 形象加分：選民開始覺得{0}很「{1}」。', g.name, want) });
     }
   }
   if (exec.img) { g.show += exec.risk ? 15 : 12; g.showMax = Math.max(g.showMax, g.show); }
@@ -360,7 +363,7 @@ function choose(g, ev, opt, isBuild = false) {
     g.maxStreak = Math.max(g.maxStreak || 0, g.streak);
     if (COMBO_AT.includes(g.streak)) {
       applyFx(g, { team: 2, conf: 2 }, delta);
-      lines.push({ kind: 'combo', text: `🔥 ${g.streak} 連擊！連續 ${g.streak} 次處理得漂亮，戰情室士氣大振` });
+      lines.push({ kind: 'combo', text: `${T('🔥 {0} 連擊！連續 {1} 次處理得漂亮，戰情室士氣大振', g.streak, g.streak)}` });
     }
   } else g.streak = 0;
   advanceClock(g, isBuild ? 3 : 1.5 + g.rng() * 2, ev && ev.late, delta);
@@ -375,7 +378,7 @@ function choose(g, ev, opt, isBuild = false) {
 // risk 可以是一個壞結果，也可以是好幾個（各有機率）；回傳抽中的壞結果，沒抽中就是 null
 const COMBO_AT = [3, 5, 8, 12, 16];
 const MINI_LINES = {
-  sweep: ['攤販都在忙，只握到幾隻手，還被魚販潑到水。', '握了一圈，菜市場阿姨說會考慮看看。', '整條市場都在喊{boss}的名字，阿嬤還塞了一把青菜！']
+  sweep: [T('攤販都在忙，只握到幾隻手，還被魚販潑到水。'), T('握了一圈，菜市場阿姨說會考慮看看。'), T('整條市場都在喊{boss}的名字，阿嬤還塞了一把青菜！')]
 };
 
 function rollRisk(g, o) {
@@ -408,10 +411,10 @@ function timeout(g, ev, isBuild = false) {
   const fx = isBuild ? { trust: -3, buzz: -2, team: -4, conf: -3 } : { trust: -3 - g.idleStreak, fav: -3, s: -0.6, buzz: -2, team: -5, conf: -4 };
   applyFx(g, fx, delta);
   advanceClock(g, 1, ev && ev.late, delta);
-  logSwing(g, '已讀不回：' + (isBuild ? '成就老闆企劃' : fill(g, ev.title)), delta);
-  const q = '接下來呢' + '？'.repeat(Math.min(g.idleStreak, 4));
-  const lines = [{ kind: 'boss', text: g.idleStreak >= 3 ? `${q}……你還在嗎？` : q }];
-  if (!isBuild) lines.push({ kind: 'bad', text: '媒體寫：「' + g.name + '陣營已讀不回。」' });
+  logSwing(g, T('已讀不回：') + (isBuild ? T('成就老闆企劃') : fill(g, ev.title)), delta);
+  const q = T('接下來呢') + T('？').repeat(Math.min(g.idleStreak, 4));
+  const lines = [{ kind: 'boss', text: g.idleStreak >= 3 ? `${T('{0}……你還在嗎？', q)}` : q }];
+  if (!isBuild) lines.push({ kind: 'bad', text: T('媒體寫：「') + g.name + T('陣營已讀不回。」') });
   return { lines, delta, idle: g.idleStreak };
 }
 
@@ -436,9 +439,9 @@ function clockText(g) {
 // 週末結算
 function endWeek(g) {
   const notes = [];
-  const T = g.type;
+  const TY = g.type;
   g.s += ((g.fav - 50) / 25) * (g.buzz / 100) * 0.8;
-  if (T === 'D') g.s -= 0.4;
+  if (TY === 'D') g.s -= 0.4;
   // 對手也在拚：每週一則對手動態
   g.rPrev = g.r;
   const news = [];
@@ -468,15 +471,15 @@ function endWeek(g) {
     g.s += 0.15 * Math.min(g.f.nerve || 0, 4); // 逆風政策：選民慢慢理解
     g.s -= 0.06 * Math.max(0, (g.f.promise || 0) - 2); // 支票開太多：選民開始懷疑做不做得到
   }
-  g.money += { A: 3, B: g.s >= g.r - 5 ? 4 : 1, C: 6, D: 4, E: 3, F: 2 }[T];
+  g.money += { A: 3, B: g.s >= g.r - 5 ? 4 : 1, C: 6, D: 4, E: 3, F: 2 }[TY];
   g.liver += 4; // 週末補眠（現任事情比較多，自然比較累）
   // 睡眠
   const sleep = Math.max(0, 32 - g.clock);
-  if (sleep < 3) { g.liver -= 3; g.team -= 3; notes.push(`你昨晚只睡了 ${sleep.toFixed(1)} 小時，整個團隊都很累。`); }
-  else if (sleep < 6) notes.push(`你昨晚睡了 ${sleep.toFixed(1)} 小時。`);
+  if (sleep < 3) { g.liver -= 3; g.team -= 3; notes.push(`${T('你昨晚只睡了 {0} 小時，整個團隊都很累。', sleep.toFixed(1))}`); }
+  else if (sleep < 6) notes.push(`${T('你昨晚睡了 {0} 小時。', sleep.toFixed(1))}`);
   if (g.liver <= 0 && !g.f.hospital) {
     g.f.hospital = 1; g.liver = 20;
-    notes.push('你在戰情室昏倒，被送進急診。你還在病床上用手機回訊息。');
+    notes.push(T('你在戰情室昏倒，被送進急診。你還在病床上用手機回訊息。'));
   }
   // 做壞事一定會被抓：分批捐款三週後爆
   if (g.f.dirty1 && !g.f.exposed && g.week >= g.f.dirty1At + 3) {
@@ -492,97 +495,97 @@ function endWeek(g) {
 // 選民和市場的反應（沒有專屬文字時用）
 const MARKET = {
   good: [
-    '菜市場阿姨說：「這個我知道，電視上有看到！」',
-    '網友留言：「這個候選人好像真的有在做事。」',
-    '脆上有人發文：「{boss}這招不錯。」愛心比酸言酸語多。',
-    '計程車司機跟乘客聊起{boss}，語氣是正面的。',
-    '里長群組轉傳了相關新聞，下面一排讚。',
-    '年輕人在脆上分享，留言說「有被打到」。',
-    '早餐店老闆說：「這個人我有印象，不錯。」',
-    '長輩群組轉了三次，還配了一張「讚」的圖。'
+    T('菜市場阿姨說：「這個我知道，電視上有看到！」'),
+    T('網友留言：「這個候選人好像真的有在做事。」'),
+    T('脆上有人發文：「{boss}這招不錯。」愛心比酸言酸語多。'),
+    T('計程車司機跟乘客聊起{boss}，語氣是正面的。'),
+    T('里長群組轉傳了相關新聞，下面一排讚。'),
+    T('年輕人在脆上分享，留言說「有被打到」。'),
+    T('早餐店老闆說：「這個人我有印象，不錯。」'),
+    T('長輩群組轉了三次，還配了一張「讚」的圖。')
   ],
   meh: [
-    '新聞只有一小則，沒什麼人討論。',
-    '網友反應普通：「喔，然後呢？」',
-    '社群上有人看到，但很快就被別的新聞蓋過去。',
-    '菜市場阿姨說：「誰？沒聽過。」',
-    '計程車司機說：「選舉嘛，大家都在做一樣的事。」'
+    T('新聞只有一小則，沒什麼人討論。'),
+    T('網友反應普通：「喔，然後呢？」'),
+    T('社群上有人看到，但很快就被別的新聞蓋過去。'),
+    T('菜市場阿姨說：「誰？沒聽過。」'),
+    T('計程車司機說：「選舉嘛，大家都在做一樣的事。」')
   ],
   bad: [
-    '網友留言：「又在作秀。」',
-    '脆上一整排酸言酸語：「這也能當市長？」',
-    '菜市場阿姨搖頭：「這個人不行啦。」',
-    '長輩群組開始轉傳批評的貼文。',
-    '計程車司機說：「這個我不會投。」'
+    T('網友留言：「又在作秀。」'),
+    T('脆上一整排酸言酸語：「這也能當市長？」'),
+    T('菜市場阿姨搖頭：「這個人不行啦。」'),
+    T('長輩群組開始轉傳批評的貼文。'),
+    T('計程車司機說：「這個我不會投。」')
   ]
 };
 
 const COUNTER = [
-  { t: '{rival}陣營回擊：開記者會說你們「只會抹黑」，還拿出你們以前的發言對照。', s: -0.6 },
-  { t: '{rival}的側翼連夜做了一整套梗圖反擊你們。', s: -0.5 },
-  { t: '{rival}在政論節目上點名你們，說「選不贏就亂咬」。', s: -0.5, r: 0.2 },
-  { t: '{rival}陣營放出你們志工的對話截圖，說是「網軍」。', s: -0.7 }
+  { t: T('{rival}陣營回擊：開記者會說你們「只會抹黑」，還拿出你們以前的發言對照。'), s: -0.6 },
+  { t: T('{rival}的側翼連夜做了一整套梗圖反擊你們。'), s: -0.5 },
+  { t: T('{rival}在政論節目上點名你們，說「選不贏就亂咬」。'), s: -0.5, r: 0.2 },
+  { t: T('{rival}陣營放出你們志工的對話截圖，說是「網軍」。'), s: -0.7 }
 ];
 const COPYCAT = [
-  { t: '{rival}看到你們辦得熱鬧，也跟著辦了一場更大的。', r: 0.5 },
-  { t: '{rival}連夜在全市加掛兩倍看板，跟你們拚曝光。', r: 0.4 },
-  { t: '{rival}也找了舞團、也辦了握手會，網友說「抄很大」。', r: 0.3 }
+  { t: T('{rival}看到你們辦得熱鬧，也跟著辦了一場更大的。'), r: 0.5 },
+  { t: T('{rival}連夜在全市加掛兩倍看板，跟你們拚曝光。'), r: 0.4 },
+  { t: T('{rival}也找了舞團、也辦了握手會，網友說「抄很大」。'), r: 0.3 }
 ];
 
 const RIVAL_NEWS = [
-  { t: '{rival}辦了萬人造勢晚會，現場很熱。', r: 1.2 },
-  { t: '{rival}掃街拜票跑了一整週。', r: 0.7 },
-  { t: '{rival}上政論節目被問倒，片段被瘋傳。', r: -0.6 },
-  { t: '{rival}陣營傳出內鬨，副總幹事出走。', r: -0.8 },
-  { t: '{rival}推出新政見，反應普通。', r: 0.3 },
-  { t: '{rival}的競選廣告開始大量放送。', r: 0.9 },
-  { t: '{rival}失言：「年輕人不懂政治。」', r: -0.9 },
-  { t: '{rival}請到知名企業家站台。', r: 1.0 },
-  { t: '{rival}這週很低調，只跑了幾場座談。', r: 0.2 },
-  { t: '{rival}的小編在留言區跟網友吵架。', r: -0.5 },
-  { t: '{rival}去長青據點陪長輩跳廣場舞。', r: 0.6 },
-  { t: '{rival}被爆選舉經費來源不明。', r: -1.2 },
-  { t: '{rival}抱著小狗拍了一支廣告，點閱破百萬。', r: 0.8 },
-  { t: '{rival}的家人在臉書幫忙拉票，留言區吵翻。', r: -0.3 }
+  { t: T('{rival}辦了萬人造勢晚會，現場很熱。'), r: 1.2 },
+  { t: T('{rival}掃街拜票跑了一整週。'), r: 0.7 },
+  { t: T('{rival}上政論節目被問倒，片段被瘋傳。'), r: -0.6 },
+  { t: T('{rival}陣營傳出內鬨，副總幹事出走。'), r: -0.8 },
+  { t: T('{rival}推出新政見，反應普通。'), r: 0.3 },
+  { t: T('{rival}的競選廣告開始大量放送。'), r: 0.9 },
+  { t: T('{rival}失言：「年輕人不懂政治。」'), r: -0.9 },
+  { t: T('{rival}請到知名企業家站台。'), r: 1.0 },
+  { t: T('{rival}這週很低調，只跑了幾場座談。'), r: 0.2 },
+  { t: T('{rival}的小編在留言區跟網友吵架。'), r: -0.5 },
+  { t: T('{rival}去長青據點陪長輩跳廣場舞。'), r: 0.6 },
+  { t: T('{rival}被爆選舉經費來源不明。'), r: -1.2 },
+  { t: T('{rival}抱著小狗拍了一支廣告，點閱破百萬。'), r: 0.8 },
+  { t: T('{rival}的家人在臉書幫忙拉票，留言區吵翻。'), r: -0.3 }
 ];
 
 const THIRD_NEWS = [
-  { t: '其他候選人：{third}在路口跳舞拜票，聲量暴增但沒人當真。' },
-  { t: '其他候選人：{third}說要「把 N City 變成全世界最好的城市」，被做成梗圖。' },
-  { t: '其他候選人：{third}宣布「不排除退選」，棄保話題開始發酵。', r: 0.4 },
-  { t: '其他候選人：{third}痛批兩大陣營，搶走了一點你的票。', s: -0.3 },
-  { t: '其他候選人：{third}的看板被颱風吹走了。' }
+  { t: T('其他候選人：{third}在路口跳舞拜票，聲量暴增但沒人當真。') },
+  { t: T('其他候選人：{third}說要「把 N City 變成全世界最好的城市」，被做成梗圖。') },
+  { t: T('其他候選人：{third}宣布「不排除退選」，棄保話題開始發酵。'), r: 0.4 },
+  { t: T('其他候選人：{third}痛批兩大陣營，搶走了一點你的票。'), s: -0.3 },
+  { t: T('其他候選人：{third}的看板被颱風吹走了。') }
 ];
 
 const SHOW_FAIL = [
-  '網友留言：「最近怎麼天天都在演親民？」這次沒人買單。',
-  '脆上有人整理了{boss}這個月的「親民影片合集」，標題是〈演技大賞〉。',
-  '名嘴說：「包裝得太用力了，看得出來是幕僚設計的。」',
-  '長輩群組轉傳：「選前才這麼勤勞。」'
+  T('網友留言：「最近怎麼天天都在演親民？」這次沒人買單。'),
+  T('脆上有人整理了{boss}這個月的「親民影片合集」，標題是〈演技大賞〉。'),
+  T('名嘴說：「包裝得太用力了，看得出來是幕僚設計的。」'),
+  T('長輩群組轉傳：「選前才這麼勤勞。」')
 ];
 
 const SELF_CAUGHT = [
-  '{boss}看到你的手機跳出一則訊息：「仲介費已入帳。」{boss}什麼都沒說，但眼神變了。',
-  '副總幹事在茶水間小聲說：「總幹事最近好像很忙，忙的都不是選舉。」話傳到了{boss}耳裡。',
-  '{boss}問你：「你最近是不是在接別的案子？」你說沒有。{boss}笑了一下。',
-  '記者打電話來問：「總幹事是不是有在幫廠商牽線？」{boss}剛好在旁邊。'
+  T('{boss}看到你的手機跳出一則訊息：「仲介費已入帳。」{boss}什麼都沒說，但眼神變了。'),
+  T('副總幹事在茶水間小聲說：「總幹事最近好像很忙，忙的都不是選舉。」話傳到了{boss}耳裡。'),
+  T('{boss}問你：「你最近是不是在接別的案子？」你說沒有。{boss}笑了一下。'),
+  T('記者打電話來問：「總幹事是不是有在幫廠商牽線？」{boss}剛好在旁邊。')
 ];
 
 const CROWD_FAIL = [
-  '現場只來了 7 個人，其中 3 個是記者，2 個是你們的志工。',
-  '空蕩蕩的椅子被對手拍下來，配文：「民氣在哪裡？」',
-  '來的人比工作人員少。{boss}還是講完了全場。',
-  '主持人一直喊「後面的朋友」，但後面沒有朋友。'
+  T('現場只來了 7 個人，其中 3 個是記者，2 個是你們的志工。'),
+  T('空蕩蕩的椅子被對手拍下來，配文：「民氣在哪裡？」'),
+  T('來的人比工作人員少。{boss}還是講完了全場。'),
+  T('主持人一直喊「後面的朋友」，但後面沒有朋友。')
 ];
 
 const EXPOSED = {
   id: 'exposed', kind: 'crisis', who: 'reporter', timer: 15,
-  title: '分批捐款被踢爆了',
-  text: '記者查到：捐款名單裡，有幾十位建設公司員工在同一天捐了一樣的金額。',
+  title: T('分批捐款被踢爆了'),
+  text: T('記者查到：捐款名單裡，有幾十位建設公司員工在同一天捐了一樣的金額。'),
   opts: [
-    { t: '🙇 認錯、全數退款', fx: { fav: -4, s: -1, money: -15, con: 6 }, r: '傷害控制住了，但很痛。' },
-    { t: '🙄 「都是員工自發的」', fx: { fav: -8, s: -1.8 }, r: '沒有人相信。' },
-    { t: '🫵 {boss}說「是幕僚處理的」', fx: { fav: -3, s: -0.8, trust: -12 }, r: '鏡頭帶到了你。' }
+    { t: T('🙇 認錯、全數退款'), fx: { fav: -4, s: -1, money: -15, con: 6 }, r: T('傷害控制住了，但很痛。') },
+    { t: T('🙄 「都是員工自發的」'), fx: { fav: -8, s: -1.8 }, r: T('沒有人相信。') },
+    { t: T('🫵 {boss}說「是幕僚處理的」'), fx: { fav: -3, s: -0.8, trust: -12 }, r: T('鏡頭帶到了你。') }
   ]
 };
 
@@ -633,16 +636,16 @@ function resolveClose(g, res, choice) {
   const m = Math.abs(res.margin);
   const lines = [];
   if (res.win) {
-    if (choice === 'accept') { g.f.graceWin = 1; lines.push('驗票結果出爐：維持原判，' + g.name + '當選。你的「歡迎驗票」被稱讚很有風度。'); }
-    else if (choice === 'fight') { g.f.siege = 1; lines.push('兩邊支持者在選委會外面對嗆到半夜，驗票結果還是維持原判，但畫面很難看。'); }
-    else { lines.push('支持者冷靜回家。驗票結果維持原判，' + g.name + '險勝。'); }
+    if (choice === 'accept') { g.f.graceWin = 1; lines.push(T('驗票結果出爐：維持原判，') + g.name + T('當選。你的「歡迎驗票」被稱讚很有風度。')); }
+    else if (choice === 'fight') { g.f.siege = 1; lines.push(T('兩邊支持者在選委會外面對嗆到半夜，驗票結果還是維持原判，但畫面很難看。')); }
+    else { lines.push(T('支持者冷靜回家。驗票結果維持原判，') + g.name + T('險勝。')); }
   } else {
     if (choice === 'recount') {
       g.f.recounted = 1;
-      if (g.rng() < 0.3 * (1 - m)) { res.win = true; g.f.flipped = 1; lines.push('驗票驗出一整箱誤判的票！結果翻盤，' + g.name + '當選！'); }
-      else lines.push('驗了三個星期，結果維持原判。');
-    } else if (choice === 'protest') { g.f.siege = 1; lines.push('支持者包圍選委會三天三夜，結果沒有改變，還多了一堆罰單。'); }
-    else { g.f.graceful = 1; lines.push(g.name + '打電話恭喜對手，敗選感言被說是「這次選舉最好看的一段」。'); }
+      if (g.rng() < 0.3 * (1 - m)) { res.win = true; g.f.flipped = 1; lines.push(T('驗票驗出一整箱誤判的票！結果翻盤，') + g.name + T('當選！')); }
+      else lines.push(T('驗了三個星期，結果維持原判。'));
+    } else if (choice === 'protest') { g.f.siege = 1; lines.push(T('支持者包圍選委會三天三夜，結果沒有改變，還多了一堆罰單。')); }
+    else { g.f.graceful = 1; lines.push(g.name + T('打電話恭喜對手，敗選感言被說是「這次選舉最好看的一段」。')); }
   }
   decide(g, res);
   return lines;
@@ -653,23 +656,23 @@ function decide(g, res) {
   const ctx = { type: g.type, win: res.win, margin, trust: g.trust, con: g.con, net: g.net, f: g.f, self: g.self, pocket: g.pocket, liver: g.liver, team: g.team };
   const ending = ENDINGS.find(e => e.when(ctx));
   const mgr = MGR_ENDINGS.find(e => e.when(ctx));
-  const resultLine = res.win ? fill(g, '好消息是，{boss}當選了。') : fill(g, '{boss}落選了。');
+  const resultLine = res.win ? fill(g, T('好消息是，{boss}當選了。')) : fill(g, T('{boss}落選了。'));
   const hist = g.history.slice();
   const best = hist.filter(h => h.v > 0).sort((a, b) => b.v - a.v).slice(0, 3);
   const worst = hist.filter(h => h.v < 0).sort((a, b) => a.v - b.v).slice(0, 3);
   const notes = [];
-  if (g.fav < 50) notes.push('好感度一直不夠高，聲量越大反而越扣分。');
-  else if (g.buzz < 45) notes.push('好感度不錯，但曝光太少，很多選民根本不認識{boss}。');
-  if ((g.f.idle || 0) >= 3) notes.push('你擺爛了 ' + g.f.idle + ' 次，老闆和選民都看在眼裡。');
-  if ((g.f.defied || 0) >= 5) notes.push('{boss}有 ' + g.f.defied + ' 次沒照你的話做，信任要顧好。');
-  if (g.f.complacent) notes.push('民調領先，支持者以為穩贏沒出門，投票率只有 ' + res.turnout + '%。');
-  if (g.f.took) notes.push('碰了不該碰的錢，就算選上也會出事。');
-  if ((g.f.promise || 0) >= 6) notes.push('開了太多討好的支票，名嘴和財政局都在算帳。');
-  if ((g.f.nerve || 0) >= 3) notes.push('推了不少逆風政策，被罵，但也被記住了。');
-  if (g.f.smear) notes.push('用了奧步。就算一時有效，選後官司也跑不掉。');
-  if (g.showMax >= 70) notes.push('形象包裝做得太密集，選民開始覺得{boss}在作秀。');
-  if (g.f.caught >= 2) notes.push('你替自己撈的事被老闆發現了 ' + g.f.caught + ' 次。');
-  if (!notes.length) notes.push(margin > 0 ? '整場選戰打得很穩，好感和聲量都夠。' : '差一點點。下次多衝一點曝光，也許就翻過去了。');
+  if (g.fav < 50) notes.push(T('好感度一直不夠高，聲量越大反而越扣分。'));
+  else if (g.buzz < 45) notes.push(T('好感度不錯，但曝光太少，很多選民根本不認識{boss}。'));
+  if ((g.f.idle || 0) >= 3) notes.push(`${T('你擺爛了')} ` + g.f.idle + ` ${T('次，老闆和選民都看在眼裡。')}`);
+  if ((g.f.defied || 0) >= 5) notes.push(`${T('{boss}有')} ` + g.f.defied + ` ${T('次沒照你的話做，信任要顧好。')}`);
+  if (g.f.complacent) notes.push(`${T('民調領先，支持者以為穩贏沒出門，投票率只有')} ` + res.turnout + '%。');
+  if (g.f.took) notes.push(T('碰了不該碰的錢，就算選上也會出事。'));
+  if ((g.f.promise || 0) >= 6) notes.push(T('開了太多討好的支票，名嘴和財政局都在算帳。'));
+  if ((g.f.nerve || 0) >= 3) notes.push(T('推了不少逆風政策，被罵，但也被記住了。'));
+  if (g.f.smear) notes.push(T('用了奧步。就算一時有效，選後官司也跑不掉。'));
+  if (g.showMax >= 70) notes.push(T('形象包裝做得太密集，選民開始覺得{boss}在作秀。'));
+  if (g.f.caught >= 2) notes.push(`${T('你替自己撈的事被老闆發現了')} ` + g.f.caught + ` ${T('次。')}`);
+  if (!notes.length) notes.push(margin > 0 ? T('整場選戰打得很穩，好感和聲量都夠。') : T('差一點點。下次多衝一點曝光，也許就翻過去了。'));
   res.review = { best, worst, notes: notes.slice(0, 3).map(n => fill(g, n)) };
   res.ending = ending;
   res.text = fill(g, ending.text).replace('{resultLine}', resultLine);

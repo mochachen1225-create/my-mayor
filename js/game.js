@@ -4,6 +4,17 @@ const SAVE_KEY = 'mymayor.endings';
 const EVENTS_KEY = 'mymayor.seenEvents';
 let G = null;
 
+// 角色插畫：六位老闆（男女、四種表情）和部分配角
+for (const t of Object.keys(TYPES)) for (const g of ['m', 'f']) TYPES[t].look[g].art = t + '_' + g;
+for (const k of ['donor', 'elder', 'intern', 'reporter']) if (NPC[k]) NPC[k].look.art = 'npc_' + k;
+
+// 英文版：把資料裡的中文換成英文
+if (LANG === 'en') {
+  [CHANGES, TYPES, VALUE_LINES, NPC, EVENTS, MAIN, TOPICS, POLICIES, BUILD, ENDINGS, MGR_ENDINGS, THREAD_USERS, THREADS, SWEEP_PEOPLE].forEach(translateDeep);
+  document.documentElement.lang = 'en';
+}
+document.title = T('我推的市長');
+
 const $ = sel => app.querySelector(sel);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -98,23 +109,25 @@ function titleScreen() {
   try { last = localStorage.getItem(VERSION_KEY); localStorage.setItem(VERSION_KEY, VERSION); } catch (e) { /* 沒差 */ }
   // 有新版就只顯示一個小連結，想看再點開
   const newsHtml = last && last !== VERSION
-    ? `<button class="newslink" id="news">🆕 遊戲更新了・看看有什麼新的</button>` : '';
+    ? `<button class="newslink" id="news">${T('🆕 遊戲更新了・看看有什麼新的')}</button>` : '';
   const faces = Object.keys(TYPES).map(t => avatar(TYPES[t].look[t === 'B' || t === 'E' ? 'f' : 'm'])).join('');
   show(`
+    <div class="langbar" role="radiogroup" aria-label="Language">${[['zh', '中文'], ['en', 'English']].map(([l, n]) => `<button data-l="${l}" role="radio" aria-checked="${LANG === l}" class="${LANG === l ? 'on' : ''}">${n}</button>`).join('')}</div>
     <div class="faces">${faces}</div>
-    <div class="tag">市長不是神，是幕僚造出來的神。</div>
-    <h1>我推的市長</h1>
-    <p class="muted">爆肝的幕僚團隊，想辦法把你的市長送上寶座。<br>一局約 10 分鐘。</p>
+    <div class="tag">${T('市長不是神，是幕僚造出來的神。')}</div>
+    <h1>${T('我推的市長')}</h1>
+    <p class="muted">${T('爆肝的幕僚團隊，想辦法把你的市長送上寶座。')}<br>${T('一局約 10 分鐘。')}</p>
     ${newsHtml}
-    <div class="pace" role="radiogroup" aria-label="遊戲節奏">
-      <button class="pace-opt" data-p="slow" role="radio">🐢 我想慢慢來<small>不倒數，慢慢看劇情</small></button>
-      <button class="pace-opt" data-p="busy" role="radio">🔥 極限爆肝模式<small>每件事都在倒數</small></button>
+    ${LANG === 'en' ? '<button class="newslink" id="primer">🇹🇼 New to Taiwanese elections? Read this first</button>' : ''}
+    <div class="pace" role="radiogroup" aria-label="${T('遊戲節奏')}">
+      <button class="pace-opt" data-p="slow" role="radio">${T('🐢 我想慢慢來')}<small>${T('不倒數，慢慢看劇情')}</small></button>
+      <button class="pace-opt" data-p="busy" role="radio">${T('🔥 極限爆肝模式')}<small>${T('每件事都在倒數')}</small></button>
     </div>
-    ${save ? `<button class="btn" id="resume">▶️ 繼續上一局：${esc(save.name)} ${weekLabel(save.week).month}月第${weekLabel(save.week).nth}週</button>` : ''}
-    <button class="btn ${save ? 'ghost' : ''}" id="go">${save ? '重新開始（放棄上一局）' : '開始上班'}</button>
-    <button class="btn ghost" id="manual">📖 總幹事手冊</button>
-    <button class="btn ghost" id="gal">結局圖鑑（${seen.size} / ${ENDINGS.length}）</button>
-    <p class="muted" style="margin-top:22px;font-size:12px">本遊戲純屬虛構，人物、政黨、城市皆非真實。<button class="verlink" id="ver">v${VERSION} 更新內容</button><button class="verlink" id="snd"></button></p>
+    ${save ? `<button class="btn" id="resume">${T('▶️ 繼續上一局：{0} {1}月第{2}週', esc(save.name), weekLabel(save.week).month, weekLabel(save.week).nth)}</button>` : ''}
+    <button class="btn ${save ? 'ghost' : ''}" id="go">${save ? T('重新開始（放棄上一局）') : T('開始上班')}</button>
+    <button class="btn ghost" id="manual">${T('📖 總幹事手冊')}</button>
+    <button class="btn ghost" id="gal">${T('結局圖鑑（{0} / {1}）', seen.size, ENDINGS.length)}</button>
+    <p class="muted" style="margin-top:22px;font-size:12px">${T('本遊戲純屬虛構，人物、政黨、城市皆非真實。')}<button class="verlink" id="ver">${T('v{0} 更新內容', VERSION)}</button><button class="verlink" id="snd"></button></p>
   `, 'title');
   const paintPace = () => app.querySelectorAll('.pace-opt').forEach(b => {
     const on = (b.dataset.p === 'slow') === isSlow();
@@ -122,32 +135,46 @@ function titleScreen() {
   });
   app.querySelectorAll('.pace-opt').forEach(b => b.onclick = () => { setPace(b.dataset.p); paintPace(); });
   paintPace();
+  app.querySelectorAll('.langbar button').forEach(b => b.onclick = () => { if (b.dataset.l !== LANG) setLang(b.dataset.l); });
+  if ($('#primer')) $('#primer').onclick = () => layer('🇹🇼 Taiwanese elections in 60 seconds', PRIMER_EN);
   $('#go').onclick = () => { clearGame(); drawScreen(); };
   if (save) $('#resume').onclick = () => resumeGame(save);
-  const showNews = () => layer(`🆕 v${VERSION} 更新內容`, `<ul class="newslist">${CHANGES.map(c => `<li>${esc(c)}</li>`).join('')}</ul>`);
+  const showNews = () => layer(`${T('🆕 v{0} 更新內容', VERSION)}`, `<ul class="newslist">${CHANGES.map(c => `<li>${esc(c)}</li>`).join('')}</ul>`);
   if ($('#news')) $('#news').onclick = showNews;
   $('#ver').onclick = showNews;
-  const paintSnd = () => { $('#snd').textContent = soundOn() ? '🔊 音效開' : '🔇 音效關'; };
+  const paintSnd = () => { $('#snd').textContent = soundOn() ? T('🔊 音效開') : T('🔇 音效關'); };
   $('#snd').onclick = () => { setSound(!soundOn()); paintSnd(); sfx('good'); };
   paintSnd();
   $('#gal').onclick = () => gallery(titleScreen);
   $('#manual').onclick = openManual;
 }
 
+// 給外國玩家的台灣選舉小知識（只有英文版會顯示）
+const PRIMER_EN = `<ul class="newslist">
+  <li><b>Everything here is fictional.</b> N City, the candidates and the animal parties are made up, but the campaign rituals are real Taiwanese election culture.</li>
+  <li><b>Local elections</b> happen every four years in late November. Mayors of big cities are powerful, and the race is loud, colorful and very personal.</li>
+  <li><b>Street campaigning</b> is everything: shaking hands at morning markets, temple visits, motorcades with loudspeakers, giant billboards and rallies with flags and stage shows.</li>
+  <li><b>「凍蒜」(dòng-suàn)</b> is Taiwanese Hokkien for “get elected!” Supporters chant it at rallies. If you hear it, you are winning.</li>
+  <li><b>Election-eve rallies</b> are the climax. Then comes a <b>polling blackout</b>: no new polls can be published in the final 10 days, so campaigns fly blind.</li>
+  <li><b>Vote buying is illegal</b> and taken seriously. So is foreign interference.</li>
+  <li><b>Crisp</b> is the in-game social network, where netizens roast everything. Typhoon days off, rats on the news and pork-barrel promises are all fair game.</li>
+  <li>You are the <b>campaign manager</b>. Your boss is drawn at random and does not always listen. Good luck. Your liver will need it.</li>
+</ul>`;
+
 // ---------------- 抽老闆 ----------------
 function drawScreen() {
   const order = Object.keys(TYPES);
   show(`
-    <p class="muted center">你接到一通電話：「明天來戰情室報到，你是總幹事。」</p>
-    <h2 class="center" style="margin:6px 0">你的老闆是……</h2>
-    <p class="muted center">翻牌決定，你沒得選。</p>
+    <p class="muted center">${T('你接到一通電話：「明天來戰情室報到，你是總幹事。」')}</p>
+    <h2 class="center" style="margin:6px 0">${T('你的老闆是……')}</h2>
+    <p class="muted center">${T('翻牌決定，你沒得選。')}</p>
     <div class="grid">${order.map(t => `
       <div class="flip" data-t="${t}"><div class="inner">
-        <div class="face front">?<small>候選人</small></div>
+        <div class="face front">?<small>${T('候選人')}</small></div>
         <div class="face back">${avatar(TYPES[t].look.m)}<b>${TYPES[t].label}</b><span class="muted" style="font-size:12px">${TYPES[t].party}</span></div>
       </div></div>`).join('')}
     </div>
-    <button class="btn" id="flip">翻牌</button>
+    <button class="btn" id="flip">${T('翻牌')}</button>
   `);
   $('#flip').onclick = async () => {
     $('#flip').disabled = true;
@@ -163,71 +190,77 @@ function drawScreen() {
 
 // ---------------- 選性別、取名 ----------------
 function setupScreen(type) {
-  const T = TYPES[type];
+  const TY = TYPES[type];
   let gender = 'm';
   let typed = false;
   show(`
     <div class="center">
-      <p class="muted">翻牌結果</p>
-      <span class="badge">${T.label}・${T.party}</span>
+      <p class="muted">${T('翻牌結果')}</p>
+      <span class="badge">${TY.label}・${TY.party}</span>
     </div>
     <div class="traits">
-      🧠 性格：${T.trait}<br>
-      👍 優勢：${T.pro}<br>
-      👎 弱點：${T.con}
+      ${T('🧠 性格：{0}', TY.trait)}<br>
+      ${T('👍 優勢：{0}', TY.pro)}<br>
+      ${T('👎 弱點：{0}', TY.con)}
     </div>
-    <p class="center" style="margin:6px 0 10px"><b>選擇外觀</b></p>
+    <p class="center" style="margin:6px 0 10px"><b>${T('選擇外觀')}</b></p>
     <div class="pick2">
-      <button data-g="m" class="on">${avatar(T.look.m)}男</button>
-      <button data-g="f">${avatar(T.look.f)}女</button>
+      <button data-g="m" class="on">${T('{0}男', avatar(TY.look.m))}</button>
+      <button data-g="f">${T('{0}女', avatar(TY.look.f))}</button>
     </div>
-    <p class="field">幫你的老闆取個名字</p>
-    <input class="name" id="nm" maxlength="12" value="${T.names.m}">
-    <button class="btn" id="go">進入戰情室 →</button>
+    <p class="field">${T('幫你的老闆取個名字')}</p>
+    <input class="name" id="nm" maxlength="12" value="${TY.names.m}">
+    <button class="btn" id="go">${T('進入戰情室 →')}</button>
   `);
   const nm = $('#nm');
   nm.oninput = () => { typed = true; };
   app.querySelectorAll('.pick2 button').forEach(b => b.onclick = () => {
     gender = b.dataset.g;
     app.querySelectorAll('.pick2 button').forEach(x => x.classList.toggle('on', x === b));
-    if (!typed) nm.value = T.names[gender];
+    if (!typed) nm.value = TY.names[gender];
   });
   $('#go').onclick = () => {
-    G = newGame(type, gender, nm.value.trim().slice(0, 12) || T.names[gender]);
+    G = newGame(type, gender, nm.value.trim().slice(0, 12) || TY.names[gender]);
     G.seenBefore = loadSeenEvents();
     profileScreen();
   };
 }
 
 // 候選人檔案：先認識你抽到的老闆
+// 對手的介紹：代名詞換成對手的性別
+function rivalText(t) {
+  const f = G.rivalGender === 'f';
+  return t.replace(/\{he\}/g, f ? T('她') : T('他')).replace(/\{He\}/g, f ? 'She' : 'He').replace(/\{him\}/g, f ? 'her' : 'him').replace(/\{his\}/g, f ? 'her' : 'his');
+}
+
 function profileScreen() {
-  const T = TYPES[G.type];
+  const TY = TYPES[G.type];
   const gap = Math.round(G.r - G.s);
-  const pos = gap > 0 ? `起跑時，民調大約落後${esc(G.rivalName)} ${gap} 個百分點。` : `起跑時，民調大約領先${esc(G.rivalName)} ${-gap} 個百分點。`;
+  const pos = gap > 0 ? `${T('起跑時，民調大約落後{0} {1} 個百分點。', esc(G.rivalName), gap)}` : `${T('起跑時，民調大約領先{0} {1} 個百分點。', esc(G.rivalName), -gap)}`;
   show(`
-    <p class="muted center">候選人檔案</p>
+    <p class="muted center">${T('候選人檔案')}</p>
     <div class="profile-face">${bossFace('big')}</div>
     <h2 class="center" style="margin:4px 0">${esc(G.name)}</h2>
-    <div class="center"><span class="badge">${T.label}・${T.party}</span></div>
-    <div class="traits">${esc(fill(G, T.bio))}</div>
+    <div class="center"><span class="badge">${TY.label}・${TY.party}</span></div>
+    <div class="traits">${esc(fill(G, TY.bio))}</div>
     <div class="traits">
-      <b>👍 強項</b><br>${T.pros.map(x => '・' + esc(fill(G, x))).join('<br>')}<br><br>
-      <b>👎 弱點</b><br>${T.cons.map(x => '・' + esc(fill(G, x))).join('<br>')}<br><br>
-      <b>🙄 不聽話的時候</b><br>・${esc(T.trait)}<br><br>
-      <b>💭 ${esc(G.name)}最在意的</b><br>・${esc(T.values.care)}
+      <b>${T('👍 強項')}</b><br>${TY.pros.map(x => '・' + esc(fill(G, x))).join('<br>')}<br><br>
+      <b>${T('👎 弱點')}</b><br>${TY.cons.map(x => '・' + esc(fill(G, x))).join('<br>')}<br><br>
+      <b>${T('🙄 不聽話的時候')}</b><br>・${esc(TY.trait)}<br><br>
+      <b>${T('💭 {0}最在意的', esc(G.name))}</b><br>・${esc(TY.values.care)}
     </div>
     <div class="traits">
-      <b>🎯 主要對手</b>
+      <b>${T('🎯 主要對手')}</b>
       <div class="who" style="margin:8px 0">${avatar({ ...TYPES[G.rivalType].look[G.rivalGender], mood: 'smile' })}<div><b>${esc(G.rivalName)}</b><br><small>${TYPES[G.rivalType].label}・${TYPES[G.rivalType].party}</small></div></div>
       ${esc(TYPES[G.rivalType].short)}<br>
-      ・強項：${esc(TYPES[G.rivalType].pros[0].replace(/\{he\}/g, G.rivalGender === 'f' ? '她' : '他'))}<br>
-      ・弱點：${esc(TYPES[G.rivalType].cons[0].replace(/\{he\}/g, G.rivalGender === 'f' ? '她' : '他'))}<br><br>
+      ${T('・強項：{0}', esc(rivalText(TYPES[G.rivalType].pros[0])))}<br>
+      ${T('・弱點：{0}', esc(rivalText(TYPES[G.rivalType].cons[0])))}<br><br>
       ${pos}<br>
-      <small class="muted">另外還有一位小黨候選人 ${esc(G.thirdName)}，票不多，但可能搶走你的票。</small>
+      <small class="muted">${T('另外還有一位小黨候選人 {0}，票不多，但可能搶走你的票。', esc(G.thirdName))}</small>
     </div>
-    <div class="traits"><b>🎭 形象任務</b><br>選民覺得${esc(G.name)}「${T.image.from}」。你要把${G.he}包裝成「<b>${T.image.to}</b>」。<br><small class="muted">行程上標著「🎭 ${T.image.to}✨」的最有效。但包裝太密集，會被說作秀。</small></div>
-    <div class="traits"><b>💡 總幹事筆記</b><br>${esc(fill(G, T.tip))}</div>
-    <button class="btn" id="go">我了解了，進戰情室 →</button>
+    <div class="traits"><b>${T('🎭 形象任務')}</b><br>${T('選民覺得{0}「{1}」。你要把{2}包裝成「', esc(G.name), TY.image.from, G.he)}<b>${TY.image.to}</b>${T('」。')}<br><small class="muted">${T('行程上標著「🎭 {0}✨」的最有效。但包裝太密集，會被說作秀。', TY.image.to)}</small></div>
+    <div class="traits"><b>${T('💡 總幹事筆記')}</b><br>${esc(fill(G, TY.tip))}</div>
+    <button class="btn" id="go">${T('我了解了，進戰情室 →')}</button>
   `);
   $('#go').onclick = introScreen;
 }
@@ -235,18 +268,18 @@ function profileScreen() {
 function introScreen() {
   roomScreen();
   overlay(`
-    <div class="head" style="background:#3a5ba0"><span>📋 報到須知</span></div>
+    <div class="head" style="background:#3a5ba0"><span>${T('📋 報到須知')}</span></div>
     <div class="body">
-      <div class="eyebrow">你要輔選的市長候選人</div>
+      <div class="eyebrow">${T('你要輔選的市長候選人')}</div>
       <div class="who">${bossFace('big')}<div><b>${esc(G.name)}</b><br><small>${TYPES[G.type].label}・${TYPES[G.type].party}</small></div></div>
-      <p>而你是<b>競選總幹事</b>，整個戰情室都會來問你「怎麼辦？」距離投票還有 <b>4 個月</b>：</p>
-      <p>🔥 <b>有火就滅火</b>：緊急卡牌跳出來，${isSlow() ? '慢慢想沒關係（🐢 慢慢來模式）' : '<b>20 秒內</b>決定'}。<br>
-      ✨ <b>沒火就成就老闆</b>：挑一個企劃，把老闆推出去。<br>
-      🤝 <b>老闆不一定聽你的</b>：信任越高，越聽話。<br>
-      📊 每月一次內參民調，最後 10 天民調封關。<br>
-      🫀 顧好你的肝。</p>
-      <button class="btn" id="ok">開工</button>
-      <button class="btn ghost" id="man2">📖 先看總幹事手冊</button>
+      <p>${T('而你是')}<b>${T('競選總幹事')}</b>${T('，整個戰情室都會來問你「怎麼辦？」距離投票還有')} <b>${T('4 個月')}</b>：</p>
+      <p>🔥 <b>${T('有火就滅火')}</b>${T('：緊急卡牌跳出來，{0}。', isSlow() ? T('慢慢想沒關係（🐢 慢慢來模式）') : `<b>${T('20 秒內')}</b>${T('決定')}`)}<br>
+      ✨ <b>${T('沒火就成就老闆')}</b>${T('：挑一個企劃，把老闆推出去。')}<br>
+      🤝 <b>${T('老闆不一定聽你的')}</b>${T('：信任越高，越聽話。')}<br>
+      ${T('📊 每月一次內參民調，最後 10 天民調封關。')}<br>
+      ${T('🫀 顧好你的肝。')}</p>
+      <button class="btn" id="ok">${T('開工')}</button>
+      <button class="btn ghost" id="man2">${T('📖 先看總幹事手冊')}</button>
     </div>`, 'k-main');
   $('#ok').onclick = () => runGame();
   $('#man2').onclick = openManual;
@@ -256,28 +289,28 @@ function introScreen() {
 function roomScreen() {
   show(`
     <div class="hud">
-      <div class="row"><span class="date" id="date"></span><span><button class="mbtn" id="menubtn" aria-label="選單">☰</button> <span class="clock" id="clock"></span></span></div>
+      <div class="row"><span class="date" id="date"></span><span><button class="mbtn" id="menubtn" aria-label="${T('選單')}">☰</button> <span class="clock" id="clock"></span></span></div>
       <div class="box">
-        <div class="boxtitle">👤 候選人 <b id="bx-name"></b></div>
+        <div class="boxtitle">${T('👤 候選人')} <b id="bx-name"></b></div>
         <div class="stats">
-          <div class="stat" id="st-buzz"><i>聲量</i>📣 <span></span><div class="bar"><div></div></div></div>
-          <div class="stat" id="st-fav"><i>民調好感度</i>😊 <span></span><div class="bar"><div></div></div></div>
-          <div class="stat" id="st-money"><i>競選資金</i>💰 <span></span><div class="bar"><div></div></div></div>
-          <div class="stat" id="st-trust"><i>對你的信任</i>🤝 <span></span><div class="bar"><div></div></div></div>
+          <div class="stat" id="st-buzz"><i>${T('聲量')}</i>📣 <span></span><div class="bar"><div></div></div></div>
+          <div class="stat" id="st-fav"><i>${T('民調好感度')}</i>😊 <span></span><div class="bar"><div></div></div></div>
+          <div class="stat" id="st-money"><i>${T('競選資金')}</i>💰 <span></span><div class="bar"><div></div></div></div>
+          <div class="stat" id="st-trust"><i>${T('對你的信任')}</i>🤝 <span></span><div class="bar"><div></div></div></div>
         </div>
       </div>
       <div class="box">
-        <div class="boxtitle">🧑‍💼 總幹事（你）</div>
+        <div class="boxtitle">${T('🧑‍💼 總幹事（你）')}</div>
         <div class="stats three">
-          <div class="stat" id="st-liver"><i>肝的健康</i>🫀 <span></span><div class="bar"><div></div></div></div>
-          <div class="stat" id="st-team"><i>團隊士氣</i>💪 <span></span><div class="bar"><div></div></div></div>
-          <div class="stat" id="st-conf"><i>你的信心</i>🔥 <span></span><div class="bar"><div></div></div></div>
+          <div class="stat" id="st-liver"><i>${T('肝的健康')}</i>🫀 <span></span><div class="bar"><div></div></div></div>
+          <div class="stat" id="st-team"><i>${T('團隊士氣')}</i>💪 <span></span><div class="bar"><div></div></div></div>
+          <div class="stat" id="st-conf"><i>${T('你的信心')}</i>🔥 <span></span><div class="bar"><div></div></div></div>
         </div>
       </div>
       <div class="box rivalbox"><div class="rivalrow" id="rivalrow"></div></div>
     </div>
     <div class="stage">
-      <div class="bubble" id="bubble">接下來呢？</div>
+      <div class="bubble" id="bubble">${T('接下來呢？')}</div>
       <div class="boss" id="boss"></div>
       <div class="who" id="bossname"></div>
     </div>
@@ -294,7 +327,7 @@ function updateHud() {
   if (!$('#date')) return;
   const w = Math.min(G.week, WEEKS);
   const L = weekLabel(w);
-  $('#date').innerHTML = `<b>${L.month}月 第${L.nth}週</b>・距投票 <b>${L.daysLeft}</b> 天`;
+  $('#date').innerHTML = `<b>${T('{0}月 第{1}週', L.month, L.nth)}</b>${T('・距投票')} <b>${L.daysLeft}</b> ${T('天')}`;
   const ck = $('#clock');
   ck.textContent = clockText(G);
   ck.classList.toggle('late', G.clock >= 24);
@@ -314,9 +347,9 @@ function updateHud() {
   // 對手聲勢：看不到確切數字，只看得到大概強弱和趨勢
   const rr = $('#rivalrow');
   if (rr) {
-    const lvl = G.r >= 45 ? '很強' : G.r >= 38 ? '強' : G.r >= 32 ? '普通' : '偏弱';
+    const lvl = G.r >= 45 ? T('很強') : G.r >= 38 ? T('強') : G.r >= 32 ? T('普通') : T('偏弱');
     const tr = G.rPrev === undefined ? '' : G.r > G.rPrev + 0.05 ? '↑' : G.r < G.rPrev - 0.05 ? '↓' : '→';
-    rr.innerHTML = `<span>🎯 主要對手 ${G.rivalType === "D" ? "現任市長 " : ""}${esc(G.rivalName)} 聲勢</span><div class="bar"><div style="width:${Math.min(100, G.r * 1.6)}%"></div></div><b>${lvl} ${tr}</b>`;
+    rr.innerHTML = `<span>${T('🎯 主要對手 {0}{1} 聲勢', G.rivalType === "D" ? `${T('現任市長')} ` : "", esc(G.rivalName))}</span><div class="bar"><div style="width:${Math.min(100, G.r * 1.6)}%"></div></div><b>${lvl} ${tr}</b>`;
   }
   const mood = G.liver < 20 || G.trust < 25 ? 'sad' : G.s > G.r + 3 ? 'big' : 'smile';
   const bossEl = $('#boss');
@@ -345,8 +378,8 @@ function overlay(inner, kind) {
 function closeOverlay() { const o = app.querySelector('.overlay'); if (o) o.remove(); }
 
 const KIND_LABEL = {
-  fire: '⚠ 突發狀況', main: '📌 選戰大事', money: '💰 有人來訪', tv: '📺 政論節目',
-  daily: '☕ 戰情室日常', crisis: '🚨 危機', topic: '🎤 座談主題', policy: '📜 政見發表', build: '✨ 沒有火，來成就老闆'
+  fire: T('⚠ 突發狀況'), main: T('📌 選戰大事'), money: T('💰 有人來訪'), tv: T('📺 政論節目'),
+  daily: T('☕ 戰情室日常'), crisis: T('🚨 危機'), topic: T('🎤 座談主題'), policy: T('📜 政見發表'), build: T('✨ 沒有火，來成就老闆')
 };
 
 // 最後 5 秒：滴答聲、倒數條變紅
@@ -364,7 +397,7 @@ function countdown(seconds, onTick, onEnd) {
     const slow = isSlow();
     if (!slow && !document.hidden && !app.querySelector('.manual')) left -= now - last; // 看手冊時暫停；慢慢來模式不倒數
     last = now;
-    onTick(Math.max(0, left) / (seconds * 1000), slow ? '慢慢來' : Math.ceil(Math.max(0, left) / 1000));
+    onTick(Math.max(0, left) / (seconds * 1000), slow ? T('慢慢來') : Math.ceil(Math.max(0, left) / 1000));
     if (left <= 0) { stop = true; onEnd(); return; }
     requestAnimationFrame(loop);
   }
@@ -373,11 +406,11 @@ function countdown(seconds, onTick, onEnd) {
 }
 
 function chipsHtml(delta) {
-  const vis = { buzz: '📣聲量', fav: '😊民調好感度', money: '💰資金', trust: '🤝信任', liver: '🫀肝', team: '💪士氣', conf: '🔥信心', con: '😇良心' };
+  const vis = { buzz: T('📣聲量'), fav: T('😊民調好感度'), money: T('💰資金'), trust: T('🤝信任'), liver: T('🫀肝'), team: T('💪士氣'), conf: T('🔥信心'), con: T('😇良心') };
   const out = [];
   const arrow = (v, good) => `<span class="chip ${good ? 'up' : 'down'}">`;
-  if (delta.s) out.push(arrow(0, delta.s > 0) + `📈 民心 ${delta.s > 0 ? '↑' : '↓'}${Math.abs(delta.s) >= 1 ? (delta.s > 0 ? '↑' : '↓') : ''}</span>`);
-  if (delta.r) out.push(arrow(0, delta.r < 0) + `🎯 對手 ${delta.r > 0 ? '↑' : '↓'}</span>`);
+  if (delta.s) out.push(arrow(0, delta.s > 0) + `${T('📈 民心 {0}{1}', delta.s > 0 ? '↑' : '↓', Math.abs(delta.s) >= 1 ? (delta.s > 0 ? '↑' : '↓') : '')}</span>`);
+  if (delta.r) out.push(arrow(0, delta.r < 0) + `${T('🎯 對手 {0}', delta.r > 0 ? '↑' : '↓')}</span>`);
 
   for (const [k, lab] of Object.entries(vis)) {
     const v = Math.round(delta[k] || 0);
@@ -397,9 +430,9 @@ function threadsHtml(res) {
   const n = Math.random() < 0.3 ? 3 : 2;
   const posts = [];
   for (let i = 0; i < n && pool.length; i++) posts.push({ u: take(users), t: take(pool) });
-  if (Math.random() < 0.05) posts[posts.length - 1] = { u: G.name + '的' + (Math.random() < 0.5 ? '媽媽' : '阿姨'), t: THREADS.mom[Math.floor(Math.random() * THREADS.mom.length)] };
+  if (Math.random() < 0.05) posts[posts.length - 1] = { u: G.name + T('的') + (Math.random() < 0.5 ? T('媽媽') : T('阿姨')), t: THREADS.mom[Math.floor(Math.random() * THREADS.mom.length)] };
   const likes = () => (Math.floor(Math.pow(Math.random(), 2.2) * 4800) + 3).toLocaleString('en-US');
-  return `<div class="threads"><div class="th-head">🧵 脆上的反應</div>${posts.map(p => `
+  return `<div class="threads"><div class="th-head">${T('🧵 脆上的反應')}</div>${posts.map(p => `
     <div class="th-post"><div class="th-ava">${esc(p.u.slice(0, 1))}</div><div class="th-body"><b>${esc(p.u)}</b><span>${esc(fill(G, p.t))}</span><small>♡ ${likes()}</small></div></div>`).join('')}</div>`;
 }
 
@@ -431,27 +464,27 @@ function eventCard(ev, queueLeft, isBuild) {
     if (G.conf < 30) secs = Math.max(6, secs - 5); // 信心太低，你慌了
     const npc = isBuild ? null : NPC[ev.who];
     const whoHtml = isBuild
-      ? `<div class="who">${bossFace('smile')}<div><b>${esc(G.name)}</b><br><small>「今天要做什麼？」</small></div></div>`
+      ? `<div class="who">${bossFace('smile')}<div><b>${esc(G.name)}</b><br><small>${T('「今天要做什麼？」')}</small></div></div>`
       : npc ? `<div class="who">${avatar(npc.look)}<div><b>${npc.name}</b><br><small>${npc.role}</small></div></div>` : '';
-    const title = isBuild ? '沒有話題，就創造話題' : fill(G, ev.title);
-    const text = isBuild ? '今天沒有火要滅。挑一個企劃，把老闆推出去。' : fill(G, ev.text);
+    const title = isBuild ? T('沒有話題，就創造話題') : fill(G, ev.title);
+    const text = isBuild ? T('今天沒有火要滅。挑一個企劃，把老闆推出去。') : fill(G, ev.text);
     const o = overlay(`
-      <div class="head"><span>${KIND_LABEL[kind]}</span><span>${queueLeft > 0 ? `<span class="q">還有 ${queueLeft} 件等你</span> ` : ''}⏱ <b id="sec">${secs}</b></span></div>
+      <div class="head"><span>${KIND_LABEL[kind]}</span><span>${queueLeft > 0 ? `<span class="q">${T('還有 {0} 件等你', queueLeft)}</span> ` : ''}⏱ <b id="sec">${secs}</b></span></div>
       <div class="timer"><div id="tbar"></div></div>
       <div class="body">
         ${whoHtml}
         <h2>${esc(title)}</h2>
         <p>${esc(text)}</p>
-        <div id="opts">${opts.map((op, i) => `<button class="opt" data-i="${i}" ${canAfford(G, op) ? '' : 'disabled'}>${esc(fill(G, op.t))}${op.crowd ? `<small>人潮型活動：聲量和民調不夠，可能沒人來</small>` : ''}${op.need && !canAfford(G, op) ? `<small>資金不足（需要 ${op.need}）</small>` : ''}</button>`).join('')}</div>
+        <div id="opts">${opts.map((op, i) => `<button class="opt" data-i="${i}" ${canAfford(G, op) ? '' : 'disabled'}>${esc(fill(G, op.t))}${op.crowd ? `<small>${T('人潮型活動：聲量和民調不夠，可能沒人來')}</small>` : ''}${op.need && !canAfford(G, op) ? `<small>${T('資金不足（需要 {0}）', op.need)}</small>` : ''}</button>`).join('')}</div>
       </div>`, 'k-' + kind);
     let done = false;
     const finish = res => {
       if (done) return; done = true; stop();
       updateHud();
       if (res.idle) bossSays(res.lines[0].text, true);
-      else bossSays(res.failed ? '……這樣真的好嗎？' : '好，接下來呢？');
+      else bossSays(res.failed ? T('……這樣真的好嗎？') : T('好，接下來呢？'));
       o.querySelector('.timer div').style.width = '0';
-      o.querySelector('#opts').innerHTML = resultHtml(res) + `<button class="btn" id="next">繼續</button>`;
+      o.querySelector('#opts').innerHTML = resultHtml(res) + `<button class="btn" id="next">${T('繼續')}</button>`;
       reactFx(res, o.querySelector('.card'));
       o.querySelector('#next').onclick = () => { sfx('tap'); closeOverlay(); resolve(res); };
     };
@@ -467,7 +500,7 @@ function eventCard(ev, queueLeft, isBuild) {
 function stageDefault() {
   const st = $('.stage');
   if (!st) return;
-  st.innerHTML = `<div class="bubble" id="bubble">接下來呢？</div><div class="boss" id="boss"></div><div class="who" id="bossname"></div>`;
+  st.innerHTML = `<div class="bubble" id="bubble">${T('接下來呢？')}</div><div class="boss" id="boss"></div><div class="who" id="bossname"></div>`;
   $('#bossname').textContent = `${G.name}・${TYPES[G.type].party}`;
   updateHud();
 }
@@ -477,12 +510,12 @@ function actTags(op) {
   const fx = op.fx || {};
   if (fx.money < 0) t.push(`💰${fx.money}`);
   if (fx.money > 0) t.push(`💰+${fx.money}`);
-  if (fx.liver <= -5) t.push('🫀 很累');
-  if (fx.liver > 0) t.push('🫀 回血');
-  if (op.crowd) t.push('👥 看人氣');
-  if (fx.con < 0) t.push('😈 良心');
-  if (op.risk) t.push('🎲 有風險');
-  if (op.img) t.unshift(op.img.includes(TYPES[G.type].image.to) ? `🎭 ${TYPES[G.type].image.to}✨` : '🎭 形象');
+  if (fx.liver <= -5) t.push(T('🫀 很累'));
+  if (fx.liver > 0) t.push(T('🫀 回血'));
+  if (op.crowd) t.push(T('👥 看人氣'));
+  if (fx.con < 0) t.push(T('😈 良心'));
+  if (op.risk) t.push(T('🎲 有風險'));
+  if (op.img) t.unshift(op.img.includes(TYPES[G.type].image.to) ? `🎭 ${TYPES[G.type].image.to}✨` : T('🎭 形象'));
   return t.join('　');
 }
 
@@ -490,7 +523,7 @@ function showResult(title, res) {
   return new Promise(resolve => {
     const o = overlay(`
       <div class="head"><span>✨ ${esc(title)}</span></div>
-      <div class="body">${resultHtml(res)}<button class="btn" id="next">繼續</button></div>`, 'k-build');
+      <div class="body">${resultHtml(res)}<button class="btn" id="next">${T('繼續')}</button></div>`, 'k-build');
     reactFx(res, o.querySelector('.card'));
     o.querySelector('#next').onclick = () => { sfx('tap'); closeOverlay(); resolve(); };
   });
@@ -505,17 +538,17 @@ function boardStep(left) {
       <div class="board">
         <div class="board-head">
           <div class="mini">${bossFace('smile')}</div>
-          <div style="flex:1"><b>今天沒有火，要做什麼？</b><br><small>${esc(G.name)}：「接下來呢？」</small></div>
+          <div style="flex:1"><b>${T('今天沒有火，要做什麼？')}</b><br><small>${T('{0}：「接下來呢？」', esc(G.name))}</small></div>
           <div class="bsec">⏱ <span id="bsec">30</span></div>
         </div>
         <div class="timer"><div id="bbar"></div></div>
         <div class="board-grid">${opts.map((op, i) => `
           <button class="act" data-i="${i}" ${canAfford(G, op) ? '' : 'disabled'}>
             <span>${esc(fill(G, op.t))}</span>
-            <small>${canAfford(G, op) ? actTags(op) : `資金不足（需要 ${op.need}）`}</small>
+            <small>${canAfford(G, op) ? actTags(op) : `${T('資金不足（需要 {0}）', op.need)}`}</small>
           </button>`).join('')}
         </div>
-        ${left > 0 ? `<p class="muted center" style="color:#aaa;margin:8px 0 0">這週還有 ${left} 件事</p>` : ''}
+        ${left > 0 ? `<p class="muted center" style="color:#aaa;margin:8px 0 0">${T('這週還有 {0} 件事', left)}</p>` : ''}
       </div>`;
     let done = false;
     const finish = async (title, res) => {
@@ -529,7 +562,7 @@ function boardStep(left) {
     const stop = countdown(G.week >= BLACKOUT_WEEK ? 15 : 30, (frac, sec) => {
       const b = $('#bbar'); if (b) b.style.width = frac * 100 + '%';
       const e = $('#bsec'); if (e && e.textContent !== String(sec)) { e.textContent = sec; hurry(st.querySelector('.board'), sec); }
-    }, () => finish('你發呆了一整天', timeout(G, null, true)));
+    }, () => finish(T('你發呆了一整天'), timeout(G, null, true)));
     st.querySelectorAll('.act').forEach(b => b.onclick = async () => {
       if (done) return;
       sfx('tap');
@@ -539,7 +572,7 @@ function boardStep(left) {
         done = true; stop();
         G.miniTier = await sweepGame();
         done = false;
-        return finish(fill(G, op.t).replace('（小遊戲）', ''), choose(G, null, op, true));
+        return finish(fill(G, op.t).replace(/[（(][^）)]*[）)]\s*$/, ''), choose(G, null, op, true));
       }
       const res = choose(G, null, op, true);
       if (op.followup === 'topic' && !res.lines.some(l => l.kind === 'bad' || l.kind === 'defy')) {
@@ -551,7 +584,7 @@ function boardStep(left) {
         const pick4 = [];
         while (pick4.length < 4) pick4.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
         await eventCard({ id: 'topic', kind: 'topic', who: 'staff', timer: 15,
-          title: '今天要講哪個主題？', text: '台下坐滿了人，主持人看向{boss}。你在旁邊比手勢提示……', opts: pick4 }, left, false);
+          title: T('今天要講哪個主題？'), text: T('台下坐滿了人，主持人看向{boss}。你在旁邊比手勢提示……'), opts: pick4 }, left, false);
         stageDefault();
         resolve(res);
         return;
@@ -567,18 +600,18 @@ function sweepGame() {
   return new Promise(resolve => {
     const stalls = ['🥬', '🐟', '🍖', '🍊', '🥚', '🌽', '🍞', '🧄', '🍜'];
     const o = overlay(`
-      <div class="head"><span>🏃 菜市場掃街</span><span>⏱ <b id="mg-t">10</b></span></div>
+      <div class="head"><span>${T('🏃 菜市場掃街')}</span><span>⏱ <b id="mg-t">10</b></span></div>
       <div class="timer"><div id="mg-bar"></div></div>
       <div class="body">
         <div id="mg-intro">
-          <h2>帶${esc(G.name)}去菜市場握手！</h2>
-          <p>10 秒內，點冒出來的人跟他們握手。<br>🙋 一般民眾 +1　👵 熱情阿嬤 +3<br>🙅 嗆聲的 −2　📸 對手偷拍 −1，別點！</p>
-          <button class="btn" id="mg-go">開始掃街！</button>
-          <button class="btn ghost" id="mg-skip">交給志工去跑（普通結果）</button>
+          <h2>${T('帶{0}去菜市場握手！', esc(G.name))}</h2>
+          <p>${T('10 秒內，點冒出來的人跟他們握手。')}<br>${T('🙋 一般民眾 +1　👵 熱情阿嬤 +3')}<br>${T('🙅 嗆聲的 −2　📸 對手偷拍 −1，別點！')}</p>
+          <button class="btn" id="mg-go">${T('開始掃街！')}</button>
+          <button class="btn ghost" id="mg-skip">${T('交給志工去跑（普通結果）')}</button>
         </div>
         <div id="mg-play" hidden>
-          <div class="mg-score">握手 <b id="mg-s">0</b></div>
-          <div class="mg-grid">${stalls.map((e, i) => `<button class="mg-cell" data-i="${i}" aria-label="攤位"><span class="mg-stall">${e}</span><span class="mg-who"></span></button>`).join('')}</div>
+          <div class="mg-score">${T('握手')} <b id="mg-s">0</b></div>
+          <div class="mg-grid">${stalls.map((e, i) => `<button class="mg-cell" data-i="${i}" aria-label="${T('攤位')}"><span class="mg-stall">${e}</span><span class="mg-who"></span></button>`).join('')}</div>
         </div>
       </div>`, 'k-build mg');
     o.querySelector('#mg-skip').onclick = () => { sfx('tap'); closeOverlay(); resolve(1); };
@@ -633,9 +666,9 @@ function sweepGame() {
         o.querySelector('#mg-play').innerHTML = `
           <div class="mg-end">
             <div class="mg-big">${['😅', '🙂', '🤩'][tier]}</div>
-            <h2>握了 ${hits} 隻手，得分 ${Math.max(0, score)}</h2>
-            <p>${['菜市場的人都在忙……', '還不錯，有幾攤說會支持。', '整條市場都動起來了！'][tier]}</p>
-            <button class="btn" id="mg-done">看結果</button>
+            <h2>${T('握了 {0} 隻手，得分 {1}', hits, Math.max(0, score))}</h2>
+            <p>${[T('菜市場的人都在忙……'), T('還不錯，有幾攤說會支持。'), T('整條市場都動起來了！')][tier]}</p>
+            <button class="btn" id="mg-done">${T('看結果')}</button>
           </div>`;
         o.querySelector('#mg-done').onclick = () => { sfx('tap'); closeOverlay(); resolve(tier); };
       })(t0);
@@ -648,10 +681,10 @@ async function forcedRest() {
   G.f.rests = (G.f.rests || 0) + 1;
   const rest = BUILD.find(b => b.id === 'rest');
   const res = choose(G, null, { ...rest, fx: { liver: 18 } }, true);
-  res.lines = [{ kind: 'bad', text: '你在戰情室的沙發上睡著了，叫都叫不醒。副總幹事說：「總幹事今天強制休假。」' }];
+  res.lines = [{ kind: 'bad', text: T('你在戰情室的沙發上睡著了，叫都叫不醒。副總幹事說：「總幹事今天強制休假。」') }];
   updateHud();
-  bossSays('總幹事呢？接下來呢？', true);
-  await showResult('你爆肝了，被強制休息一天', res);
+  bossSays(T('總幹事呢？接下來呢？'), true);
+  await showResult(T('你爆肝了，被強制休息一天'), res);
   stageDefault();
   return res;
 }
@@ -659,16 +692,16 @@ async function forcedRest() {
 // 民調時，副總幹事給的建議：告訴玩家現在卡在哪裡
 function tipsHtml() {
   const t = [];
-  if (G.fav < 50) t.push('好感度偏低：現在越多人討論你，反而越扣分。先做讓人有好感的事。');
-  else if (G.buzz < 45) t.push('好感度不錯，但沒什麼人在討論你：多製造話題、多曝光，民調才會動。');
-  if (G.money < 20) t.push('競選資金快見底了：可以辦募款、推募款小物。');
-  if (G.trust < 40) t.push('老闆不太信任你：陪他吃宵夜聊天，或多選他擅長的事。');
-  if (G.liver < 30) t.push('你的肝快撐不住了，排一天休息吧。');
-  if (G.team < 40) t.push('團隊士氣低落，事情容易出包。請大家喝個飲料吧。');
-  if (G.show > 55) t.push('最近形象包裝太密集了，小心被說作秀。先做點實事，隔幾週再包裝。');
-  if (G.conf < 30) t.push('總幹事，你看起來很慌。信心太低，做決定的時間會變短，老闆也不太想聽你的。');
-  if (!t.length) t.push('數字都不錯，保持下去，好感度和聲量都高，民調就會一直往上。');
-  return `<div class="res note" style="font-size:14px;margin-top:10px">🗒️ 副總幹事：${t.slice(0, 2).map(esc).join('<br>')}</div>`;
+  if (G.fav < 50) t.push(T('好感度偏低：現在越多人討論你，反而越扣分。先做讓人有好感的事。'));
+  else if (G.buzz < 45) t.push(T('好感度不錯，但沒什麼人在討論你：多製造話題、多曝光，民調才會動。'));
+  if (G.money < 20) t.push(T('競選資金快見底了：可以辦募款、推募款小物。'));
+  if (G.trust < 40) t.push(T('老闆不太信任你：陪他吃宵夜聊天，或多選他擅長的事。'));
+  if (G.liver < 30) t.push(T('你的肝快撐不住了，排一天休息吧。'));
+  if (G.team < 40) t.push(T('團隊士氣低落，事情容易出包。請大家喝個飲料吧。'));
+  if (G.show > 55) t.push(T('最近形象包裝太密集了，小心被說作秀。先做點實事，隔幾週再包裝。'));
+  if (G.conf < 30) t.push(T('總幹事，你看起來很慌。信心太低，做決定的時間會變短，老闆也不太想聽你的。'));
+  if (!t.length) t.push(T('數字都不錯，保持下去，好感度和聲量都高，民調就會一直往上。'));
+  return `<div class="res note" style="font-size:14px;margin-top:10px">${T('🗒️ 副總幹事：{0}', t.slice(0, 2).map(esc).join('<br>'))}</div>`;
 }
 
 function pollCard() {
@@ -679,21 +712,21 @@ function pollCard() {
     const diff = prev ? p.s - prev.s : null;
     const row = (lab, v, color) => `<div class="pollrow"><div class="lab"><span>${lab}</span><b>${v.toFixed(1)}%</b></div><div class="track"><div style="background:${color}" data-w="${v}"></div></div></div>`;
     const gap = p.s - p.r;
-    const comment = gap > 5 ? '領先中，但別輕敵。' : gap > -3 ? '五五波，每一票都重要。' : gap > -8 ? '小幅落後，還追得上。' : '大幅落後……戰情室一片安靜。';
+    const comment = gap > 5 ? T('領先中，但別輕敵。') : gap > -3 ? T('五五波，每一票都重要。') : gap > -8 ? T('小幅落後，還追得上。') : T('大幅落後……戰情室一片安靜。');
     const o = overlay(`
-      <div class="head"><span>📊 ${L.month} 月內參民調</span><span class="q">誤差 ±3%</span></div>
+      <div class="head"><span>${T('📊 {0} 月內參民調', L.month)}</span><span class="q">${T('誤差 ±3%')}</span></div>
       <div class="body">
         ${row(`${esc(G.name)}（${TYPES[G.type].party}）`, p.s, '#e0a526')}
         ${row(`${esc(G.rivalName)}（${TYPES[G.rivalType].party}）`, p.r, '#7a6ba8')}
-        ${row('其他候選人', p.others, '#aaa')}
-        ${row('還沒決定', p.und, '#ddd')}
-        ${p.top && p.top.length ? `<p style="margin:12px 0 4px"><b>這個月影響最大的事：</b></p>${p.top.map(t => `<div class="res ${t.v > 0 ? 'good' : 'bad'}" style="font-size:14px;margin:4px 0">${t.v > 0 ? '📈' : '📉'} ${esc(t.title)}</div>`).join('')}` : ''}
+        ${row(T('其他候選人'), p.others, '#aaa')}
+        ${row(T('還沒決定'), p.und, '#ddd')}
+        ${p.top && p.top.length ? `<p style="margin:12px 0 4px"><b>${T('這個月影響最大的事：')}</b></p>${p.top.map(t => `<div class="res ${t.v > 0 ? 'good' : 'bad'}" style="font-size:14px;margin:4px 0">${t.v > 0 ? '📈' : '📉'} ${esc(t.title)}</div>`).join('')}` : ''}
         ${tipsHtml()}
-        <p style="margin-top:12px">${comment}${diff !== null ? `<br>比上次 ${diff >= 0 ? '↑' : '↓'} ${Math.abs(diff).toFixed(1)}%` : ''}</p>
-        <button class="btn" id="ok">知道了</button>
+        <p style="margin-top:12px">${comment}${diff !== null ? `<br>${T('比上次 {0} {1}%', diff >= 0 ? '↑' : '↓', Math.abs(diff).toFixed(1))}` : ''}</p>
+        <button class="btn" id="ok">${T('知道了')}</button>
       </div>`, 'k-poll');
     requestAnimationFrame(() => o.querySelectorAll('.track div').forEach(d => d.style.width = d.dataset.w + '%'));
-    bossSays(gap >= 0 ? '我就說吧！' : '接下來呢？', gap < 0);
+    bossSays(gap >= 0 ? T('我就說吧！') : T('接下來呢？'), gap < 0);
     o.querySelector('#ok').onclick = () => { closeOverlay(); resolve(); };
   });
 }
@@ -706,13 +739,13 @@ function weekCard(info) {
     const blackout = G.week >= BLACKOUT_WEEK;
     const o = overlay(`
       <div class="body weekcard">
-        <div class="muted">N City 戰情室</div>
-        <div class="big">${L.month}月 第${L.nth}週</div>
-        <div>距離投票還有 <b>${L.daysLeft}</b> 天</div>
-        ${news.length ? `<p style="margin:12px 0 4px;text-align:left"><b>📰 上週對手動態</b></p>${news.map(n => `<div class="res ${n.up === null ? 'note' : n.up ? 'bad' : 'good'}" style="text-align:left;font-size:14px">${esc(n.text)}</div>`).join('')}` : ''}
+        <div class="muted">${T('N City 戰情室')}</div>
+        <div class="big">${T('{0}月 第{1}週', L.month, L.nth)}</div>
+        <div>${T('距離投票還有')} <b>${L.daysLeft}</b> ${T('天')}</div>
+        ${news.length ? `<p style="margin:12px 0 4px;text-align:left"><b>${T('📰 上週對手動態')}</b></p>${news.map(n => `<div class="res ${n.up === null ? 'note' : n.up ? 'bad' : 'good'}" style="text-align:left;font-size:14px">${esc(n.text)}</div>`).join('')}` : ''}
         ${notes.map(n => `<div class="res note">${esc(n)}</div>`).join('')}
-        ${blackout ? '<div class="res bad">🔥 最後衝刺！民調封關，看不到任何數字，只能憑直覺。每件事只剩 10 秒可以決定。</div>' : ''}
-        <button class="btn" id="ok">開工</button>
+        ${blackout ? `<div class="res bad">${T('🔥 最後衝刺！民調封關，看不到任何數字，只能憑直覺。每件事只剩 10 秒可以決定。')}</div>` : ''}
+        <button class="btn" id="ok">${T('開工')}</button>
       </div>`, '');
     updateHud();
     o.querySelector('#ok').onclick = () => { closeOverlay(); resolve(); };
@@ -745,21 +778,21 @@ async function electionNight() {
   const res = finish(G);
   saveSeenEvents();
   show(`
-    <p class="muted" style="color:#ccc">11 月 28 日 晚上 8 點</p>
-    <h2>開票夜</h2>
+    <p class="muted" style="color:#ccc">${T('11 月 28 日 晚上 8 點')}</p>
+    <h2>${T('開票夜')}</h2>
     <div id="nightface" style="margin:10px auto;width:120px;height:120px">${bossFace('flat')}</div>
-    <div class="counted">開票率 <b id="pct">0%</b></div>
+    <div class="counted">${T('開票率')} <b id="pct">0%</b></div>
     <div class="votes">
-      <div class="pollrow"><div class="lab"><span>${esc(G.name)}</span><b id="v1">0.0%</b></div><div class="track"><div id="b1" style="background:#e0a526"></div></div><small class="vn" id="n1">0 票</small></div>
-      <div class="pollrow"><div class="lab"><span>${esc(G.rivalName)}</span><b id="v2">0.0%</b></div><div class="track"><div id="b2" style="background:#7a6ba8"></div></div><small class="vn" id="n2">0 票</small></div>
-      <div class="pollrow"><div class="lab"><span>其他</span><b id="v3">0.0%</b></div><div class="track"><div id="b3" style="background:#aaa"></div></div></div>
+      <div class="pollrow"><div class="lab"><span>${esc(G.name)}</span><b id="v1">0.0%</b></div><div class="track"><div id="b1" style="background:#e0a526"></div></div><small class="vn" id="n1">${T('0 票')}</small></div>
+      <div class="pollrow"><div class="lab"><span>${esc(G.rivalName)}</span><b id="v2">0.0%</b></div><div class="track"><div id="b2" style="background:#7a6ba8"></div></div><small class="vn" id="n2">${T('0 票')}</small></div>
+      <div class="pollrow"><div class="lab"><span>${T('其他')}</span><b id="v3">0.0%</b></div><div class="track"><div id="b3" style="background:#aaa"></div></div></div>
     </div>
-    <div class="ticker" id="ticker">📺 主播：「各位觀眾，N City 市長選舉開始開票！」</div>
-    <div class="big-result" id="verdict">開票中……</div>
-    <p class="muted" id="turnout" style="color:#ccc;visibility:hidden">投票率 ${res.turnout}%</p>
+    <div class="ticker" id="ticker">${T('📺 主播：「各位觀眾，N City 市長選舉開始開票！」')}</div>
+    <div class="big-result" id="verdict">${T('開票中……')}</div>
+    <p class="muted" id="turnout" style="color:#ccc;visibility:hidden">${T('投票率 {0}%', res.turnout)}</p>
     <div id="closebox"></div>
-    <button class="btn ghost" id="skip" style="border-color:#888;color:#ccc">⏩ 直接看結果</button>
-    <button class="btn" id="next" style="visibility:hidden">看結局</button>
+    <button class="btn ghost" id="skip" style="border-color:#888;color:#ccc">${T('⏩ 直接看結果')}</button>
+    <button class="btn" id="next" style="visibility:hidden">${T('看結局')}</button>
   `, 'end');
   // 開票過程：差距小的時候，前半段常常是另一邊領先，最後才翻盤
   const fin = [res.share.s, res.share.r, res.share.o];
@@ -770,10 +803,10 @@ async function electionNight() {
   const tick = t => { const el = $('#ticker'); if (el) { el.textContent = t; el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); } };
   const lines = (lead, gap, p) => {
     const who = lead === 0 ? G.name : G.rivalName;
-    if (p > 0.9) return gap < 1 ? `📺 主播：「最後幾個開票所了，差距只剩 ${gap.toFixed(1)}%！」` : `📺 主播：「大勢底定，${who}領先 ${gap.toFixed(1)}%。」`;
-    if (gap < 1) return pickOne([`📺 主播：「咬得非常緊！差距不到 1%！」`, `😰 戰情室一片安靜，沒有人敢講話。`, `🙏 ${G.name}握緊了拳頭。`]);
-    if (lead === 0) return pickOne([`📺 主播：「${G.name}目前領先 ${gap.toFixed(1)}%！」`, `📣 競選總部外面開始有人喊「凍蒜」……`, `🧑‍💼 副總幹事：「先不要高興，還早。」`]);
-    return pickOne([`📺 主播：「${G.rivalName}目前領先 ${gap.toFixed(1)}%。」`, `😟 志工盯著電視，有人開始咬指甲。`, `🧑‍💼 副總幹事：「還有很多票沒開，撐住。」`]);
+    if (p > 0.9) return gap < 1 ? `${T('📺 主播：「最後幾個開票所了，差距只剩 {0}%！」', gap.toFixed(1))}` : `${T('📺 主播：「大勢底定，{0}領先 {1}%。」', who, gap.toFixed(1))}`;
+    if (gap < 1) return pickOne([`${T('📺 主播：「咬得非常緊！差距不到 1%！」')}`, `${T('😰 戰情室一片安靜，沒有人敢講話。')}`, `${T('🙏 {0}握緊了拳頭。', G.name)}`]);
+    if (lead === 0) return pickOne([`${T('📺 主播：「{0}目前領先 {1}%！」', G.name, gap.toFixed(1))}`, `${T('📣 競選總部外面開始有人喊「凍蒜」……')}`, `${T('🧑‍💼 副總幹事：「先不要高興，還早。」')}`]);
+    return pickOne([`${T('📺 主播：「{0}目前領先 {1}%。」', G.rivalName, gap.toFixed(1))}`, `${T('😟 志工盯著電視，有人開始咬指甲。')}`, `${T('🧑‍💼 副總幹事：「還有很多票沒開，撐住。」')}`]);
   };
   let skip = false;
   $('#skip').onclick = () => { skip = true; };
@@ -789,13 +822,13 @@ async function electionNight() {
         $('#b' + (i + 1)).style.width = Math.max(0, v) + '%';
       });
       const counted = total * p;
-      $('#n1').textContent = Math.round(counted * sh[0] / 100).toLocaleString('en-US') + ' 票';
-      $('#n2').textContent = Math.round(counted * sh[1] / 100).toLocaleString('en-US') + ' 票';
+      $('#n1').textContent = Math.round(counted * sh[0] / 100).toLocaleString('en-US') + ` ${T('票')}`;
+      $('#n2').textContent = Math.round(counted * sh[1] / 100).toLocaleString('en-US') + ` ${T('票')}`;
       $('#pct').textContent = Math.floor(p * 100) + '%';
       const lead = sh[0] >= sh[1] ? 0 : 1, gap = Math.abs(sh[0] - sh[1]);
       if (!skip && p > 0.03) {
         if (lastLead !== null && lead !== lastLead) {
-          tick(`🔄 逆轉！${lead === 0 ? G.name : G.rivalName}超前了！`); sfx('combo'); vibrate(120);
+          tick(`${T('🔄 逆轉！{0}超前了！', lead === 0 ? G.name : G.rivalName)}`); sfx('combo'); vibrate(120);
           nextLine = p + 0.15;
         } else if (p >= nextLine) { tick(lines(lead, gap, p)); nextLine = p + 0.2; }
         $('#nightface').innerHTML = bossFace(gap < 1 ? 'flat' : lead === 0 ? 'big' : 'sad');
@@ -809,12 +842,12 @@ async function electionNight() {
     requestAnimationFrame(step);
   });
   $('#skip').remove();
-  tick(res.win ? `📺 主播：「${G.name}自行宣布當選！」` : `📺 主播：「${G.rivalName}自行宣布當選。」`);
+  tick(res.win ? `${T('📺 主播：「{0}自行宣布當選！」', G.name)}` : `${T('📺 主播：「{0}自行宣布當選。」', G.rivalName)}`);
   if (res.win) { sfx('win'); confetti(160); vibrate([80, 60, 160]); } else sfx('lose');
-  $('#verdict').textContent = res.win ? `🎉 ${G.name} 凍蒜！` : `😢 ${G.name} 落選`;
+  $('#verdict').textContent = res.win ? `${T('🎉 {0} 凍蒜！', G.name)}` : `${T('😢 {0} 落選', G.name)}`;
   $('#nightface').innerHTML = bossFace(res.win ? 'big' : 'sad');
   $('#turnout').style.visibility = 'visible';
-  if (G.f.complacent) $('#turnout').textContent += '　支持者以為穩贏，很多人沒出門……';
+  if (G.f.complacent) $('#turnout').textContent += `　${T('支持者以為穩贏，很多人沒出門……')}`;
   // 差距不到 1%：要驗票、嗆聲還是認輸？
   if (res.close) await closeRace(res);
   const seen = saveSeen(res.ending.id);
@@ -822,27 +855,26 @@ async function electionNight() {
   saveRun(res);
   const btn = $('#next');
   btn.style.visibility = 'visible';
-  btn.textContent = '選戰檢討會 →';
+  btn.textContent = T('選戰檢討會 →');
   btn.onclick = () => reviewScreen(res, seen);
 }
 
 function closeRace(res) {
   return new Promise(resolve => {
     const opts = res.win
-      ? [['accept', '🗳️ 「歡迎驗票，我們有信心」'], ['fight', '📣 嗆回去：「輸不起就不要選」'], ['calm', '🙏 請支持者冷靜，先回家休息']]
-      : [['recount', '🗳️ 申請驗票'], ['protest', '📣 號召支持者到選委會'], ['concede', '🤝 打電話恭喜對手']];
+      ? [['accept', T('🗳️ 「歡迎驗票，我們有信心」')], ['fight', T('📣 嗆回去：「輸不起就不要選」')], ['calm', T('🙏 請支持者冷靜，先回家休息')]]
+      : [['recount', T('🗳️ 申請驗票')], ['protest', T('📣 號召支持者到選委會')], ['concede', T('🤝 打電話恭喜對手')]];
     const box = $('#closebox');
     box.innerHTML = `<div class="story" style="margin-top:8px">
-      <b>⚠️ 差距只有 ${(Math.floor(Math.abs(res.margin) * 100) / 100).toFixed(2)}%！</b><br>
-      ${res.win ? esc(G.rivalName) + '陣營不認輸，要求驗票。' : '只差一點點，支持者在競選總部外面不肯走。'}總幹事，怎麼辦？
-      ${opts.map(([k, t]) => `<button class="opt" data-k="${k}" style="margin-top:8px">${t}</button>`).join('')}
+      <b>${T('⚠️ 差距只有 {0}%！', (Math.floor(Math.abs(res.margin) * 100) / 100).toFixed(2))}</b><br>
+      ${T('{0}總幹事，怎麼辦？\n      {1}', res.win ? esc(G.rivalName) + T('陣營不認輸，要求驗票。') : T('只差一點點，支持者在競選總部外面不肯走。'), opts.map(([k, t]) => `<button class="opt" data-k="${k}" style="margin-top:8px">${t}</button>`).join(''))}
     </div>`;
     box.querySelectorAll('.opt').forEach(b => b.onclick = () => {
       const wasWin = res.win;
       const lines = resolveClose(G, res, b.dataset.k);
       box.innerHTML = `<div class="story" style="margin-top:8px">${lines.map(esc).join('<br>')}</div>`;
       if (res.win !== wasWin) {
-        $('#verdict').textContent = `🎉 ${G.name} 驗票翻盤，凍蒜！`;
+        $('#verdict').textContent = `${T('🎉 {0} 驗票翻盤，凍蒜！', G.name)}`;
         $('#nightface').innerHTML = bossFace('big');
       }
       resolve();
@@ -852,34 +884,34 @@ function closeRace(res) {
 
 function statsOf() {
   return [
-    ['🫀', '爆肝被強制休息', (G.f.rests || 0) + ' 次'],
-    ['😶', '擺爛（時間到沒選）', (G.f.idle || 0) + ' 次'],
-    ['🙄', '老闆不聽你的', (G.f.defied || 0) + ' 次'],
-    ['🔥', '最高連擊', (G.maxStreak || 0) + ' 次'],
-    ['🏃', '菜市場掃街', (G.f.sweeps || 0) + ' 次'],
-    ['😇', '最後的良心', Math.round(G.con)]
+    ['🫀', T('爆肝被強制休息'), (G.f.rests || 0) + ` ${T('次')}`],
+    ['😶', T('擺爛（時間到沒選）'), (G.f.idle || 0) + ` ${T('次')}`],
+    ['🙄', T('老闆不聽你的'), (G.f.defied || 0) + ` ${T('次')}`],
+    ['🔥', T('最高連擊'), (G.maxStreak || 0) + ` ${T('次')}`],
+    ['🏃', T('菜市場掃街'), (G.f.sweeps || 0) + ` ${T('次')}`],
+    ['😇', T('最後的良心'), Math.round(G.con)]
   ];
 }
 
 function reviewScreen(res, seen) {
   const R = res.review;
-  const row = (h, good) => `<div class="res ${good ? 'good' : 'bad'}" style="text-align:left;font-size:14px">${good ? '📈' : '📉'} ${esc(h.title)}<span class="muted" style="font-size:12px">（${weekLabel(h.week).month}月）</span></div>`;
+  const row = (h, good) => `<div class="res ${good ? 'good' : 'bad'}" style="text-align:left;font-size:14px">${good ? '📈' : '📉'} ${esc(h.title)}<span class="muted" style="font-size:12px">${T('（{0}月）', weekLabel(h.week).month)}</span></div>`;
   show(`
-    <h2>選戰檢討會</h2>
-    <p class="muted" style="color:#ccc">${res.win ? '贏了，但也要知道是怎麼贏的。' : '輸了，來看看問題出在哪。'}</p>
+    <h2>${T('選戰檢討會')}</h2>
+    <p class="muted" style="color:#ccc">${res.win ? T('贏了，但也要知道是怎麼贏的。') : T('輸了，來看看問題出在哪。')}</p>
     <div class="story">
-      <b>👍 幫最多的決定</b>
-      ${R.best.length ? R.best.map(h => row(h, true)).join('') : '<div class="muted">沒有特別突出的。</div>'}
-      <br><b>👎 傷最重的決定</b>
-      ${R.worst.length ? R.worst.map(h => row(h, false)).join('') : '<div class="muted">沒有明顯的失誤。</div>'}
-      <br><b>🗒️ 總評</b>
+      <b>${T('👍 幫最多的決定')}</b>
+      ${R.best.length ? R.best.map(h => row(h, true)).join('') : `<div class="muted">${T('沒有特別突出的。')}</div>`}
+      <br><b>${T('👎 傷最重的決定')}</b>
+      ${R.worst.length ? R.worst.map(h => row(h, false)).join('') : `<div class="muted">${T('沒有明顯的失誤。')}</div>`}
+      <br><b>${T('🗒️ 總評')}</b>
       ${R.notes.map(n => `<div style="margin:4px 0">・${esc(n)}</div>`).join('')}
     </div>
     <div class="story" style="margin-top:10px">
-      <b>📋 這局的數據</b>
+      <b>${T('📋 這局的數據')}</b>
       ${statsOf().map(([e, k, v]) => `<div class="statline"><span>${e} ${k}</span><b>${v}</b></div>`).join('')}
     </div>
-    <button class="btn" id="go">看結局 →</button>
+    <button class="btn" id="go">${T('看結局 →')}</button>
   `, 'end');
   $('#go').onclick = () => endingScreen(res, seen);
 }
@@ -888,16 +920,16 @@ function endingScreen(res, seen) {
   const e = res.ending;
   show(`
     <div class="emoji">${e.emoji}</div>
-    <p class="muted" style="color:#ccc">${res.win ? '當選' : '落選'}・得票 ${res.share.s.toFixed(1)}% vs ${res.share.r.toFixed(1)}%</p>
+    <p class="muted" style="color:#ccc">${T('{0}・得票 {1}% vs {2}%', res.win ? T('當選') : T('落選'), res.share.s.toFixed(1), res.share.r.toFixed(1))}</p>
     <h2>${esc(e.title)}</h2>
     <div class="story">${esc(res.text)}</div>
-    <p class="muted" style="color:#ccc;margin-top:18px">🧑‍💼 而你，總幹事……</p>
+    <p class="muted" style="color:#ccc;margin-top:18px">${T('🧑‍💼 而你，總幹事……')}</p>
     <div class="story mgr"><div class="memoji">${res.mgr.emoji}</div><b>${esc(res.mgr.title)}</b><br>${esc(res.mgrText)}</div>
-    <p class="muted" style="color:#ccc">已解鎖結局 ${seen.size} / ${ENDINGS.length}・總幹事結局 ${loadMgr().size} / ${MGR_ENDINGS.length}</p>
-    <button class="btn" id="share">📤 分享結局截圖</button>
-    <button class="btn ghost" id="gal">📚 結局圖鑑</button>
-    <button class="btn ghost" id="again">🔁 再當一次幕僚</button>
-    <button class="btn ghost" id="home">🏠 回首頁</button>
+    <p class="muted" style="color:#ccc">${T('已解鎖結局 {0} / {1}・總幹事結局 {2} / {3}', seen.size, ENDINGS.length, loadMgr().size, MGR_ENDINGS.length)}</p>
+    <button class="btn" id="share">${T('📤 分享結局截圖')}</button>
+    <button class="btn ghost" id="gal">${T('📚 結局圖鑑')}</button>
+    <button class="btn ghost" id="again">${T('🔁 再當一次幕僚')}</button>
+    <button class="btn ghost" id="home">${T('🏠 回首頁')}</button>
   `, 'end');
   $('#share').onclick = () => shareEnding(res);
   $('#gal').onclick = () => gallery(() => endingScreen(res, loadSeen()));
@@ -932,10 +964,10 @@ function saveRun(res) {
 
 // ---------------- 結局圖鑑 ----------------
 const CATS = [
-  ['true', '⭐ 真結局'], ['win', '🏆 選上'], ['lose', '🌃 落選'], ['close', '🗳️ 險勝驗票'],
-  ['crime', '🚔 被抓'], ['special', '🎲 特殊'], ['mgr', '🧑‍💼 總幹事']
+  ['true', T('⭐ 真結局')], ['win', T('🏆 選上')], ['lose', T('🌃 落選')], ['close', T('🗳️ 險勝驗票')],
+  ['crime', T('🚔 被抓')], ['special', T('🎲 特殊')], ['mgr', T('🧑‍💼 總幹事')]
 ];
-const RARE = { common: ['普通', 'r-common'], rare: ['稀有', 'r-rare'], legend: ['傳說', 'r-legend'] };
+const RARE = { common: [T('普通'), 'r-common'], rare: [T('稀有'), 'r-rare'], legend: [T('傳說'), 'r-legend'] };
 const allEndings = () => ENDINGS.concat(MGR_ENDINGS.map(e => ({ ...e, cat: 'mgr' })));
 let galTab = 'true';
 
@@ -946,16 +978,16 @@ function renderGallery(box) {
   const list = allEndings().filter(e => e.cat === galTab);
   const count = c => { const l = allEndings().filter(e => e.cat === c); return `${l.filter(has).length}/${l.length}`; };
   box.innerHTML = `
-    <p class="muted center" style="margin:8px 0 0">選舉結局 ${seen.size}/${ENDINGS.length}・總幹事結局 ${mseen.size}/${MGR_ENDINGS.length}</p>
+    <p class="muted center" style="margin:8px 0 0">${T('選舉結局 {0}/{1}・總幹事結局 {2}/{3}', seen.size, ENDINGS.length, mseen.size, MGR_ENDINGS.length)}</p>
     <div class="tabs">${CATS.map(([c, n]) => `<button class="tab ${c === galTab ? 'on' : ''}" data-c="${c}">${n}<small>${count(c)}</small></button>`).join('')}</div>
     <div class="gallery">${list.map(e => has(e)
       ? `<button class="gcell" data-id="${e.id}"><span class="rtag ${RARE[e.rare][1]}">${RARE[e.rare][0]}</span><span class="e">${e.emoji}</span>${esc(e.title)}</button>`
       : `<button class="gcell lock" data-id="${e.id}"><span class="rtag ${RARE[e.rare][1]}">${RARE[e.rare][0]}</span><span class="e">🔒</span>？？？</button>`).join('')}</div>
-    <button class="btn ghost" id="runsbtn">📜 我的選戰紀錄</button>`;
+    <button class="btn ghost" id="runsbtn">${T('📜 我的選戰紀錄')}</button>`;
   box.querySelectorAll('.tab').forEach(b => b.onclick = () => { galTab = b.dataset.c; renderGallery(box); });
   box.querySelectorAll('.gcell').forEach(b => b.onclick = () => {
     const e = allEndings().find(x => x.id === b.dataset.id);
-    if (has(e)) endingCard(e); else toast('還沒解鎖，再當幾次總幹事吧');
+    if (has(e)) endingCard(e); else toast(T('還沒解鎖，再當幾次總幹事吧'));
   });
   box.querySelector('#runsbtn').onclick = runsList;
 }
@@ -964,7 +996,7 @@ function renderGallery(box) {
 function layer(title, html) {
   const m = document.createElement('div');
   m.className = 'manual';
-  m.innerHTML = `<div class="mcard"><div class="mhead"><b>${title}</b><button class="mx" aria-label="關閉">✕</button></div><div class="mbody">${html}</div></div>`;
+  m.innerHTML = `<div class="mcard"><div class="mhead"><b>${title}</b><button class="mx" aria-label="${T('關閉')}">✕</button></div><div class="mbody">${html}</div></div>`;
   app.appendChild(m);
   m.querySelector('.mx').onclick = () => m.remove();
   m.onclick = ev => { if (ev.target === m) m.remove(); };
@@ -976,16 +1008,16 @@ function endingCard(e) {
   const rec = R.endings[e.id];
   const run = rec && R.runs.find(r => r.id === rec.last);
   const story = run ? (e.cat === 'mgr' ? run.mgrText : run.endingText) : '';
-  const m = layer(`${e.emoji} 結局小卡`, `
+  const m = layer(`${T('{0} 結局小卡', e.emoji)}`, `
     <div class="ecard">
       <div class="big-e">${e.emoji}</div>
       <h3>${esc(e.title)}</h3>
       <span class="rtag ${RARE[e.rare][1]}">${RARE[e.rare][0]}</span>
       <p class="quip">「${esc(e.quip)}」</p>
-      <div class="einfo"><b>🔓 怎麼拿到的</b><br>${esc(e.how)}</div>
-      <div class="einfo"><b>🗂️ 你的紀錄</b><br>${rec ? `第一次解鎖：${esc(rec.first)}・${esc(rec.boss)}<br>總共拿過 ${rec.count} 次` : '這是舊版玩到的結局，還沒有詳細紀錄。'}</div>
-      ${story ? `<button class="btn ghost" id="storybtn">📖 看完整故事</button><div class="einfo" id="story" hidden>${esc(story)}</div>` : ''}
-      ${run ? `<button class="btn" id="runbtn">📜 看那一局的檢討會</button>` : ''}
+      <div class="einfo"><b>${T('🔓 怎麼拿到的')}</b><br>${esc(e.how)}</div>
+      <div class="einfo"><b>${T('🗂️ 你的紀錄')}</b><br>${rec ? `${T('第一次解鎖：{0}・{1}', esc(rec.first), esc(rec.boss))}<br>${T('總共拿過 {0} 次', rec.count)}` : T('這是舊版玩到的結局，還沒有詳細紀錄。')}</div>
+      ${story ? `<button class="btn ghost" id="storybtn">${T('📖 看完整故事')}</button><div class="einfo" id="story" hidden>${esc(story)}</div>` : ''}
+      ${run ? `<button class="btn" id="runbtn">${T('📜 看那一局的檢討會')}</button>` : ''}
     </div>`);
   const sb = m.querySelector('#storybtn');
   if (sb) sb.onclick = () => { m.querySelector('#story').hidden = false; sb.remove(); };
@@ -998,38 +1030,41 @@ function runsList() {
   const all = allEndings();
   const em = id => (all.find(e => e.id === id) || {}).emoji || '';
   const tt = id => (all.find(e => e.id === id) || {}).title || '';
-  const m = layer('📜 我的選戰紀錄', R.runs.length
-    ? `<p class="muted">最近 ${R.runs.length} 局，點一下可以看那一局的檢討會。</p>${R.runs.map(r => `
+  const m = layer(T('📜 我的選戰紀錄'), R.runs.length
+    ? `<p class="muted">${T('最近 {0} 局，點一下可以看那一局的檢討會。', R.runs.length)}</p>${R.runs.map(r => `
       <button class="runrow" data-id="${r.id}">
         <span>${esc(r.date)}・${esc(r.boss)}（${esc(r.label)}）</span>
-        <b>${r.win ? '🎉 當選' : '😢 落選'} ${r.s}% vs ${r.r}%</b>
+        <b>${r.win ? T('🎉 當選') : T('😢 落選')} ${r.s}% vs ${r.r}%</b>
         <small>${em(r.ending)} ${esc(tt(r.ending))}　🧑‍💼 ${em(r.mgr)} ${esc(tt(r.mgr))}</small>
       </button>`).join('')}`
-    : '<p class="muted">還沒有紀錄。玩完一局就會出現在這裡。</p>');
+    : `<p class="muted">${T('還沒有紀錄。玩完一局就會出現在這裡。')}</p>`);
   m.querySelectorAll('.runrow').forEach(b => b.onclick = () => runDetail(R.runs.find(r => String(r.id) === b.dataset.id)));
 }
 
 function runDetail(r) {
   const all = allEndings();
   const e = all.find(x => x.id === r.ending) || {}, mg = all.find(x => x.id === r.mgr) || {};
-  const row = (h, good) => `<div class="res ${good ? 'good' : 'bad'}" style="font-size:14px">${good ? '📈' : '📉'} ${esc(h.title)}（${weekLabel(h.week).month}月）</div>`;
-  layer(`📜 ${esc(r.date)} 那一局`, `
-    <p><b>${esc(r.boss)}</b>（${esc(r.label)}）vs ${esc(r.rival)}<br>${r.win ? '🎉 當選' : '😢 落選'}・得票 ${r.s}% vs ${r.r}%・投票率 ${r.turnout}%</p>
+  const row = (h, good) => `<div class="res ${good ? 'good' : 'bad'}" style="font-size:14px">${T('{0} {1}（{2}月）', good ? '📈' : '📉', esc(h.title), weekLabel(h.week).month)}</div>`;
+  layer(`${T('📜 {0} 那一局', esc(r.date))}`, `
+    <p><b>${esc(r.boss)}</b>（${esc(r.label)}）vs ${esc(r.rival)}<br>${T('{0}・得票 {1}% vs {2}%・投票率 {3}%', r.win ? T('🎉 當選') : T('😢 落選'), r.s, r.r, r.turnout)}</p>
     <div class="einfo"><b>${e.emoji || ''} ${esc(e.title || '')}</b><br>${esc(r.endingText)}</div>
     <div class="einfo"><b>🧑‍💼 ${mg.emoji || ''} ${esc(mg.title || '')}</b><br>${esc(r.mgrText)}</div>
-    <h3>👍 幫最多的決定</h3>${r.review.best.length ? r.review.best.map(h => row(h, true)).join('') : '<p class="muted">沒有特別突出的。</p>'}
-    <h3>👎 傷最重的決定</h3>${r.review.worst.length ? r.review.worst.map(h => row(h, false)).join('') : '<p class="muted">沒有明顯的失誤。</p>'}
-    <h3>🗒️ 總評</h3>${r.review.notes.map(n => `<p>・${esc(n)}</p>`).join('')}
-    <h3>📋 這局的數據</h3>${r.stats.map(([a, k, v]) => `<div class="statline dark"><span>${a} ${k}</span><b>${v}</b></div>`).join('')}`);
+    <h3>${T('👍 幫最多的決定')}</h3>${r.review.best.length ? r.review.best.map(h => row(h, true)).join('') : `<p class="muted">${T('沒有特別突出的。')}</p>`}
+    <h3>${T('👎 傷最重的決定')}</h3>${r.review.worst.length ? r.review.worst.map(h => row(h, false)).join('') : `<p class="muted">${T('沒有明顯的失誤。')}</p>`}
+    <h3>${T('🗒️ 總評')}</h3>${r.review.notes.map(n => `<p>・${esc(n)}</p>`).join('')}
+    <h3>${T('📋 這局的數據')}</h3>${r.stats.map(([a, k, v]) => `<div class="statline dark"><span>${a} ${k}</span><b>${v}</b></div>`).join('')}`);
 }
 
 function gallery(back) {
-  show(`<h2 class="center">結局圖鑑</h2><div id="galbox"></div><button class="btn" id="back">返回</button>`);
+  show(`<h2 class="center">${T('結局圖鑑')}</h2><div id="galbox"></div><button class="btn" id="back">${T('返回')}</button>`);
   renderGallery($('#galbox'));
   $('#back').onclick = back;
 }
 
 // ---------------- 分享截圖 ----------------
+function loadImage(src) {
+  return new Promise((resolve, reject) => { const img = new Image(); img.onload = () => resolve(img); img.onerror = reject; img.src = src; });
+}
 function svgToImage(svg) {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -1041,8 +1076,10 @@ function svgToImage(svg) {
 
 function wrapText(ctx, text, maxW) {
   const lines = []; let cur = '';
-  for (const ch of text) {
-    if (ctx.measureText(cur + ch).width > maxW) { lines.push(cur); cur = ch; } else cur += ch;
+  // 英文按單字斷行，中文按字斷行
+  const units = LANG === 'en' ? text.split(/(?<=\s)/) : [...text];
+  for (const ch of units) {
+    if (cur && ctx.measureText(cur + ch).width > maxW) { lines.push(cur.trim()); cur = ch; } else cur += ch;
   }
   if (cur) lines.push(cur);
   return lines;
@@ -1057,7 +1094,10 @@ async function shareEnding(res) {
   // 文字和 emoji 分開畫：手機上 emoji 的寬度常常量不準，一起置中就會歪
   const font = (s) => `${s}px Huninn, "PingFang TC", "Noto Sans TC", sans-serif`;
   const efont = (s) => `${s}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
+  // 字太長（例如英文）就縮小，免得超出畫面
+  const fit = (text, size, max = W - 180) => { let sz = size; x.font = font(sz); while (sz > 16 && x.measureText(text).width > max) { sz -= 2; x.font = font(sz); } return sz; };
   const line = (emoji, text, y, size, color) => {
+    size = fit(text, size, W - 180 - (emoji ? size * 1.45 : 0));
     x.font = font(size);
     const tw = x.measureText(text).width;
     const ew = emoji ? size * 1.15 : 0, gap = emoji ? size * 0.3 : 0;
@@ -1080,41 +1120,47 @@ async function shareEnding(res) {
   g.addColorStop(0, '#2b2f36'); g.addColorStop(1, '#3d3150');
   x.fillStyle = g; x.fillRect(0, 0, W, H);
   x.textAlign = 'center';
-  x.fillStyle = '#e0a526'; x.font = font(36); x.fillText('市長不是神，是幕僚造出來的神。', W / 2, 80);
-  x.fillStyle = '#fff'; x.font = font(76); x.fillText('我推的市長', W / 2, 170);
+  x.fillStyle = '#e0a526'; x.font = font(36); x.fillText(T('市長不是神，是幕僚造出來的神。'), W / 2, 80);
+  x.fillStyle = '#fff'; x.font = font(76); x.fillText(T('我推的市長'), W / 2, 170);
 
   // ---- 候選人的框
   box(220, 640, 'rgba(224,165,38,.7)', 'rgba(224,165,38,.08)');
-  label('候選人', 225, '#e0a526');
+  label(T('候選人'), 225, '#e0a526');
   try {
-    const img = await svgToImage(bossFace(res.win ? 'big' : 'sad'));
-    x.drawImage(img, W / 2 - 95, 270, 190, 190);
+    const mood = res.win ? 'big' : 'sad';
+    const img = await loadImage(`art/${G.type}_${G.gender}_${mood}.webp`).catch(() => svgToImage(avatarSvg(lookOf(G.type, G.gender, mood))));
+    x.save(); x.beginPath(); x.arc(W / 2, 365, 95, 0, Math.PI * 2); x.clip();
+    x.fillStyle = '#f6efe0'; x.fillRect(W / 2 - 95, 270, 190, 190);
+    x.drawImage(img, W / 2 - 95, 270, 190, 190); x.restore();
   } catch (e) { /* 頭像畫不出來就略過 */ }
   x.textAlign = 'center'; x.fillStyle = '#fff'; x.font = font(42);
-  x.fillText(`${G.name}・${TYPES[G.type].label}`, W / 2, 510);
-  line(res.win ? '🎉' : '😢', res.win ? '凍蒜！' : '落選', 585, 58, res.win ? '#ffd166' : '#ff9a9a');
+  fit(`${G.name}・${TYPES[G.type].label}`, 42); x.fillText(`${G.name}・${TYPES[G.type].label}`, W / 2, 510);
+  line(res.win ? '🎉' : '😢', res.win ? T('凍蒜！') : T('落選'), 585, 58, res.win ? '#ffd166' : '#ff9a9a');
   x.textAlign = 'center'; x.font = font(34); x.fillStyle = '#ccc';
-  x.fillText(`得票 ${res.share.s.toFixed(1)}% vs ${res.share.r.toFixed(1)}%`, W / 2, 640);
+  x.fillText(`${T('得票 {0}% vs {1}%', res.share.s.toFixed(1), res.share.r.toFixed(1))}`, W / 2, 640);
   line(res.ending.emoji, res.ending.title, 715, 48, '#fff');
   x.textAlign = 'center'; x.font = font(32); x.fillStyle = '#eee';
-  wrapText(x, res.text, W - 220).slice(0, 2).forEach((l, i) => x.fillText(l, W / 2, 775 + i * 46));
+  const story = wrapText(x, res.text, W - 220);
+  if (story.length > 2) story[1] = story[1].replace(/\s*\S{0,3}$/, '') + '…';
+  story.slice(0, 2).forEach((l, i) => x.fillText(l, W / 2, 775 + i * 46));
 
   // ---- 總幹事的框
   box(900, 330, 'rgba(201,184,255,.7)', 'rgba(160,139,214,.12)');
-  label('總幹事（我）', 905, '#c9b8ff');
+  label(T('總幹事（我）'), 905, '#c9b8ff');
   line(res.mgr.emoji, res.mgr.title, 990, 46, '#e6dcff');
   x.textAlign = 'center'; x.font = font(30); x.fillStyle = '#ddd';
-  x.fillText(`「${res.mgr.quip || ''}」`, W / 2, 1045);
+  const quip = LANG === 'en' ? `“${res.mgr.quip || ''}”` : `「${res.mgr.quip || ''}」`;
+  fit(quip, 30); x.fillText(quip, W / 2, 1045);
   statsOf().slice(0, 3).forEach(([e, k, v], i) => line(e, `${k} ${v}`, 1105 + i * 42, 28, '#ffd166'));
 
   x.textAlign = 'center'; x.fillStyle = '#e0a526'; x.font = font(34);
-  x.fillText('你也來當總幹事，看能不能把市長送上寶座 →', W / 2, H - 50);
+  fit(T('你也來當總幹事，看能不能把市長送上寶座 →'), parseInt(x.font), W - 100); x.fillText(T('你也來當總幹事，看能不能把市長送上寶座 →'), W / 2, H - 50);
   const blob = await new Promise(r => c.toBlob(r, 'image/png'));
   const file = new File([blob], 'my-mayor.png', { type: 'image/png' });
-  const winWord = res.win ? '凍蒜' : '落選';
+  const winWord = res.win ? T('凍蒜') : T('落選');
   const eShare = (res.ending.share || res.ending.title).replace('%W', winWord);
   const mShare = res.mgr.share || res.mgr.title;
-  const text = `我在《我推的市長》幫 ${G.name} 打選戰，市長選戰結局是「${eShare}」，我自己則是「${mShare}」！你要玩玩看嗎？👉 https://mochachen1225-create.github.io/my-mayor/`;
+  const text = `${T('我在《我推的市長》幫 {0} 打選戰，市長選戰結局是「{1}」，我自己則是「{2}」！你要玩玩看嗎？👉 https://mochachen1225-create.github.io/my-mayor/', G.name, eShare, mShare)}`;
   try {
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       await navigator.share({ files: [file], text });
@@ -1127,14 +1173,14 @@ async function shareEnding(res) {
   const url = c.toDataURL('image/png');
   const o = overlay(`
     <div class="body center">
-      <h2>結局截圖</h2>
-      <img src="${url}" alt="結局截圖" style="width:100%;border-radius:12px">
-      <p class="muted">長按圖片儲存，再傳到 LINE 給朋友。</p>
-      <button class="btn" id="cp">複製分享文字</button>
-      <button class="btn ghost" id="cl">關閉</button>
+      <h2>${T('結局截圖')}</h2>
+      <img src="${url}" alt="${T('結局截圖')}" style="width:100%;border-radius:12px">
+      <p class="muted">${T('長按圖片儲存，再傳到 LINE 給朋友。')}</p>
+      <button class="btn" id="cp">${T('複製分享文字')}</button>
+      <button class="btn ghost" id="cl">${T('關閉')}</button>
     </div>`, '');
   o.querySelector('#cp').onclick = async () => {
-    try { await navigator.clipboard.writeText(text); toast('已複製分享文字'); } catch (e) { toast('複製失敗，請手動輸入網址'); }
+    try { await navigator.clipboard.writeText(text); toast(T('已複製分享文字')); } catch (e) { toast(T('複製失敗，請手動輸入網址')); }
   };
   o.querySelector('#cl').onclick = closeOverlay;
 }
@@ -1148,23 +1194,23 @@ function openMenu() {
   const close = () => m.remove();
   const home = () => {
     m.querySelector('.mbody').innerHTML = `
-      <p style="margin:14px 0">確定要回首頁嗎？<br><b>這一局的進度會放棄。</b></p>
-      <button class="btn" id="yes">放棄這局，回首頁</button>
-      <button class="btn ghost" id="no">繼續打選戰</button>`;
+      <p style="margin:14px 0">${T('確定要回首頁嗎？')}<br><b>${T('這一局的進度會放棄。')}</b></p>
+      <button class="btn" id="yes">${T('放棄這局，回首頁')}</button>
+      <button class="btn ghost" id="no">${T('繼續打選戰')}</button>`;
     m.querySelector('#yes').onclick = () => { close(); clearGame(); titleScreen(); };
     m.querySelector('#no').onclick = close;
   };
   const gal = () => renderGallery(m.querySelector('.mbody'));
   m.innerHTML = `<div class="mcard">
-    <div class="mhead"><b>☰ 選單</b><button id="mclose" aria-label="關閉">✕</button></div>
+    <div class="mhead"><b>${T('☰ 選單')}</b><button id="mclose" aria-label="${T('關閉')}">✕</button></div>
     <div class="mbody">
-      <p class="muted" style="margin-top:10px">打開選單時，倒數會暫停。</p>
-      <button class="btn" id="m1">▶️ 繼續打選戰</button>
+      <p class="muted" style="margin-top:10px">${T('打開選單時，倒數會暫停。')}</p>
+      <button class="btn" id="m1">${T('▶️ 繼續打選戰')}</button>
       <button class="btn ghost" id="m5"></button>
       <button class="btn ghost" id="m6"></button>
-      <button class="btn ghost" id="m2">📖 總幹事手冊</button>
-      <button class="btn ghost" id="m3">🏆 結局圖鑑</button>
-      <button class="btn ghost" id="m4">🏠 回首頁</button>
+      <button class="btn ghost" id="m2">${T('📖 總幹事手冊')}</button>
+      <button class="btn ghost" id="m3">${T('🏆 結局圖鑑')}</button>
+      <button class="btn ghost" id="m4">${T('🏠 回首頁')}</button>
     </div>
   </div>`;
   app.appendChild(m);
@@ -1174,11 +1220,11 @@ function openMenu() {
   m.querySelector('#m3').onclick = gal;
   m.querySelector('#m4').onclick = home;
   const paceBtn = m.querySelector('#m5');
-  const paintPace = () => { paceBtn.textContent = isSlow() ? '🔥 切換成極限爆肝模式' : '🐢 切換成慢慢來模式（不倒數）'; };
+  const paintPace = () => { paceBtn.textContent = isSlow() ? T('🔥 切換成極限爆肝模式') : T('🐢 切換成慢慢來模式（不倒數）'); };
   paceBtn.onclick = () => { setPace(isSlow() ? 'busy' : 'slow'); paintPace(); };
   paintPace();
   const sndBtn = m.querySelector('#m6');
-  const paintSnd = () => { sndBtn.textContent = soundOn() ? '🔇 關掉音效' : '🔊 打開音效'; };
+  const paintSnd = () => { sndBtn.textContent = soundOn() ? T('🔇 關掉音效') : T('🔊 打開音效'); };
   sndBtn.onclick = () => { setSound(!soundOn()); paintSnd(); sfx('good'); };
   paintSnd();
   m.onclick = e => { if (e.target === m) close(); };
@@ -1188,62 +1234,62 @@ function openManual() {
   const m = document.createElement('div');
   m.className = 'manual';
   m.innerHTML = `<div class="mcard">
-    <div class="mhead"><b>📖 總幹事手冊</b><button id="mclose" aria-label="關閉">✕</button></div>
+    <div class="mhead"><b>${T('📖 總幹事手冊')}</b><button id="mclose" aria-label="${T('關閉')}">✕</button></div>
     <div class="mbody">
-      <h3>🎯 選上的關鍵</h3>
-      <p><b>民調好感度高的時候，聲量越大，民調漲得越快。</b></p>
+      <h3>${T('🎯 選上的關鍵')}</h3>
+      <p><b>${T('民調好感度高的時候，聲量越大，民調漲得越快。')}</b></p>
       <ul>
-        <li>好感度高於 50、聲量又高 → 民調每週自動往上漲</li>
-        <li>好感度低於 50 → 聲量越大，扣得越多（越紅越被罵）</li>
-        <li>聲量很低 → 好感度再高，民調也幾乎不動</li>
+        <li>${T('好感度高於 50、聲量又高 → 民調每週自動往上漲')}</li>
+        <li>${T('好感度低於 50 → 聲量越大，扣得越多（越紅越被罵）')}</li>
+        <li>${T('聲量很低 → 好感度再高，民調也幾乎不動')}</li>
       </ul>
-      <p>順序是：<b>先拉好感度，再衝聲量。</b></p>
+      <p>${T('順序是：')}<b>${T('先拉好感度，再衝聲量。')}</b></p>
 
-      <h3>🔥 有火就滅火</h3>
+      <h3>${T('🔥 有火就滅火')}</h3>
       <ul>
-        <li>突發事件只有 20 秒，最後兩週只剩 10 秒（首頁選「🐢 我想慢慢來」就不倒數；玩到一半也可以在選單切換）</li>
-        <li>誠實、負責的選項通常最穩：道歉、公開說明、親自到現場</li>
-        <li>「推給中央」「說是抹黑」「不回應」很常翻車</li>
-        <li>時間到沒選，就是擺爛，老闆會一直問「接下來呢？」</li>
-        <li>連續處理得漂亮會有<b>連擊</b>，3、5、8 連擊時團隊士氣和你的信心都會上升；出包或老闆不聽話就歸零</li>
-      </ul>
-
-      <h3>✨ 沒火就成就老闆</h3>
-      <ul>
-        <li>行程上的小標籤：💰 花錢、🫀 很累、👥 看人氣（聲量太低可能沒人來）、🎲 有風險</li>
-        <li>座談、講政見之後，要再選講什麼主題</li>
-        <li>🏃 <b>菜市場掃街</b>是小遊戲：10 秒內點冒出來的人握手，阿嬤加最多，嗆聲的和偷拍的別點。玩得越好效果越大</li>
-        <li>錢少的時候記得募款；造勢、廣告效果大，但要錢</li>
+        <li>${T('突發事件只有 20 秒，最後兩週只剩 10 秒（首頁選「🐢 我想慢慢來」就不倒數；玩到一半也可以在選單切換）')}</li>
+        <li>${T('誠實、負責的選項通常最穩：道歉、公開說明、親自到現場')}</li>
+        <li>${T('「推給中央」「說是抹黑」「不回應」很常翻車')}</li>
+        <li>${T('時間到沒選，就是擺爛，老闆會一直問「接下來呢？」')}</li>
+        <li>${T('連續處理得漂亮會有')}<b>${T('連擊')}</b>${T('，3、5、8 連擊時團隊士氣和你的信心都會上升；出包或老闆不聽話就歸零')}</li>
       </ul>
 
-      <h3>🤝 讓老闆聽你的</h3>
-      <p>信任太低，老闆會自己做別的事。多選他擅長的事，信任會上升，也比較不會翻車：</p>
+      <h3>${T('✨ 沒火就成就老闆')}</h3>
       <ul>
-        <li>政治世家：掃街、里長、宮廟、長輩出面</li>
-        <li>清新專業：政見、座談、白皮書</li>
-        <li>商業老闆：廣告、外商、花錢辦大事</li>
-        <li>現任市長：視察、把市政危機處理好</li>
-        <li>資深黨員：貓、國際交流、長照與住宅</li>
-        <li>草根律師：街頭演講、即興、上節目</li>
-      </ul>
-      <p>信任掉了，就陪老闆吃宵夜聊天。</p>
-
-      <h3>🧑‍💼 總幹事自己</h3>
-      <ul>
-        <li>🫀 肝的健康：太低會被強制休息一天</li>
-        <li>💪 團隊士氣：太低事情容易出包，請大家喝飲料打打氣</li>
-        <li>🔥 你的信心：太低你會慌，做決定的時間變短，老闆也不想聽</li>
+        <li>${T('行程上的小標籤：💰 花錢、🫀 很累、👥 看人氣（聲量太低可能沒人來）、🎲 有風險')}</li>
+        <li>${T('座談、講政見之後，要再選講什麼主題')}</li>
+        <li>🏃 <b>${T('菜市場掃街')}</b>${T('是小遊戲：10 秒內點冒出來的人握手，阿嬤加最多，嗆聲的和偷拍的別點。玩得越好效果越大')}</li>
+        <li>${T('錢少的時候記得募款；造勢、廣告效果大，但要錢')}</li>
       </ul>
 
-      <h3>⚠️ 千萬別做</h3>
+      <h3>${T('🤝 讓老闆聽你的')}</h3>
+      <p>${T('信任太低，老闆會自己做別的事。多選他擅長的事，信任會上升，也比較不會翻車：')}</p>
       <ul>
-        <li>收黑錢、買票、境外資金：<b>通常沒有好下場</b>，選上也沒用</li>
-        <li>一直攻擊對手：對手會回擊</li>
-        <li>民調領先就放鬆：支持者以為穩贏，投票日不出門</li>
+        <li>${T('政治世家：掃街、里長、宮廟、長輩出面')}</li>
+        <li>${T('清新專業：政見、座談、白皮書')}</li>
+        <li>${T('商業老闆：廣告、外商、花錢辦大事')}</li>
+        <li>${T('現任市長：視察、把市政危機處理好')}</li>
+        <li>${T('資深黨員：貓、國際交流、長照與住宅')}</li>
+        <li>${T('草根律師：街頭演講、即興、上節目')}</li>
+      </ul>
+      <p>${T('信任掉了，就陪老闆吃宵夜聊天。')}</p>
+
+      <h3>${T('🧑‍💼 總幹事自己')}</h3>
+      <ul>
+        <li>${T('🫀 肝的健康：太低會被強制休息一天')}</li>
+        <li>${T('💪 團隊士氣：太低事情容易出包，請大家喝飲料打打氣')}</li>
+        <li>${T('🔥 你的信心：太低你會慌，做決定的時間變短，老闆也不想聽')}</li>
       </ul>
 
-      <h3>📊 看內參民調</h3>
-      <p>每個月一次。下面有「副總幹事建議」，會告訴你現在卡在哪裡。最後 10 天民調封關，只能憑直覺。</p>
+      <h3>${T('⚠️ 千萬別做')}</h3>
+      <ul>
+        <li>${T('收黑錢、買票、境外資金：')}<b>${T('通常沒有好下場')}</b>${T('，選上也沒用')}</li>
+        <li>${T('一直攻擊對手：對手會回擊')}</li>
+        <li>${T('民調領先就放鬆：支持者以為穩贏，投票日不出門')}</li>
+      </ul>
+
+      <h3>${T('📊 看內參民調')}</h3>
+      <p>${T('每個月一次。下面有「副總幹事建議」，會告訴你現在卡在哪裡。最後 10 天民調封關，只能憑直覺。')}</p>
     </div>
   </div>`;
   app.appendChild(m);
