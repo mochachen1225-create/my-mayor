@@ -114,7 +114,7 @@ function titleScreen() {
     <button class="btn ${save ? 'ghost' : ''}" id="go">${save ? '重新開始（放棄上一局）' : '開始上班'}</button>
     <button class="btn ghost" id="manual">📖 總幹事手冊</button>
     <button class="btn ghost" id="gal">結局圖鑑（${seen.size} / ${ENDINGS.length}）</button>
-    <p class="muted" style="margin-top:22px;font-size:12px">本遊戲純屬虛構，人物、政黨、城市皆非真實。<button class="verlink" id="ver">v${VERSION} 更新內容</button></p>
+    <p class="muted" style="margin-top:22px;font-size:12px">本遊戲純屬虛構，人物、政黨、城市皆非真實。<button class="verlink" id="ver">v${VERSION} 更新內容</button><button class="verlink" id="snd"></button></p>
   `, 'title');
   const paintPace = () => app.querySelectorAll('.pace-opt').forEach(b => {
     const on = (b.dataset.p === 'slow') === isSlow();
@@ -127,6 +127,9 @@ function titleScreen() {
   const showNews = () => layer(`🆕 v${VERSION} 更新內容`, `<ul class="newslist">${CHANGES.map(c => `<li>${esc(c)}</li>`).join('')}</ul>`);
   if ($('#news')) $('#news').onclick = showNews;
   $('#ver').onclick = showNews;
+  const paintSnd = () => { $('#snd').textContent = soundOn() ? '🔊 音效開' : '🔇 音效關'; };
+  $('#snd').onclick = () => { setSound(!soundOn()); paintSnd(); sfx('good'); };
+  paintSnd();
   $('#gal').onclick = () => gallery(titleScreen);
   $('#manual').onclick = openManual;
 }
@@ -282,6 +285,7 @@ function roomScreen() {
   $('#menubtn').onclick = openMenu;
   $('#boss').innerHTML = bossFace('smile');
   $('#bossname').textContent = `${G.name}・${TYPES[G.type].party}`;
+  for (const k in lastHud) delete lastHud[k]; // 新的一局，不要飄上一局的數字
   updateHud();
 }
 
@@ -301,7 +305,10 @@ function updateHud() {
     el.querySelector('span').textContent = v;
     el.querySelector('.bar div').style.width = v + '%';
     el.classList.toggle('low', v < 25);
-    if (lastHud[k] !== undefined && lastHud[k] !== v) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
+    if (lastHud[k] !== undefined && lastHud[k] !== v) {
+      el.classList.remove('bump', 'up', 'down'); void el.offsetWidth; el.classList.add('bump', v > lastHud[k] ? 'up' : 'down');
+      floatDelta(el, v - lastHud[k]);
+    }
     lastHud[k] = v;
   }
   // 對手聲勢：看不到確切數字，只看得到大概強弱和趨勢
@@ -342,6 +349,13 @@ const KIND_LABEL = {
   daily: '☕ 戰情室日常', crisis: '🚨 危機', topic: '🎤 座談主題', policy: '📜 政見發表', build: '✨ 沒有火，來成就老闆'
 };
 
+// 最後 5 秒：滴答聲、倒數條變紅
+function hurry(box, s) {
+  const on = typeof s === 'number' && s <= 5 && s > 0;
+  box.classList.toggle('hurry', on);
+  if (on) sfx('tick');
+}
+
 // 倒數計時：切到背景時暫停
 function countdown(seconds, onTick, onEnd) {
   let left = seconds * 1000, last = performance.now(), stop = false;
@@ -372,13 +386,40 @@ function chipsHtml(delta) {
   return out.length ? `<div class="chips">${out.join('')}</div>` : '';
 }
 
+// 脆上的網友反應：只是好玩，用 Math.random 不影響遊戲
+function threadsHtml(res) {
+  const exec = res.exec || {};
+  const cat = res.idle ? 'idle' : res.lines.some(l => l.kind === 'combo') ? 'combo' : res.defied ? 'defy'
+    : res.failed ? 'bad' : (exec.fx && exec.fx.con <= -5) ? 'dirty'
+    : ((res.delta.s || 0) - (res.delta.r || 0) + (res.delta.fav || 0) * 0.15 > 0.3) ? 'good' : 'meh';
+  const pool = THREADS[cat].slice(), users = THREAD_USERS.slice();
+  const take = a => a.splice(Math.floor(Math.random() * a.length), 1)[0];
+  const n = Math.random() < 0.3 ? 3 : 2;
+  const posts = [];
+  for (let i = 0; i < n && pool.length; i++) posts.push({ u: take(users), t: take(pool) });
+  if (Math.random() < 0.05) posts[posts.length - 1] = { u: G.name + '的' + (Math.random() < 0.5 ? '媽媽' : '阿姨'), t: THREADS.mom[Math.floor(Math.random() * THREADS.mom.length)] };
+  const likes = () => (Math.floor(Math.pow(Math.random(), 2.2) * 4800) + 3).toLocaleString('en-US');
+  return `<div class="threads"><div class="th-head">🧵 脆上的反應</div>${posts.map(p => `
+    <div class="th-post"><div class="th-ava">${esc(p.u.slice(0, 1))}</div><div class="th-body"><b>${esc(p.u)}</b><span>${esc(fill(G, p.t))}</span><small>♡ ${likes()}</small></div></div>`).join('')}</div>`;
+}
+
+// 做完決定的手感：音效、震動、晃卡片、撒彩帶
+function reactFx(res, card) {
+  if (res.idle) { sfx('bad'); vibrate([60, 40, 60]); shakeEl(card); return; }
+  if (res.lines.some(l => l.kind === 'combo')) { sfx('combo'); confetti(70); return; }
+  if (res.failed || res.defied) { sfx('bad'); vibrate(80); shakeEl(card); return; }
+  sfx('good');
+  if ((res.delta.s || 0) >= 0.8) confetti(40);
+}
+
 // 結果卡：先看選民和市場的反應＋數值變化，老闆的話放在最下面小小的
 function resultHtml(res) {
   const main = res.lines.filter(l => l.kind !== 'say' && l.kind !== 'boss');
   const boss = res.lines.filter(l => l.kind === 'say' || l.kind === 'boss');
   return main.map(l => `<div class="res ${l.kind}">${esc(l.text)}</div>`).join('')
     + chipsHtml(res.delta)
-    + boss.map(l => `<div class="res say"><div class="who" style="margin:0">${bossFace(l.kind === 'boss' ? 'sad' : l.mood)}<span><b>${esc(G.name)}</b>：${l.kind === 'boss' ? '「' + esc(l.text) + '」' : esc(l.text)}</span></div></div>`).join('');
+    + boss.map(l => `<div class="res say"><div class="who" style="margin:0">${bossFace(l.kind === 'boss' ? 'sad' : l.mood)}<span><b>${esc(G.name)}</b>：${l.kind === 'boss' ? '「' + esc(l.text) + '」' : esc(l.text)}</span></div></div>`).join('')
+    + threadsHtml(res);
 }
 
 // 顯示一張事件卡，等玩家選或時間到
@@ -411,13 +452,14 @@ function eventCard(ev, queueLeft, isBuild) {
       else bossSays(res.failed ? '……這樣真的好嗎？' : '好，接下來呢？');
       o.querySelector('.timer div').style.width = '0';
       o.querySelector('#opts').innerHTML = resultHtml(res) + `<button class="btn" id="next">繼續</button>`;
-      o.querySelector('#next').onclick = () => { closeOverlay(); resolve(res); };
+      reactFx(res, o.querySelector('.card'));
+      o.querySelector('#next').onclick = () => { sfx('tap'); closeOverlay(); resolve(res); };
     };
     const stop = countdown(secs, (frac, s) => {
       const bar = o.querySelector('#tbar'); if (bar) bar.style.width = frac * 100 + '%';
-      const sec = o.querySelector('#sec'); if (sec) sec.textContent = s;
+      const sec = o.querySelector('#sec'); if (sec && sec.textContent !== String(s)) { sec.textContent = s; hurry(o, s); }
     }, () => finish(timeout(G, ev, isBuild)));
-    o.querySelectorAll('.opt').forEach(b => b.onclick = () => finish(choose(G, ev, opts[+b.dataset.i], isBuild)));
+    o.querySelectorAll('.opt').forEach(b => b.onclick = () => { sfx('tap'); finish(choose(G, ev, opts[+b.dataset.i], isBuild)); });
   });
 }
 
@@ -449,7 +491,8 @@ function showResult(title, res) {
     const o = overlay(`
       <div class="head"><span>✨ ${esc(title)}</span></div>
       <div class="body">${resultHtml(res)}<button class="btn" id="next">繼續</button></div>`, 'k-build');
-    o.querySelector('#next').onclick = () => { closeOverlay(); resolve(); };
+    reactFx(res, o.querySelector('.card'));
+    o.querySelector('#next').onclick = () => { sfx('tap'); closeOverlay(); resolve(); };
   });
 }
 
@@ -485,10 +528,19 @@ function boardStep(left) {
     };
     const stop = countdown(G.week >= BLACKOUT_WEEK ? 15 : 30, (frac, sec) => {
       const b = $('#bbar'); if (b) b.style.width = frac * 100 + '%';
-      const e = $('#bsec'); if (e) e.textContent = sec;
+      const e = $('#bsec'); if (e && e.textContent !== String(sec)) { e.textContent = sec; hurry(st.querySelector('.board'), sec); }
     }, () => finish('你發呆了一整天', timeout(G, null, true)));
     st.querySelectorAll('.act').forEach(b => b.onclick = async () => {
+      if (done) return;
+      sfx('tap');
       const op = opts[+b.dataset.i];
+      if (op.mini) {
+        // 小遊戲：先停倒數，玩完再結算
+        done = true; stop();
+        G.miniTier = await sweepGame();
+        done = false;
+        return finish(fill(G, op.t).replace('（小遊戲）', ''), choose(G, null, op, true));
+      }
       const res = choose(G, null, op, true);
       if (op.followup === 'topic' && !res.lines.some(l => l.kind === 'bad' || l.kind === 'defy')) {
         // 座談、講政見：再選要講的主題
@@ -506,6 +558,88 @@ function boardStep(left) {
       }
       finish(fill(G, op.t), res);
     });
+  });
+}
+
+// ---------------- 小遊戲：菜市場掃街 ----------------
+// 點冒出來的人握手。回傳 0／1／2（差／普通／超好），交給 engine 決定效果
+function sweepGame() {
+  return new Promise(resolve => {
+    const stalls = ['🥬', '🐟', '🍖', '🍊', '🥚', '🌽', '🍞', '🧄', '🍜'];
+    const o = overlay(`
+      <div class="head"><span>🏃 菜市場掃街</span><span>⏱ <b id="mg-t">10</b></span></div>
+      <div class="timer"><div id="mg-bar"></div></div>
+      <div class="body">
+        <div id="mg-intro">
+          <h2>帶${esc(G.name)}去菜市場握手！</h2>
+          <p>10 秒內，點冒出來的人跟他們握手。<br>🙋 一般民眾 +1　👵 熱情阿嬤 +3<br>🙅 嗆聲的 −2　📸 對手偷拍 −1，別點！</p>
+          <button class="btn" id="mg-go">開始掃街！</button>
+          <button class="btn ghost" id="mg-skip">交給志工去跑（普通結果）</button>
+        </div>
+        <div id="mg-play" hidden>
+          <div class="mg-score">握手 <b id="mg-s">0</b></div>
+          <div class="mg-grid">${stalls.map((e, i) => `<button class="mg-cell" data-i="${i}" aria-label="攤位"><span class="mg-stall">${e}</span><span class="mg-who"></span></button>`).join('')}</div>
+        </div>
+      </div>`, 'k-build mg');
+    o.querySelector('#mg-skip').onclick = () => { sfx('tap'); closeOverlay(); resolve(1); };
+    o.querySelector('#mg-go').onclick = () => {
+      sfx('pop');
+      o.querySelector('#mg-intro').hidden = true;
+      o.querySelector('#mg-play').hidden = false;
+      const cells = [...o.querySelectorAll('.mg-cell')];
+      const live = new Map(); // 格子 → { person, until }
+      let score = 0, hits = 0, last = 0, nextSpawn = 0;
+      const DUR = 10000, t0 = performance.now();
+      const totalW = SWEEP_PEOPLE.reduce((a, p) => a + p.w, 0);
+      const pickPerson = () => { let x = Math.random() * totalW; for (const p of SWEEP_PEOPLE) { x -= p.w; if (x <= 0) return p; } return SWEEP_PEOPLE[0]; };
+      const clear = c => { live.delete(c); c.classList.remove('on', 'gold'); c.querySelector('.mg-who').textContent = ''; };
+      cells.forEach(c => c.onclick = () => {
+        const it = live.get(c);
+        if (!it) return;
+        score += it.p.n; if (it.p.n > 0) hits++;
+        sfx(it.p.n > 0 ? 'hand' : 'boo');
+        if (it.p.n < 0) vibrate(50);
+        floatDelta(c, it.p.n);
+        if (it.p.boo) toast(it.p.boo, 900);
+        o.querySelector('#mg-s').textContent = Math.max(0, score);
+        c.classList.add(it.p.n > 0 ? 'hit' : 'miss');
+        setTimeout(() => c.classList.remove('hit', 'miss'), 250);
+        clear(c);
+      });
+      (function frame(now) {
+        const el = now - t0;
+        const k = Math.min(1, el / DUR);
+        o.querySelector('#mg-bar').style.width = (1 - k) * 100 + '%';
+        const sec = Math.ceil((DUR - el) / 1000);
+        if (sec !== last) { last = sec; o.querySelector('#mg-t').textContent = Math.max(0, sec); if (sec <= 3 && sec > 0) sfx('tick'); }
+        for (const [c, it] of live) if (now > it.until) clear(c);
+        if (now >= nextSpawn) {
+          const free = cells.filter(c => !live.has(c));
+          if (free.length) {
+            const c = free[Math.floor(Math.random() * free.length)];
+            const p = pickPerson();
+            live.set(c, { p, until: now + 1150 - k * 450 });
+            c.querySelector('.mg-who').textContent = p.e;
+            c.classList.add('on'); if (p.gold) c.classList.add('gold');
+          }
+          nextSpawn = now + 520 - k * 220;
+        }
+        if (k < 1) return requestAnimationFrame(frame);
+        // 結束：算分
+        cells.forEach(clear);
+        const tier = score >= 15 ? 2 : score >= 7 ? 1 : 0;
+        sfx(tier === 2 ? 'combo' : tier === 1 ? 'good' : 'bad');
+        if (tier === 2) confetti(70);
+        o.querySelector('#mg-play').innerHTML = `
+          <div class="mg-end">
+            <div class="mg-big">${['😅', '🙂', '🤩'][tier]}</div>
+            <h2>握了 ${hits} 隻手，得分 ${Math.max(0, score)}</h2>
+            <p>${['菜市場的人都在忙……', '還不錯，有幾攤說會支持。', '整條市場都動起來了！'][tier]}</p>
+            <button class="btn" id="mg-done">看結果</button>
+          </div>`;
+        o.querySelector('#mg-done').onclick = () => { sfx('tap'); closeOverlay(); resolve(tier); };
+      })(t0);
+    };
   });
 }
 
@@ -603,6 +737,8 @@ async function runGame(notes = {}) {
   electionNight();
 }
 
+const pickOne = a => a[Math.floor(Math.random() * a.length)];
+
 // ---------------- 開票 ----------------
 async function electionNight() {
   clearGame();
@@ -612,33 +748,69 @@ async function electionNight() {
     <p class="muted" style="color:#ccc">11 月 28 日 晚上 8 點</p>
     <h2>開票夜</h2>
     <div id="nightface" style="margin:10px auto;width:120px;height:120px">${bossFace('flat')}</div>
+    <div class="counted">開票率 <b id="pct">0%</b></div>
     <div class="votes">
-      <div class="pollrow"><div class="lab"><span>${esc(G.name)}</span><b id="v1">0.0%</b></div><div class="track"><div id="b1" style="background:#e0a526"></div></div></div>
-      <div class="pollrow"><div class="lab"><span>${esc(G.rivalName)}</span><b id="v2">0.0%</b></div><div class="track"><div id="b2" style="background:#7a6ba8"></div></div></div>
+      <div class="pollrow"><div class="lab"><span>${esc(G.name)}</span><b id="v1">0.0%</b></div><div class="track"><div id="b1" style="background:#e0a526"></div></div><small class="vn" id="n1">0 票</small></div>
+      <div class="pollrow"><div class="lab"><span>${esc(G.rivalName)}</span><b id="v2">0.0%</b></div><div class="track"><div id="b2" style="background:#7a6ba8"></div></div><small class="vn" id="n2">0 票</small></div>
       <div class="pollrow"><div class="lab"><span>其他</span><b id="v3">0.0%</b></div><div class="track"><div id="b3" style="background:#aaa"></div></div></div>
     </div>
+    <div class="ticker" id="ticker">📺 主播：「各位觀眾，N City 市長選舉開始開票！」</div>
     <div class="big-result" id="verdict">開票中……</div>
     <p class="muted" id="turnout" style="color:#ccc;visibility:hidden">投票率 ${res.turnout}%</p>
     <div id="closebox"></div>
+    <button class="btn ghost" id="skip" style="border-color:#888;color:#ccc">⏩ 直接看結果</button>
     <button class="btn" id="next" style="visibility:hidden">看結局</button>
   `, 'end');
-  const target = [res.share.s, res.share.r, res.share.o];
-  const t0 = performance.now(), dur = 4500;
+  // 開票過程：差距小的時候，前半段常常是另一邊領先，最後才翻盤
+  const fin = [res.share.s, res.share.r, res.share.o];
+  const m = fin[0] - fin[1];
+  const swing = res.win && m < 5 ? -(2.5 + Math.random() * 2.5) : !res.win && m > -5 ? 2.5 + Math.random() * 2.5 : (Math.random() - 0.5) * 3;
+  const total = Math.round(1860000 * res.turnout / 100);
+  const shareAt = p => { const b = swing * Math.pow(1 - p, 1.3); return [fin[0] + b, fin[1] - b, fin[2]]; };
+  const tick = t => { const el = $('#ticker'); if (el) { el.textContent = t; el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); } };
+  const lines = (lead, gap, p) => {
+    const who = lead === 0 ? G.name : G.rivalName;
+    if (p > 0.9) return gap < 1 ? `📺 主播：「最後幾個開票所了，差距只剩 ${gap.toFixed(1)}%！」` : `📺 主播：「大勢底定，${who}領先 ${gap.toFixed(1)}%。」`;
+    if (gap < 1) return pickOne([`📺 主播：「咬得非常緊！差距不到 1%！」`, `😰 戰情室一片安靜，沒有人敢講話。`, `🙏 ${G.name}握緊了拳頭。`]);
+    if (lead === 0) return pickOne([`📺 主播：「${G.name}目前領先 ${gap.toFixed(1)}%！」`, `📣 競選總部外面開始有人喊「凍蒜」……`, `🧑‍💼 副總幹事：「先不要高興，還早。」`]);
+    return pickOne([`📺 主播：「${G.rivalName}目前領先 ${gap.toFixed(1)}%。」`, `😟 志工盯著電視，有人開始咬指甲。`, `🧑‍💼 副總幹事：「還有很多票沒開，撐住。」`]);
+  };
+  let skip = false;
+  $('#skip').onclick = () => { skip = true; };
+  const t0 = performance.now(), dur = 10000;
+  let lastLead = null, nextLine = 0.12, lastBeat = 0;
   await new Promise(done => {
     function step(now) {
-      const k = Math.min(1, (now - t0) / dur);
-      const e = 1 - Math.pow(1 - k, 3);
-      // 前半段讓數字互咬一下
-      const wobble = k < 0.7 ? Math.sin(k * 20) * 2 * (1 - k) : 0;
-      const vals = [target[0] * e + wobble, target[1] * e - wobble, target[2] * e];
-      vals.forEach((v, i) => {
+      const k = skip ? 1 : Math.min(1, (now - t0) / dur);
+      const p = k; // 開票進度；最後一段靠心跳聲撐張力
+      const sh = shareAt(p);
+      sh.forEach((v, i) => {
         $('#v' + (i + 1)).textContent = Math.max(0, v).toFixed(1) + '%';
         $('#b' + (i + 1)).style.width = Math.max(0, v) + '%';
       });
+      const counted = total * p;
+      $('#n1').textContent = Math.round(counted * sh[0] / 100).toLocaleString('en-US') + ' 票';
+      $('#n2').textContent = Math.round(counted * sh[1] / 100).toLocaleString('en-US') + ' 票';
+      $('#pct').textContent = Math.floor(p * 100) + '%';
+      const lead = sh[0] >= sh[1] ? 0 : 1, gap = Math.abs(sh[0] - sh[1]);
+      if (!skip && p > 0.03) {
+        if (lastLead !== null && lead !== lastLead) {
+          tick(`🔄 逆轉！${lead === 0 ? G.name : G.rivalName}超前了！`); sfx('combo'); vibrate(120);
+          nextLine = p + 0.15;
+        } else if (p >= nextLine) { tick(lines(lead, gap, p)); nextLine = p + 0.2; }
+        $('#nightface').innerHTML = bossFace(gap < 1 ? 'flat' : lead === 0 ? 'big' : 'sad');
+        lastLead = lead;
+        // 心跳聲：越接近開完越快
+        const gapMs = 900 - p * 550;
+        if (now - lastBeat > gapMs) { lastBeat = now; sfx('drum'); }
+      }
       if (k < 1) requestAnimationFrame(step); else done();
     }
     requestAnimationFrame(step);
   });
+  $('#skip').remove();
+  tick(res.win ? `📺 主播：「${G.name}自行宣布當選！」` : `📺 主播：「${G.rivalName}自行宣布當選。」`);
+  if (res.win) { sfx('win'); confetti(160); vibrate([80, 60, 160]); } else sfx('lose');
   $('#verdict').textContent = res.win ? `🎉 ${G.name} 凍蒜！` : `😢 ${G.name} 落選`;
   $('#nightface').innerHTML = bossFace(res.win ? 'big' : 'sad');
   $('#turnout').style.visibility = 'visible';
@@ -683,6 +855,8 @@ function statsOf() {
     ['🫀', '爆肝被強制休息', (G.f.rests || 0) + ' 次'],
     ['😶', '擺爛（時間到沒選）', (G.f.idle || 0) + ' 次'],
     ['🙄', '老闆不聽你的', (G.f.defied || 0) + ' 次'],
+    ['🔥', '最高連擊', (G.maxStreak || 0) + ' 次'],
+    ['🏃', '菜市場掃街', (G.f.sweeps || 0) + ' 次'],
     ['😇', '最後的良心', Math.round(G.con)]
   ];
 }
@@ -987,6 +1161,7 @@ function openMenu() {
       <p class="muted" style="margin-top:10px">打開選單時，倒數會暫停。</p>
       <button class="btn" id="m1">▶️ 繼續打選戰</button>
       <button class="btn ghost" id="m5"></button>
+      <button class="btn ghost" id="m6"></button>
       <button class="btn ghost" id="m2">📖 總幹事手冊</button>
       <button class="btn ghost" id="m3">🏆 結局圖鑑</button>
       <button class="btn ghost" id="m4">🏠 回首頁</button>
@@ -1002,6 +1177,10 @@ function openMenu() {
   const paintPace = () => { paceBtn.textContent = isSlow() ? '🔥 切換成極限爆肝模式' : '🐢 切換成慢慢來模式（不倒數）'; };
   paceBtn.onclick = () => { setPace(isSlow() ? 'busy' : 'slow'); paintPace(); };
   paintPace();
+  const sndBtn = m.querySelector('#m6');
+  const paintSnd = () => { sndBtn.textContent = soundOn() ? '🔇 關掉音效' : '🔊 打開音效'; };
+  sndBtn.onclick = () => { setSound(!soundOn()); paintSnd(); sfx('good'); };
+  paintSnd();
   m.onclick = e => { if (e.target === m) close(); };
 }
 
@@ -1026,12 +1205,14 @@ function openManual() {
         <li>誠實、負責的選項通常最穩：道歉、公開說明、親自到現場</li>
         <li>「推給中央」「說是抹黑」「不回應」很常翻車</li>
         <li>時間到沒選，就是擺爛，老闆會一直問「接下來呢？」</li>
+        <li>連續處理得漂亮會有<b>連擊</b>，3、5、8 連擊時團隊士氣和你的信心都會上升；出包或老闆不聽話就歸零</li>
       </ul>
 
       <h3>✨ 沒火就成就老闆</h3>
       <ul>
         <li>行程上的小標籤：💰 花錢、🫀 很累、👥 看人氣（聲量太低可能沒人來）、🎲 有風險</li>
         <li>座談、講政見之後，要再選講什麼主題</li>
+        <li>🏃 <b>菜市場掃街</b>是小遊戲：10 秒內點冒出來的人握手，阿嬤加最多，嗆聲的和偷拍的別點。玩得越好效果越大</li>
         <li>錢少的時候記得募款；造勢、廣告效果大，但要錢</li>
       </ul>
 

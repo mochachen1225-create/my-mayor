@@ -51,7 +51,7 @@ function newGame(type, gender, name, rng = Math.random) {
     s: T.start.s, r: T.start.r,
     buzz: 40, fav: 50, money: T.start.money, trust: T.start.trust,
     liver: 80, con: 60, team: 70, conf: 60, show: 0, showMax: 0, self: 0, pocket: 0, net: T.start.net, favor: 0,
-    f: { idle: 0 }, idleStreak: 0,
+    f: { idle: 0 }, idleStreak: 0, streak: 0, maxStreak: 0, miniTier: null,
     used: new Set(), pending: [], lastPoll: null, swings: [], history: []
   };
 }
@@ -179,8 +179,13 @@ function buildChoices(g, n = 6) {
     const i = Math.floor(g.rng() * pool.length);
     out.push(pool.splice(i, 1)[0]);
   }
+  // 掃街小遊戲：第 2 週起常常出現，一局最多玩 3 次
+  const sweep = BUILD.find(b => b.id === 'sweep');
+  const has = out.includes(sweep);
+  if ((g.f.sweeps || 0) >= 3) { if (has) out.splice(out.indexOf(sweep), 1, ...pool.splice(0, 1)); }
+  else if (!has && g.week >= 2 && g.rng() < 0.3) out[0] = sweep;
   out.push(BUILD.find(b => b.id === 'rest'));
-  return out;
+  return out.filter(Boolean);
 }
 
 function applyFx(g, fx, delta) {
@@ -230,6 +235,7 @@ function choose(g, ev, opt, isBuild = false) {
     if (opt.hates && opt.hates.includes(g.type)) p -= 0.25;
     if (g.type === 'C') p -= 0.05;
     if (isBuild) p += 0.12; // 自己排的行程，老闆比較願意配合
+    if (isBuild && opt.mini) p = 1; // 小遊戲是你親自帶著老闆跑，不會不配合
     if (g.conf > 75) p += 0.05; // 總幹事有信心，老闆比較願意聽
     if (g.conf < 30) p -= 0.08; // 總幹事自己都沒把握，老闆更不想聽
     p = clamp(p, 0.35, 0.96);
@@ -261,7 +267,17 @@ function choose(g, ev, opt, isBuild = false) {
     applyFx(g, { fav: -2, buzz: -3, s: -0.2 }, delta);
     lines.push({ kind: 'bad', text: fill(g, CROWD_FAIL[Math.floor(g.rng() * CROWD_FAIL.length)]) });
     failed = true;
-  } else applyFx(g, exec.fx, delta);
+  } else {
+    // 小遊戲：玩得好，正面效果放大；玩得差，打折
+    if (exec.mini && g.miniTier !== null && g.miniTier !== undefined) {
+      const k = [0.4, 1, 1.8][g.miniTier];
+      const fx = {};
+      for (const [key, v] of Object.entries(exec.fx || {})) fx[key] = typeof v === 'number' && v > 0 ? v * k : v;
+      exec = { ...exec, fx, r: MINI_LINES[exec.mini][g.miniTier] };
+    }
+    applyFx(g, exec.fx, delta);
+  }
+  if (exec.mini) { g.miniTier = null; g.f.sweeps = (g.f.sweeps || 0) + 1; }
   if (crowdFail) { /* 已處理 */ }
   else if (exec.dirtyCheck) {
     if (g.f.dirty1 || g.f.dirty2 || g.f.foreign) {
@@ -338,6 +354,15 @@ function choose(g, ev, opt, isBuild = false) {
   if (bossActs && !defied && !lines.some(l => l.kind === 'say') && g.rng() < 0.6) {
     lines.push({ kind: 'say', mood: failed ? 'sad' : 'big', text: fill(g, pick(g, failed ? TYPES[g.type].bad : TYPES[g.type].ok)) });
   }
+  // 連擊：連續處理得漂亮，團隊越做越順
+  if (!failed && !defied) {
+    g.streak = (g.streak || 0) + 1;
+    g.maxStreak = Math.max(g.maxStreak || 0, g.streak);
+    if (COMBO_AT.includes(g.streak)) {
+      applyFx(g, { team: 2, conf: 2 }, delta);
+      lines.push({ kind: 'combo', text: `🔥 ${g.streak} 連擊！連續 ${g.streak} 次處理得漂亮，戰情室士氣大振` });
+    }
+  } else g.streak = 0;
   advanceClock(g, isBuild ? 3 : 1.5 + g.rng() * 2, ev && ev.late, delta);
   g.boost = 1;
   logSwing(g, isBuild ? fill(g, exec.t) : fill(g, ev.title), delta);
@@ -348,6 +373,11 @@ function choose(g, ev, opt, isBuild = false) {
 
 // 老闆擅長的事比較不容易翻車，不擅長的比較容易
 // risk 可以是一個壞結果，也可以是好幾個（各有機率）；回傳抽中的壞結果，沒抽中就是 null
+const COMBO_AT = [3, 5, 8, 12, 16];
+const MINI_LINES = {
+  sweep: ['攤販都在忙，只握到幾隻手，還被魚販潑到水。', '握了一圈，菜市場阿姨說會考慮看看。', '整條市場都在喊{boss}的名字，阿嬤還塞了一把青菜！']
+};
+
 function rollRisk(g, o) {
   const list = Array.isArray(o.risk) ? o.risk : [o.risk];
   const total = list.reduce((a, r) => a + r.p, 0);
@@ -372,6 +402,7 @@ function halve(fx) {
 function timeout(g, ev, isBuild = false) {
   g.rPrev = g.r;
   g.idleStreak++;
+  g.streak = 0;
   g.f.idle = (g.f.idle || 0) + 1;
   const delta = {};
   const fx = isBuild ? { trust: -3, buzz: -2, team: -4, conf: -3 } : { trust: -3 - g.idleStreak, fav: -3, s: -0.6, buzz: -2, team: -5, conf: -4 };
