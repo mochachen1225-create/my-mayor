@@ -1,5 +1,6 @@
 // 英文對照表：中文原文 → English（由 scripts/i18n 流程產生，改英文就直接改這裡）
 I18N.en = {
+  "修正英文版幾句不通順的文字": "Fixed a few awkward lines in the English version",
   "🌏 新增英文版：首頁可以切換中文／English，第一次會自動偵測": "🌏 English version! Switch between 中文 and English on the title screen (auto-detected the first time)",
   "🎨 老闆們換上新插畫，每位都有笑、大笑、難過、緊張四種表情": "🎨 New illustrated portraits for every candidate, each with four expressions",
   "🎭 形象加分：選民開始覺得{0}很「{1}」。": "🎭 Image boost: voters are starting to see {0} as “{1}”.",
@@ -2423,7 +2424,7 @@ I18N.en = {
   "🗣️ 幫{boss}準備「市政三十秒版本」": "🗣️ Prep {boss} a “30-second city policy version”",
   "🗣️ 正面回答，講清楚立場": "🗣️ Answer head-on, make your stance clear",
   "🗯️ 「有人在消費孩子」": "🗯️ “Some people are exploiting children”",
-  "🗯️ 「這是{rparty}在抹黑」": "🗯️ “This is a {rparty} smear”",
+  "🗯️ 「這是{rparty}在抹黑」": "🗯️ “It’s a smear! The {rparty} camp is behind this!”",
   "🗯️ 「這是議員在製造恐慌」": "🗯️ “The councilor is fearmongering”",
   "🗳️ 「歡迎驗票，我們有信心」": "🗳️ “We welcome a recount. We're confident.”",
   "🗳️ 申請驗票": "🗳️ Request a recount",

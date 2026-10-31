@@ -20,6 +20,7 @@
 | AI disclosure | 角色插畫用 AI 生成（itch.io 有「是否使用生成式 AI」的欄位，照實勾選） |
 
 ## 封面與截圖
+- 已做好：`promo/itch/cover-630x500.png`（封面）、`promo/itch/screenshot-en-1~6.png`（英文截圖）、`promo/itch/screenshot-zh-1~6.png`（中文版，可當 IG 輪播）、試玩廣告 `promo/my-mayor-trailer-en.mp4`／`-zh.mp4`
 - 封面圖（Cover image）：建議 630 × 500，可以用 `og.png` 改尺寸，或截首頁
 - 截圖 3～5 張：首頁、抽老闆、突發事件卡、菜市場掃街小遊戲、開票夜
 - 宣傳影片：`promo/my-mayor-promo.mp4`（上傳到 YouTube 後把連結貼在 Gameplay video）
