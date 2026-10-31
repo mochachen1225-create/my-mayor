@@ -66,3 +66,34 @@ Everything is fictional: the city, the people, the animal-themed parties. The *r
 - 58 種結局：老闆的 43 種，加上你自己的 15 種
 
 一局約 10 分鐘，手機直接玩。本遊戲純屬虛構，人物、政黨、城市皆非真實。
+
+## Devlog 第一篇（已發布，2026-11-01）
+
+**標題**：Why I made a game about Taiwanese election chaos
+
+> Every four years, Taiwan turns into a festival of campaign trucks, flags, and candidates shaking hands at 6 a.m. morning markets. Supporters chant “Dong-suan!” (Taiwanese for “get elected!”). Rats make the evening news. Someone always has to decide whether tomorrow is a typhoon day off.
+>
+> Taiwan's real local elections are on November 28. So I made a small game about the people behind the candidates: the exhausted campaign managers.
+>
+> In *My Mayor-to-Be*, your candidate is random, they don't always listen, and the internet has an opinion about everything you do. One run takes about 10 minutes, and there are 58 endings, including some where the campaign manager ends up in more trouble than the candidate.
+>
+> Everything is fictional: the city, the people, the animal parties. It pokes fun at campaign culture on all sides, not at anyone real.
+>
+> The English version is brand new, so if anything reads strangely, please tell me. And I'd love to know: which ending did you get?
+
+- 第二篇：選舉當週（11/28 前後）發，例如「Taiwan votes today! Here's what election night looks like in the game」，順便加一點新內容
+
+## YouTube Shorts（英文版廣告 `promo/my-mayor-trailer-en.mp4`）
+
+**標題**：In Taiwan, grandmas count triple votes 👵🗳️
+
+**說明欄**：
+> A tiny browser game about running a Taiwanese mayoral campaign. Your boss is random. Your liver is not.
+> Free to play: search “My Mayor-to-Be” on itch.io
+> (link in channel profile)
+>
+> #indiegame #taiwan #browsergame #election #gamedev
+
+- Shorts 說明欄和留言的連結不能點：把 itch 連結放在頻道個人資料（Customization → Basic info → Links）
+- 上傳後把 Shorts 網址貼回 itch 頁面的 Gameplay video
+- 中文版（`promo/my-mayor-trailer-zh.mp4`）可另外上傳，標題例如「台灣選舉的總幹事有多慘」

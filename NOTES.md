@@ -66,6 +66,7 @@
 - 依玩家回饋微調難度與事件文字
 
 ## 更新紀錄
+- **文件**：`docs/itch-page.md` 加上第一篇 itch.io Devlog 和 YouTube Shorts 文案（遊戲本身沒改）
 - **v2.1.2**：在 itch.io 上玩（網址是 itch.io／itch.zone／hwcdn.net）一律預設英文；玩家自己選過語言的話照選的；GitHub Pages 維持看瀏覽器語言
 - **v2.1.1**：修正英文版「This is a {rparty} smear」在對手是無黨籍時文法不通；新增宣傳素材：試玩廣告（中、英，`promo/my-mayor-trailer-*.mp4`）、itch.io 封面與截圖（`promo/itch/`）
 - **v2.1**：新增英文版——首頁右上方「中文／English」切換，第一次依瀏覽器語言自動選；所有文字（約 2,700 句）翻成英文，英文版首頁多一個「🇹🇼 台灣選舉 60 秒小知識」；新增 `js/i18n.js`（語言、`T()`、整批翻譯資料）與 `js/i18n.en.js`（對照表）；老闆換上 Cloudflare Workers AI 生成的動畫風插畫（48 張，WebP 共約 360KB），四位配角也有插畫；分享截圖用插畫；英文斷行改成按單字；新增 itch.io 上架資料與打包腳本
