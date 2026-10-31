@@ -1,8 +1,9 @@
 // 語言：zh（繁體中文）或 en（English）
-// 先看玩家選過的；沒選過就看瀏覽器語言（中文介面 → 中文，其他 → 英文）
+// 先看玩家選過的；在 itch.io 上一律先英文；其他地方看瀏覽器語言（中文介面 → 中文，其他 → 英文）
 const LANG_KEY = 'mymayor.lang';
 const LANG = (() => {
   try { const s = localStorage.getItem(LANG_KEY); if (s === 'zh' || s === 'en') return s; } catch (e) { /* 沒差 */ }
+  if (/(^|\.)(itch\.io|itch\.zone|hwcdn\.net)$/i.test(location.hostname)) return 'en';
   return /^zh/i.test(navigator.language || '') ? 'zh' : 'en';
 })();
 const I18N = { en: {} }; // 英文對照表由 js/i18n.en.js 填入：{ 中文原文: 英文 }

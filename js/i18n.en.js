@@ -1,5 +1,6 @@
 // 英文對照表：中文原文 → English（由 scripts/i18n 流程產生，改英文就直接改這裡）
 I18N.en = {
+  "itch.io 上的版本預設英文（可以在首頁切回中文）": "The itch.io version now starts in English (switch to Chinese on the title screen)",
   "修正英文版幾句不通順的文字": "Fixed a few awkward lines in the English version",
   "🌏 新增英文版：首頁可以切換中文／English，第一次會自動偵測": "🌏 English version! Switch between 中文 and English on the title screen (auto-detected the first time)",
   "🎨 老闆們換上新插畫，每位都有笑、大笑、難過、緊張四種表情": "🎨 New illustrated portraits for every candidate, each with four expressions",
