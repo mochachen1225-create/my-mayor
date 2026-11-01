@@ -860,6 +860,7 @@ async function electionNight() {
     <div class="big-result" id="verdict">${T('開票中……')}</div>
     <p class="muted" id="turnout" style="color:#ccc;visibility:hidden">${T('投票率 {0}%', res.turnout)}</p>
     <p class="muted" id="guessline" style="color:#ffd166;visibility:hidden"></p>
+    <p class="muted" id="guessreact" style="color:#eee;font-style:italic;display:none"></p>
     <div id="closebox"></div>
     <button class="btn ghost" id="skip" style="border-color:#888;color:#ccc">${T('⏩ 直接看結果')}</button>
     <button class="btn" id="next" style="visibility:hidden">${T('看結局')}</button>
@@ -918,7 +919,9 @@ async function electionNight() {
   $('#nightface').innerHTML = bossFace(res.win ? 'big' : 'sad');
   $('#turnout').style.visibility = 'visible';
   const gl = $('#guessline');
-  if (gl) { gl.textContent = G.guessHit ? T('🔮 你猜 {0}，結果 {1}%：猜中了！', G.guess.label, res.share.s.toFixed(1)) : T('你猜 {0}，結果 {1}%：沒猜中。', G.guess.label, res.share.s.toFixed(1)); gl.style.visibility = 'visible'; if (G.guessHit) { sfx('combo'); confetti(60); } }
+  if (gl) { gl.textContent = G.guessHit ? T('🔮 你猜 {0}，結果 {1}%：猜中了！', G.guess.label, res.share.s.toFixed(1)) : (() => { const miss = Math.min(Math.abs(res.share.s - G.guess.lo), Math.abs(res.share.s - G.guess.hi)); return miss < 1 ? T('你猜 {0}，結果 {1}%：只差 {2}%，好可惜！', G.guess.label, res.share.s.toFixed(1), Math.max(0.1, miss).toFixed(1)) : T('你猜 {0}，結果 {1}%：沒猜中。', G.guess.label, res.share.s.toFixed(1)); })(); gl.style.visibility = 'visible'; if (G.guessHit) { sfx('combo'); confetti(60); } }
+  const gr = $('#guessreact');
+  if (gr && G.guess) { gr.textContent = guessReaction(res); gr.style.display = 'block'; }
   if (G.f.complacent) $('#turnout').textContent += `　${T('支持者以為穩贏，很多人沒出門……')}`;
   // 差距不到 1%：要驗票、嗆聲還是認輸？
   if (res.close) await closeRace(res);
@@ -1014,10 +1017,25 @@ function guessCard() {
       <div class="body">
         <div class="who">${bossFace('flat')}<div><b>${esc(G.name)}</b><br><small>${T('「總幹事，你覺得我會拿到幾 %？」')}</small></div></div>
         <p>${T('投票所關門了。開票前，猜猜看{0}的得票率，猜中有特別稱號。', esc(G.name))}</p>
+        ${G.lastPoll ? `<p class="muted" style="font-size:13px">${T('📊 最後一次內參民調：{0} {1}%、{2} {3}%，還有 {4}% 沒表態。', esc(G.name), Math.round(G.lastPoll.s), esc(G.rivalName), Math.round(G.lastPoll.r), Math.round(G.lastPoll.und))}</p>` : ''}
         <div id="opts">${opts.map(([a, b, t], i) => `<button class="opt" data-i="${i}">${t}</button>`).join('')}</div>
       </div>`, 'k-main');
     o.querySelectorAll('.opt').forEach(btn => btn.onclick = () => { sfx('tap'); const [a, b, t] = opts[+btn.dataset.i]; closeOverlay(); resolve({ lo: a, hi: b, label: t }); });
   });
+}
+
+// 開票後：老闆對你開票前的猜測有反應
+function guessReaction(res) {
+  const g = G.guess, v = res.share.s;
+  const key = G.guessHit ? 'hit' : (v >= g.hi ? 'low' : 'high') + (res.win ? 'W' : 'L');
+  const lines = {
+    hit: [T('「你怎麼知道？你是不是偷看了開票所？」'), T('「準成這樣，下次樂透號碼也交給你。」')],
+    lowW: [T('「你覺得我拿不到 {0}%？我記住了。」', g.hi), T('「原來我的總幹事不看好我……沒關係，我贏給你看了。」')],
+    lowL: [T('「比你猜的還多一點……這算安慰嗎？」'), T('「你都猜這麼低了，我是不是該早點發現？」')],
+    highW: [T('「你對我比我對自己還有信心。」'), T('「沒那麼多啦，但贏了就好！」')],
+    highL: [T('「你這麼看好我……對不起，讓你失望了。」'), T('「{0}？你是不是太相信我了？」', g.label)]
+  }[key];
+  return `💬 ${G.name}${T('：')}${lines[Math.floor(Math.random() * lines.length)]}`;
 }
 
 function statsOf() {
@@ -1319,7 +1337,7 @@ async function shareEnding(res) {
   const winWord = res.win ? T('凍蒜') : T('落選');
   const eShare = (res.ending.share || res.ending.title).replace('%W', winWord);
   const mShare = res.mgr.share || res.mgr.title;
-  const text = (G.daily ? T('【今日挑戰 {0}・得票 {1}%】', G.dailyLabel, res.share.s.toFixed(1)) : '') + `${T('我在《我推的市長》幫 {0} 打選戰，市長選戰結局是「{1}」，我自己則是「{2}」！你要玩玩看嗎？👉 https://mochachen1225-create.github.io/my-mayor/', G.name, eShare, mShare)}`;
+  const text = (G.daily ? T('【今日挑戰 {0}・得票 {1}%】', G.dailyLabel, res.share.s.toFixed(1)) : '') + (G.guess ? (G.guessHit ? T('🔮 開票前我猜 {0}，結果 {1}%，猜中了！', G.guess.label, res.share.s.toFixed(1)) : T('開票前我猜 {0}，結果 {1}%。', G.guess.label, res.share.s.toFixed(1))) : '') + `${T('我在《我推的市長》幫 {0} 打選戰，市長選戰結局是「{1}」，我自己則是「{2}」！你要玩玩看嗎？👉 https://mochachen1225-create.github.io/my-mayor/', G.name, eShare, mShare)}`;
   try {
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       await navigator.share({ files: [file], text });

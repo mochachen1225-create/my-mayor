@@ -1,7 +1,7 @@
 // 英文對照表：中文原文 → English（由 scripts/i18n 流程產生，改英文就直接改這裡）
 I18N.en = {
   "🏅 結局圖鑑新增「稱號」分頁，收集 13 種本局稱號": "🏅 New “Titles” tab in the Endings gallery: collect all 13 run titles",
-  "🔮 開票前可以猜老闆的得票率，猜中就拿到「神準總幹事」稱號": "🔮 Guess your boss's vote share before the count. Guess right and you earn the “Oracle” title",
+  "🔮 開票前可以猜老闆的得票率，開票後老闆會對你的猜測有反應，猜中就拿到「神準總幹事」稱號": "🔮 Guess your boss's vote share before the count. Your boss will react to your guess, and getting it right earns the “Oracle” title",
   "神準總幹事": "The Oracle",
   "開票前猜中得票率": "Guessed the vote share before the count",
   "開票前就猜中得票率，戰情室都說你有內線。": "You called the vote share before the count. The war room thinks you have an inside source.",
@@ -2969,4 +2969,19 @@ I18N.en = {
   "🫵 {boss}說「是幕僚處理的」": "🫵 {boss} says “my staff handled it”",
   '🆕 新稱號！圖鑑收集 {0}/{1}': '🆕 New title! Collected {0}/{1}',
   '還沒拿到這個稱號，照提示試試看吧': 'Not earned yet. Try following the hint!',
+  '「你怎麼知道？你是不是偷看了開票所？」': '“How did you know? Did you sneak into a counting station?”',
+  '「準成這樣，下次樂透號碼也交給你。」': '“That accurate? You\'re picking my lottery numbers next.”',
+  '「你覺得我拿不到 {0}%？我記住了。」': '“You thought I wouldn\'t even get {0}%? I\'ll remember that.”',
+  '「原來我的總幹事不看好我……沒關係，我贏給你看了。」': '“So my own campaign manager doubted me… That\'s fine. I won anyway.”',
+  '「比你猜的還多一點……這算安慰嗎？」': '“A bit more than you guessed… Is that supposed to be comforting?”',
+  '「你都猜這麼低了，我是不是該早點發現？」': '“You guessed that low? Should I have seen this coming?”',
+  '「你對我比我對自己還有信心。」': '“You believed in me more than I did.”',
+  '「沒那麼多啦，但贏了就好！」': '“Not quite that much, but a win is a win!”',
+  '「你這麼看好我……對不起，讓你失望了。」': '“You had that much faith in me… Sorry I let you down.”',
+  '「{0}？你是不是太相信我了？」': '“{0}? Maybe you believed in me a little too much.”',
+  '：': ': ',
+  '🔮 開票前我猜 {0}，結果 {1}%，猜中了！': '🔮 Before the count I guessed {0}. Result: {1}%. Nailed it! ',
+  '開票前我猜 {0}，結果 {1}%。': 'Before the count I guessed {0}. Result: {1}%. ',
+  '你猜 {0}，結果 {1}%：只差 {2}%，好可惜！': 'You guessed {0}. Result: {1}%. Missed by just {2}%. So close!',
+  '📊 最後一次內參民調：{0} {1}%、{2} {3}%，還有 {4}% 沒表態。': '📊 Last internal poll: {0} {1}%, {2} {3}%, {4}% undecided.',
 };
