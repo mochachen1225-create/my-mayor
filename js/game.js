@@ -28,6 +28,25 @@ function loadSeen() {
 const SAVE_GAME_KEY = 'mymayor.save';
 const VERSION_KEY = 'mymayor.version';
 const PACE_KEY = 'mymayor.pace';
+const DAILY_KEY = 'mymayor.daily';
+let DAILY = null; // 正在玩今日挑戰時：{ date, seed, type }
+
+// 今日挑戰：用手機的日期決定今天的老闆和行程，同一天大家玩同一局
+function todayDaily() {
+  const d = new Date();
+  const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const seed = d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+  const r = makeRng(seed);
+  const types = Object.keys(TYPES);
+  return { date, seed, label: `${d.getMonth() + 1}/${d.getDate()}`, type: types[Math.floor(r() * types.length)] };
+}
+function loadDaily() { try { return JSON.parse(localStorage.getItem(DAILY_KEY) || 'null'); } catch (e) { return null; } }
+function saveDailyResult(res) {
+  const old = loadDaily();
+  if (old && old.date === G.daily) return; // 一天只記第一次的成績，之後算練習
+  const t = runTitle();
+  try { localStorage.setItem(DAILY_KEY, JSON.stringify({ date: G.daily, label: G.dailyLabel, win: res.win, s: +res.share.s.toFixed(1), title: `${t.emoji} ${t.name}`, ending: res.ending.title })); } catch (e) { /* 沒差 */ }
+}
 
 // 節奏：slow＝我想慢慢來（不倒數），其他＝極限爆肝（照常倒數）
 function isSlow() {
@@ -128,6 +147,8 @@ function titleScreen() {
     </div>
     ${save ? `<button class="btn" id="resume">${T('▶️ 繼續上一局：{0} {1}月第{2}週', esc(save.name), weekLabel(save.week).month, weekLabel(save.week).nth)}</button>` : ''}
     <button class="btn ${save ? 'ghost' : ''}" id="go">${save ? T('重新開始（放棄上一局）') : T('開始上班')}</button>
+    ${(() => { const td = todayDaily(), dr = loadDaily(), done = dr && dr.date === td.date;
+      return `<button class="btn daily" id="daily">${T('📅 今日挑戰・{0}', td.label)}<small>${done ? T('今日成績：{0} {1}%・{2}', dr.win ? T('凍蒜') : T('落選'), dr.s, dr.title) : T('今天的老闆：{0}・大家玩同一局', TYPES[td.type].label)}</small></button>`; })()}
     <button class="btn ghost" id="manual">${T('📖 總幹事手冊')}</button>
     <button class="btn ghost" id="gal">${T('結局圖鑑（{0} / {1}）', seen.size, ENDINGS.length)}</button>
     <p class="muted" style="margin-top:22px;font-size:12px">${T('本遊戲純屬虛構，人物、政黨、城市皆非真實。')}<button class="verlink" id="ver">${T('v{0} 更新內容', VERSION)}</button><button class="verlink" id="snd"></button></p>
@@ -140,7 +161,8 @@ function titleScreen() {
   paintPace();
   app.querySelectorAll('.langbar button').forEach(b => b.onclick = () => { if (b.dataset.l !== LANG) setLang(b.dataset.l); });
   if ($('#primer')) $('#primer').onclick = () => layer('🇹🇼 Taiwanese elections in 60 seconds', PRIMER_EN);
-  $('#go').onclick = () => { clearGame(); drawScreen(); };
+  $('#go').onclick = () => { DAILY = null; clearGame(); drawScreen(); };
+  $('#daily').onclick = () => { DAILY = todayDaily(); clearGame(); setupScreen(DAILY.type); };
   if (save) $('#resume').onclick = () => resumeGame(save);
   const showNews = () => layer(`${T('🆕 v{0} 更新內容', VERSION)}`, `<ul class="newslist">${CHANGES.map(c => `<li>${esc(c)}</li>`).join('')}</ul>`);
   if ($('#news')) $('#news').onclick = showNews;
@@ -223,8 +245,15 @@ function setupScreen(type) {
     if (!typed) nm.value = TY.names[gender];
   });
   $('#go').onclick = () => {
-    G = newGame(type, gender, nm.value.trim().slice(0, 12) || TY.names[gender]);
-    G.seenBefore = loadSeenEvents();
+    if (DAILY) {
+      // 今日挑戰：老闆和行程固定；不參考「上一局遇過的事件」，大家才公平
+      G = newGame(type, gender, nm.value.trim().slice(0, 12) || TY.names[gender], makeRng(DAILY.seed));
+      G.dailySeed = DAILY.seed; G.daily = DAILY.date; G.dailyLabel = DAILY.label;
+      G.seenBefore = new Set();
+    } else {
+      G = newGame(type, gender, nm.value.trim().slice(0, 12) || TY.names[gender]);
+      G.seenBefore = loadSeenEvents();
+    }
     profileScreen();
   };
 }
@@ -890,6 +919,7 @@ async function electionNight() {
   const seen = saveSeen(res.ending.id);
   saveMgr(res.mgr.id);
   saveRun(res);
+  if (G.daily) saveDailyResult(res);
   const btn = $('#next');
   btn.style.visibility = 'visible';
   btn.textContent = T('選戰檢討會 →');
@@ -979,6 +1009,7 @@ function reviewScreen(res, seen) {
 function endingScreen(res, seen) {
   const e = res.ending;
   show(`
+    ${G.daily ? (() => { const dr = loadDaily(); const first = dr && dr.date === G.daily && dr.s === +res.share.s.toFixed(1); return `<div class="dailytag">${T('📅 今日挑戰 {0}', G.dailyLabel)}${first ? '' : `・${T('練習局（今天的正式成績已經記下了）')}`}</div>`; })() : ''}
     <div class="emoji">${e.emoji}</div>
     <p class="muted" style="color:#ccc">${T('{0}・得票 {1}% vs {2}%', res.win ? T('當選') : T('落選'), res.share.s.toFixed(1), res.share.r.toFixed(1))}</p>
     <h2>${esc(e.title)}</h2>
@@ -1233,7 +1264,7 @@ async function shareEnding(res) {
   const winWord = res.win ? T('凍蒜') : T('落選');
   const eShare = (res.ending.share || res.ending.title).replace('%W', winWord);
   const mShare = res.mgr.share || res.mgr.title;
-  const text = `${T('我在《我推的市長》幫 {0} 打選戰，市長選戰結局是「{1}」，我自己則是「{2}」！你要玩玩看嗎？👉 https://mochachen1225-create.github.io/my-mayor/', G.name, eShare, mShare)}`;
+  const text = (G.daily ? T('【今日挑戰 {0}・得票 {1}%】', G.dailyLabel, res.share.s.toFixed(1)) : '') + `${T('我在《我推的市長》幫 {0} 打選戰，市長選戰結局是「{1}」，我自己則是「{2}」！你要玩玩看嗎？👉 https://mochachen1225-create.github.io/my-mayor/', G.name, eShare, mShare)}`;
   try {
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       await navigator.share({ files: [file], text });
@@ -1326,6 +1357,7 @@ function openManual() {
         <li>${T('時間到沒選，就是擺爛，老闆會一直問「接下來呢？」')}</li>
         <li>${T('連續處理得漂亮會有')}<b>${T('連擊')}</b>${T('，3、5、8 連擊時團隊士氣和你的信心都會上升；出包或老闆不聽話就歸零')}</li>
         <li>${T('第 13 週有電視辯論：題目每局不同，每位老闆都有最怕被問的題目，對手也會拿你這局做過的事來質問；畫面上的觀眾好感，會決定辯論後脆上流傳的是金句還是迷因')}</li>
+        <li>${T('📅 今日挑戰：每天一局，同一天所有人的老闆和行程都一樣（你的選擇還是會引出不同的後續事件），比比看誰的得票率高。一天只記第一次的成績，之後可以一直練習')}</li>
       </ul>
 
       <h3>${T('✨ 沒火就成就老闆')}</h3>

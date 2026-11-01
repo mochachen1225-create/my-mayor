@@ -1,5 +1,13 @@
 // 英文對照表：中文原文 → English（由 scripts/i18n 流程產生，改英文就直接改這裡）
 I18N.en = {
+  "📅 新增「今日挑戰」：每天一局，同一天大家的老闆和行程都一樣，比比看誰的得票率高（你的選擇還是會引出不同的後續）": "📅 New Daily Challenge: one run a day where everyone gets the same boss and the same events. Compare your vote share with friends",
+  "📅 今日挑戰・{0}": "📅 Daily Challenge · {0}",
+  "今日成績：{0} {1}%・{2}": "Today's result: {0} {1}% · {2}",
+  "今天的老闆：{0}・大家玩同一局": "Today's boss: {0} · Everyone plays the same run",
+  "📅 今日挑戰 {0}": "📅 Daily Challenge {0}",
+  "練習局（今天的正式成績已經記下了）": "Practice run (today's official score is already saved)",
+  "【今日挑戰 {0}・得票 {1}%】": "[Daily Challenge {0} · {1}% of the vote] ",
+  "📅 今日挑戰：每天一局，同一天所有人的老闆和行程都一樣（你的選擇還是會引出不同的後續事件），比比看誰的得票率高。一天只記第一次的成績，之後可以一直練習": "📅 Daily Challenge: one run per day. Everyone gets the same boss and the same schedule that day (your choices still trigger different follow-ups), so you can compare vote shares. Only your first run of the day counts; after that you can practice as much as you like",
   "👆 結果卡的「繼續」固定在下方，不用再往下捲找按鈕": "👆 The Continue button now stays pinned at the bottom of result cards, no more scrolling to find it",
   "⏩ 沒有新聞的週會自動開工；玩過一次之後，報到須知會直接跳過": "⏩ Quiet weeks start automatically, and the briefing is skipped after your first run",
   "🧵 結局和分享截圖會秀出「本局脆上最熱門的留言」": "🧵 The ending screen and share image now show the run's most-liked Crisp comment",

@@ -113,8 +113,17 @@ function pickEvent(g) {
   return pool[pool.length - 1];
 }
 
-// 一週的行程：民調、主線、突發（可能好幾件）、成就老闆
+// 今日挑戰：用「日期＋週數」當亂數種子排行程，同一天大家遇到一樣的事件
+// （玩家的選擇和結果還是用自己的亂數；中途讀檔也會排出一樣的行程）
 function planWeek(g) {
+  if (!g.dailySeed) return planWeekInner(g);
+  const own = g.rng;
+  g.rng = makeRng(g.dailySeed * 31 + g.week);
+  try { return planWeekInner(g); } finally { g.rng = own; }
+}
+
+// 一週的行程：民調、主線、突發（可能好幾件）、成就老闆
+function planWeekInner(g) {
   const steps = [];
   if (POLL_WEEKS.includes(g.week)) steps.push({ step: 'poll' });
   if (POLICY_WEEKS.includes(g.week)) steps.push({ step: 'event', ev: policyEvent(g) });
@@ -220,6 +229,14 @@ function prepare(g, ev) {
 
 // 戰情室行程板：每次給 6 個能做的事，「休息」一定在
 function buildChoices(g, n = 6) {
+  if (g.dailySeed) { // 今日挑戰：行程板的選項也固定
+    g.boardN = (g.boardN || 0) + 1;
+    const own = g.rng; g.rng = makeRng(g.dailySeed * 97 + g.week * 13 + g.boardN);
+    try { return buildChoicesInner(g, n); } finally { g.rng = own; }
+  }
+  return buildChoicesInner(g, n);
+}
+function buildChoicesInner(g, n) {
   const pool = BUILD.filter(b => (!b.types || b.types.includes(g.type)) && b.id !== 'rest' && (!b.minWeek || g.week >= b.minWeek));
   const out = [];
   while (out.length < n - 1 && pool.length) {
