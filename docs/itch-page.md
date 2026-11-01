@@ -97,3 +97,18 @@ Everything is fictional: the city, the people, the animal-themed parties. The *r
 - Shorts 說明欄和留言的連結不能點：把 itch 連結放在頻道個人資料（Customization → Basic info → Links）
 - 上傳後把 Shorts 網址貼回 itch 頁面的 Gameplay video
 - 中文版（`promo/my-mayor-trailer-zh.mp4`）可另外上傳，標題例如「台灣選舉的總幹事有多慘」
+
+## 宣傳紀錄
+| 日期 | 管道 | 內容 |
+|---|---|---|
+| 2026-11-01 | itch Devlog | Why I made a game about Taiwanese election chaos |
+| 2026-11-01 | YouTube Shorts | 英文版試玩廣告（In Taiwan, grandmas count triple votes） |
+| 2026-11-01 | Newgrounds | 上傳，https://www.newgrounds.com/portal/view/1059947 （審核中） |
+| 2026-11-01 | Reddit r/playmygame | 功能介紹型貼文（附截圖、Shorts） |
+| 2026-11-01 | Reddit r/BrowserGaming | 標題梗「My Mayor-to-Be: my candidate won and thanked everyone… except me」＋ itch 連結＋自己留第一則留言 |
+
+### 之後
+- r/taiwan：帳號太新不能發，養 1～2 週後再發（稿子在對話紀錄，發前更新日期）
+- Newgrounds 審核通過後：發自我介紹 News Post
+- 11/23～11/29 選舉週：itch 第二篇 Devlog、投票日當天各平台發一則
+- 脆：中文貼文＋中文版廣告

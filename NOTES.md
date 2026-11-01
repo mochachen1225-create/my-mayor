@@ -68,6 +68,7 @@
 - 依玩家回饋微調難度與事件文字
 
 ## 更新紀錄
+- **宣傳**：Reddit r/playmygame、r/BrowserGaming 發文；宣傳紀錄與後續計畫記在 `docs/itch-page.md`（遊戲本身沒改）
 - **上架**：Newgrounds 已上傳，網址 https://www.newgrounds.com/portal/view/1059947 （審核中）
 - **宣傳圖**：新增手繪「躺平貓」圖示與橫幅（`promo/newgrounds/newgrounds-icon-cat-*.png`、`banner-cat-2400x1260.png`，原圖 `cat-handdrawn.png`），文字改成正確拼法 Exhausted!!（遊戲本身沒改）
 - **宣傳圖**：新增手繪「爆肝的肝」圖示（`promo/newgrounds/newgrounds-icon-liver-*.png`，原圖 `liver-handdrawn.png`），給 Newgrounds 用（遊戲本身沒改）
