@@ -344,3 +344,11 @@ html[lang="en"] .title .tag { font-size: 15px; }
 .runtitle small { display: block; color: #ffd166; font-size: 12px; letter-spacing: 1px; }
 .runtitle b { display: block; font-size: 20px; margin: 2px 0; }
 .runtitle span { font-size: 13px; color: #ddd; }
+
+/* 結果卡的「繼續」固定在卡片底部（.card 是捲動容器） */
+.card #next { position: sticky; bottom: 0; z-index: 2; box-shadow: 0 -10px 16px 6px var(--card); }
+/* 本局脆上最熱門的留言 */
+.toppost { margin: 8px auto; max-width: 340px; background: rgba(255,255,255,.08); border-radius: 14px; padding: 8px 12px; text-align: left; color: #fff; }
+.toppost > small { display: block; color: #c9b8ff; font-size: 12px; margin-bottom: 2px; }
+.toppost .th-body small { color: #aaa; }
+.toppost .th-ava { background: #6b5aa8; }

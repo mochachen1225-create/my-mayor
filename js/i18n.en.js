@@ -1,5 +1,11 @@
 // 英文對照表：中文原文 → English（由 scripts/i18n 流程產生，改英文就直接改這裡）
 I18N.en = {
+  "👆 結果卡的「繼續」固定在下方，不用再往下捲找按鈕": "👆 The Continue button now stays pinned at the bottom of result cards, no more scrolling to find it",
+  "⏩ 沒有新聞的週會自動開工；玩過一次之後，報到須知會直接跳過": "⏩ Quiet weeks start automatically, and the briefing is skipped after your first run",
+  "🧵 結局和分享截圖會秀出「本局脆上最熱門的留言」": "🧵 The ending screen and share image now show the run's most-liked Crisp comment",
+  "開工（自動）": "Clock in (auto)",
+  "🧵 本局脆上最熱門的留言": "🧵 Most-liked Crisp comment this run",
+  "🧵 本局脆上最熱門的留言（♡ {0}）": "🧵 Most-liked Crisp comment this run (♡ {0})",
   "本局稱號：{0}": "Run title: {0}",
   "🏅 結局多了「本局稱號」：看你怎麼玩，給你一個好笑的稱號（例如已讀不回之王、菜市場阿嬤收割機），分享截圖也看得到": "🏅 New “Run title” on the ending screen: a funny title based on how you played (like King of Left-on-Read or Grandma Whisperer). It shows up in the share image too",
   "本局稱號": "Run title",

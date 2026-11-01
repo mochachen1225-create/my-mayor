@@ -270,6 +270,8 @@ function profileScreen() {
 
 function introScreen() {
   roomScreen();
+  // 玩過的人不用再看一次報到須知，直接開工
+  if (loadRecords().runs.length) { runGame(); return; }
   overlay(`
     <div class="head" style="background:#3a5ba0"><span>${T('📋 報到須知')}</span></div>
     <div class="body">
@@ -448,9 +450,12 @@ function threadsHtml(res) {
   const posts = [];
   for (let i = 0; i < n && pool.length; i++) posts.push({ u: take(users), t: take(pool) });
   if (Math.random() < 0.05) posts[posts.length - 1] = { u: G.name + T('的') + (Math.random() < 0.5 ? T('媽媽') : T('阿姨')), t: THREADS.mom[Math.floor(Math.random() * THREADS.mom.length)] };
-  const likes = () => (Math.floor(Math.pow(Math.random(), 2.2) * 4800) + 3).toLocaleString('en-US');
+  posts.forEach(p => { p.likes = Math.floor(Math.pow(Math.random(), 2.2) * 4800) + 3; p.text = fill(G, p.t); });
+  // 記住這局按讚最多的留言，結局和分享截圖會用到
+  const best = posts.reduce((a, b) => (b.likes > a.likes ? b : a));
+  if (!G.topPost || best.likes > G.topPost.likes) G.topPost = { u: best.u, t: best.text, likes: best.likes };
   return `<div class="threads"><div class="th-head">${T('🧵 脆上的反應')}</div>${posts.map(p => `
-    <div class="th-post"><div class="th-ava">${esc(p.u.slice(0, 1))}</div><div class="th-body"><b>${esc(p.u)}</b><span>${esc(fill(G, p.t))}</span><small>♡ ${likes()}</small></div></div>`).join('')}</div>`;
+    <div class="th-post"><div class="th-ava">${esc(p.u.slice(0, 1))}</div><div class="th-body"><b>${esc(p.u)}</b><span>${esc(p.text)}</span><small>♡ ${p.likes.toLocaleString('en-US')}</small></div></div>`).join('')}</div>`;
 }
 
 // 做完決定的手感：音效、震動、晃卡片、撒彩帶
@@ -767,7 +772,11 @@ function weekCard(info) {
         <button class="btn" id="ok">${T('開工')}</button>
       </div>`, '');
     updateHud();
-    o.querySelector('#ok').onclick = () => { closeOverlay(); resolve(); };
+    let closed = false;
+    const done = () => { if (closed) return; closed = true; closeOverlay(); resolve(); };
+    o.querySelector('#ok').onclick = done;
+    // 這週沒有對手新聞、也沒有提醒：看一眼日期就自己關掉，不用每週都點「開工」
+    if (!news.length && !notes.length && !blackout) { o.querySelector('#ok').textContent = T('開工（自動）'); setTimeout(done, 1300); }
   });
 }
 
@@ -977,6 +986,7 @@ function endingScreen(res, seen) {
     <p class="muted" style="color:#ccc;margin-top:18px">${T('🧑‍💼 而你，總幹事……')}</p>
     <div class="story mgr"><div class="memoji">${res.mgr.emoji}</div><b>${esc(res.mgr.title)}</b><br>${esc(res.mgrText)}</div>
     ${(() => { const t = runTitle(); return `<div class="runtitle"><small>${T('本局稱號')}</small><b>${t.emoji} ${esc(t.name)}</b><span>${esc(t.why)}</span></div>`; })()}
+    ${G.topPost ? `<div class="toppost"><small>${T('🧵 本局脆上最熱門的留言')}</small><div class="th-post"><div class="th-ava">${esc(G.topPost.u.slice(0, 1))}</div><div class="th-body"><b>${esc(G.topPost.u)}</b><span>${esc(G.topPost.t)}</span><small>♡ ${G.topPost.likes.toLocaleString('en-US')}</small></div></div></div>` : ''}
     <p class="muted" style="color:#ccc">${T('已解鎖結局 {0} / {1}・總幹事結局 {2} / {3}', seen.size, ENDINGS.length, loadMgr().size, MGR_ENDINGS.length)}</p>
     <button class="btn" id="share">${T('📤 分享結局截圖')}</button>
     <button class="btn ghost" id="gal">${T('📚 結局圖鑑')}</button>
@@ -1206,7 +1216,15 @@ async function shareEnding(res) {
   fit(quip, 30); x.fillText(quip, W / 2, 1045);
   const rt = runTitle();
   line(rt.emoji, T('本局稱號：{0}', rt.name), 1110, 34, '#ffd166');
-  statsOf().slice(0, 2).forEach(([e, k, v], i) => line(e, `${k} ${v}`, 1160 + i * 40, 26, '#ddd'));
+  if (G.topPost) {
+    // 本局脆上最熱門的留言
+    x.textAlign = 'center'; x.font = font(24); x.fillStyle = '#bbb';
+    x.fillText(T('🧵 本局脆上最熱門的留言（♡ {0}）', G.topPost.likes.toLocaleString('en-US')), W / 2, 1158);
+    const q = LANG === 'en' ? `“${G.topPost.t}”` : `「${G.topPost.t}」`;
+    fit(q, 30, W - 200); x.fillStyle = '#fff'; x.fillText(q, W / 2, 1200);
+  } else {
+    statsOf().slice(0, 2).forEach(([e, k, v], i) => line(e, `${k} ${v}`, 1160 + i * 40, 26, '#ddd'));
+  }
 
   x.textAlign = 'center'; x.fillStyle = '#e0a526'; x.font = font(34);
   fit(T('你也來當總幹事，看能不能把市長送上寶座 →'), parseInt(x.font), W - 100); x.fillText(T('你也來當總幹事，看能不能把市長送上寶座 →'), W / 2, H - 50);
