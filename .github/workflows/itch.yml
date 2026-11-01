@@ -1,0 +1,30 @@
+# 推上 GitHub 後，自動把最新版上傳到 itch.io（用 itch 官方工具 butler）
+# 需要先在 GitHub repo 的 Settings → Secrets and variables → Actions 新增 BUTLER_API_KEY（itch 帳號的 API key）
+name: Deploy to itch.io
+
+on:
+  push:
+    branches: [claude/nice-darwin-3ur7ro]
+    paths: ['index.html', 'style.css', 'og.png', 'js/**', 'art/**']
+  workflow_dispatch:
+
+jobs:
+  itch:
+    runs-on: ubuntu-latest
+    env:
+      BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Skip if no API key yet
+        if: env.BUTLER_API_KEY == ''
+        run: echo "BUTLER_API_KEY is not set; skipping itch.io upload."
+      - name: Build zip
+        if: env.BUTLER_API_KEY != ''
+        run: scripts/build-itch.sh dist/my-mayor-itch.zip
+      - uses: jdno/setup-butler@v1
+        if: env.BUTLER_API_KEY != ''
+      - name: Push to itch.io
+        if: env.BUTLER_API_KEY != ''
+        run: |
+          version=$(sed -n "s/^const VERSION = '\(.*\)';/\1/p" js/data.js)
+          butler push dist/my-mayor-itch.zip mocha-cat-team/my-mayor:html5 --userversion "$version"
