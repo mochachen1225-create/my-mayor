@@ -5,7 +5,7 @@ description: 小型手機網頁遊戲從發想到上架宣傳的完整流程。�
 
 # 小型網頁遊戲：從發想到上架
 
-> **skill 版本 1.1（2026-11-01）**：補上預設分支與 tag、AI 揭露全勾、Newgrounds 暫停、連線遊戲、Flow 素材細節、宣傳錯開與時事禁發期、上架前檢查清單。
+> **skill 版本 1.2（2026-11-01）**：tag 改由 GitHub Actions 自動打。1.1：補上預設分支與 tag、AI 揭露全勾、Newgrounds 暫停、連線遊戲、Flow 素材細節、宣傳錯開與時事禁發期、上架前檢查清單。
 
 這套流程來自《我推的市長》（選舉題材、一局約 10 分鐘的手機網頁遊戲），從第一句發想做到 itch.io、YouTube Shorts、Reddit。照這個順序走，可以避開我們踩過的坑。
 
@@ -53,7 +53,7 @@ description: 小型手機網頁遊戲從發想到上架宣傳的完整流程。�
 4. 跑平衡模擬（各角色勝率要接近）＋手機尺寸實玩一局，確認沒有錯誤。
 5. 新增中文字串要同時補英文翻譯。
 6. **commit＋push 到預設分支**：小弟週六 deploy 抓的就是預設分支，推到別的分支等於沒上線。要趕上週六 13:00，就要在那之前推。
-7. **發版打 git tag**（例如 `v2.2.2`），出事可以回滾。選用：GitHub Release 貼同一段更新說明。雲端環境有時推不上 tag（branch 可以、tag 會斷線）：推不上就請作者 Mac 上的小弟或架構師補打，並告訴總編是哪一個 commit。
+7. **版本 tag 由 `version-tag` workflow 自動打**：`js/data.js` 的 `VERSION` 一改、推上預設分支，GitHub Actions 就會打 `v<版本>`，不用手動打（雲端環境推不上 tag）。補打舊版本：Actions →「版本 tag」→ Run workflow，填 version 和 commit。新遊戲 repo 要複製 `.github/workflows/version-tag.yml` 並改分支名稱。選用：GitHub Release 貼同一段更新說明。
 8. **金鑰永遠不進 repo**：butler 金鑰在作者 Mac 的鑰匙圈，CI 用 GitHub Secrets。
 9. 改好通知總編。
 

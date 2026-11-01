@@ -20,7 +20,7 @@
 1. 開發紀錄（`NOTES.md` 更新紀錄）、`CHANGES`（首頁新版提醒）、版本號（`VERSION`＋`index.html` 的 `?v=`）一起更新，三者一致。
 2. 功能或介面有變：同步 `docs/itch-page.md`、`README.md` 玩法表；截圖或試玩廣告過時，列進「待重拍」通知總編。
 3. **commit＋push 到預設分支**（週六 deploy 抓預設分支），要趕上週六 13:00 就在那之前推。
-4. **打 git tag**（`v2.2.2`），選用 GitHub Release。
+4. **版本 tag 自動打**（`version-tag` workflow 看到 `VERSION` 變動就打 `v<版本>`）；補打舊版到 Actions →「版本 tag」→ Run workflow。
 5. 金鑰永遠不進 repo。
 6. 照固定格式通知總編：版本號、玩家看得懂的一兩句、itch 要不要更新、結局數有沒有變、有沒有素材要重拍。
 
@@ -66,7 +66,7 @@ Flow 注意事項：
 ## 上架前檢查清單
 工作室的完整清單在 isekai-studio repo 的 `publish/games/README.md`，重點：
 - [ ] `NOTES.md`／`CHANGES`／`VERSION`（含 `?v=`）三者一致
-- [ ] 已推到**預設分支**，已打 **git tag**
+- [ ] 已推到**預設分支**，Actions 的「版本 tag」有成功打出 `v<版本>`
 - [ ] 打包 itch 版，解壓後實際打開測過
 - [ ] `docs/itch-page.md` 跟目前版本一致（介紹、標籤、結局數）
 - [ ] itch 頁面：文案、截圖、封面、分類、標籤；**AI 揭露四項全勾**
