@@ -120,8 +120,10 @@ function planWeek(g) {
   if (POLICY_WEEKS.includes(g.week)) steps.push({ step: 'event', ev: policyEvent(g) });
   for (const ev of g.pending) steps.push({ step: 'event', ev });
   g.pending = [];
-  const main = (MAIN[g.week] || []).map(e => typeof e === 'string' ? EVENTS.find(x => x.id === e) : e);
+  const main = (MAIN[g.week] || []).flatMap(e => e === 'DEBATE' ? debateEvents(g) : [typeof e === 'string' ? EVENTS.find(x => x.id === e) : e]);
   for (const ev of main) steps.push({ step: 'event', ev });
+  // 辯論結束後的金句／迷因，要等三題打完才知道觀眾好感，所以到時候才產生
+  if ((MAIN[g.week] || []).includes('DEBATE')) steps.push({ step: 'event', lazy: 'debate_after' });
   // 沒事的時候自己排行程；突發事件隨機插進來，有時候一整週都沒事
   // 每週有幾個空檔是隨機的：有時很閒、有時忙到沒空
   let slots = g.week === 13 || g.week === WEEKS ? 0 : main.length ? (g.rng() < 0.7 ? 1 : 0) : (g.rng() < 0.5 ? 1 : 2);
@@ -145,6 +147,48 @@ function planWeek(g) {
   }
   if (g.week === 1 && mix.length) mix.sort((a, b) => (a.step === 'free') - (b.step === 'free')); // 第一週先遇到事件，認識玩法
   return steps.concat(mix);
+}
+
+// 電視辯論：第一題從題庫抽（四成機率是老闆的弱點題）、第二題對手翻舊帳、第三題結辯
+function debateEvents(g) {
+  g.debate = { aud: 50 };
+  const weakId = DEBATE.weak[g.type];
+  let q1 = g.rng() < 0.4 ? DEBATE.pool.find(q => q.id === weakId) : null;
+  if (!q1) q1 = DEBATE.pool[Math.floor(g.rng() * DEBATE.pool.length)];
+  const weak = q1.id === weakId;
+  const weakRisk = { p: 0.25, fx: { fav: -4, s: -0.4 }, r: DEBATE.weakFail };
+  const ev1 = { id: 'debate_q', kind: 'debate', who: 'pundit', timer: 12, debate: 1, weak,
+    title: T('電視辯論・{0}', q1.topic), text: weak ? q1.q + ' ' + DEBATE.weakLine : q1.q,
+    opts: weak ? q1.opts.map(o => ({ ...o, risk: [].concat(o.risk || [], weakRisk) })) : q1.opts };
+  // 對手翻舊帳：你這局做過什麼，他就打什麼
+  const hit = {
+    dirty: g.f.dirty1 || g.f.dirty2 || g.f.foreign || g.f.donated || g.f.insider || g.f.buy,
+    promise: (g.f.promise || 0) >= 3,
+    smear: g.f.smear,
+    defy: (g.f.defied || 0) >= 4,
+    show: g.showMax >= 50,
+    incumbent: g.type === 'D',
+    challenger: g.type !== 'D'
+  };
+  const matched = DEBATE.attacks.filter(a => hit[a.when]);
+  const atk = g.rng() < 0.65 ? matched[0] : matched[Math.floor(g.rng() * matched.length)];
+  const ev2 = { id: 'debate_attack', kind: 'debate', who: 'pundit', timer: 12, debate: 2, attack: atk.id,
+    title: T('電視辯論・對手質問'), text: atk.q, opts: atk.opts };
+  const ev3 = { id: 'debate_close', kind: 'debate', who: 'pundit', timer: 12, debate: 3,
+    title: T('電視辯論・結辯'), text: DEBATE.closing.q, opts: DEBATE.closing.opts };
+  return [ev1, ev2, ev3];
+}
+
+// 需要等前面的事情發生後才產生的事件
+function lazyEvent(g, kind) {
+  if (kind === 'debate_after') {
+    const aud = g.debate ? g.debate.aud : 50;
+    const tier = aud >= 68 ? 'great' : aud >= 58 ? 'good' : aud >= 47 ? 'meh' : 'flop';
+    g.f.debateTier = tier;
+    const a = DEBATE.after[tier];
+    return { id: 'debate_after', kind: 'debate', who: 'intern', title: a.title, text: a.text, opts: a.opts };
+  }
+  return null;
 }
 
 // 政見發表：諂媚、逆風各抽兩個，順序打亂
@@ -229,6 +273,7 @@ function choose(g, ev, opt, isBuild = false) {
   const lines = [];
   let exec = opt;
   let defied = false;
+  let adlib = null; // 辯論時老闆脫稿的結果
   const opts = isBuild ? null : ev.opts;
   const bossActs = isBuild ? true : !ev.staff;
 
@@ -255,6 +300,13 @@ function choose(g, ev, opt, isBuild = false) {
         exec = { ...opt, fx: halve(opt.fx), risk: null, ok: null };
       }
       if (defied) g.f.defied = (g.f.defied || 0) + 1;
+      // 辯論時老闆脫稿：可能爆紅，也可能翻車
+      if (defied && ev && ev.debate) {
+        const good = g.rng() < 0.45;
+        applyFx(g, good ? { buzz: 6, fav: 3, s: 0.3 } : { fav: -4, s: -0.4 }, delta);
+        adlib = { kind: good ? 'good' : 'bad', text: fill(g, pick(g, good ? DEBATE.adlibGood : DEBATE.adlibBad)) };
+        g.f.adlib = (g.f.adlib || 0) + 1;
+      }
       if (defied) lines.push({ kind: 'defy', text: opts ? fill(g, pick(g, TYPES[g.type].defy)) + ' ' + fill(g, exec.t) : fill(g, pick(g, TYPES[g.type].half)) });
     }
   }
@@ -371,7 +423,8 @@ function choose(g, ev, opt, isBuild = false) {
   logSwing(g, isBuild ? fill(g, exec.t) : fill(g, ev.title), delta);
   if ((delta.r || 0) < -0.3) g.provoked = 1;
   if (isBuild && ['rally', 'billboard', 'ads', 'dance', 'handshake'].includes(exec.id) && !failed) g.bigMove = 1;
-  return { exec, defied, lines, delta, failed };
+  if (adlib) lines.unshift(adlib);
+  return { exec, defied, lines, delta, failed, aud: debateAudience(g, ev, delta, failed) };
 }
 
 // 老闆擅長的事比較不容易翻車，不擅長的比較容易
@@ -415,7 +468,7 @@ function timeout(g, ev, isBuild = false) {
   const q = T('接下來呢') + T('？').repeat(Math.min(g.idleStreak, 4));
   const lines = [{ kind: 'boss', text: g.idleStreak >= 3 ? `${T('{0}……你還在嗎？', q)}` : q }];
   if (!isBuild) lines.push({ kind: 'bad', text: T('媒體寫：「') + g.name + T('陣營已讀不回。」') });
-  return { lines, delta, idle: g.idleStreak };
+  return { lines, delta, idle: g.idleStreak, aud: debateAudience(g, ev, delta, true) };
 }
 
 // 爆肝：肝歸零就當場倒下送急診，這週剩下的事只好交給副總幹事（回傳 null 代表還撐得住）
@@ -432,6 +485,15 @@ function collapse(g) {
     { kind: 'bad', text: T('你在戰情室昏倒，被送進急診。這週剩下的事，只好全部交給副總幹事。') },
     { kind: 'say', mood: 'sad', text: T('（傳訊息來）「總幹事，你先休息……那明天的行程呢？」') }
   ], collapse: true };
+}
+
+// 辯論的觀眾好感：每回答一題就上下跳（0～100，起點 50）
+function debateAudience(g, ev, delta, failed) {
+  if (!ev || !ev.debate || !g.debate) return null;
+  const before = g.debate.aud;
+  const move = (delta.fav || 0) * 1.5 + ((delta.s || 0) - (delta.r || 0)) * 6 + (delta.buzz || 0) * 0.2 + (failed ? -8 : 0);
+  g.debate.aud = clamp(Math.round(before + move), 0, 100);
+  return { before, after: g.debate.aud };
 }
 
 function logSwing(g, title, delta) {
@@ -698,4 +760,4 @@ function decide(g, res) {
   return res;
 }
 
-if (typeof module !== 'undefined') module.exports = { newGame, planWeek, buildChoices, choose, timeout, collapse, endWeek, doPoll, finish, resolveClose, decide, fill, weekLabel, clockText, canAfford, makeRng, WEEKS, BLACKOUT_WEEK };
+if (typeof module !== 'undefined') module.exports = { newGame, planWeek, buildChoices, choose, timeout, collapse, lazyEvent, endWeek, doPoll, finish, resolveClose, decide, fill, weekLabel, clockText, canAfford, makeRng, WEEKS, BLACKOUT_WEEK };

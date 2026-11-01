@@ -328,3 +328,13 @@ input.name { width: 100%; border: 2px solid #ccc; border-radius: 12px; padding: 
 .langbar button.on { border-color: var(--ink); color: var(--ink); background: #fff7e3; }
 html[lang="en"] .title h1 { font-size: 42px; white-space: nowrap; }
 html[lang="en"] .title .tag { font-size: 15px; }
+
+/* 電視辯論：觀眾好感條 */
+.k-debate .head { background: #2b3a67; }
+.aud { display: flex; align-items: center; gap: 8px; padding: 8px 14px 0; font-size: 13px; color: var(--muted); }
+.aud span { white-space: nowrap; }
+.aud-bar { flex: 1; height: 8px; border-radius: 99px; background: #e7e3ee; overflow: hidden; }
+.aud-bar div { height: 100%; background: linear-gradient(90deg, #7a6ba8, #e0a526); transition: width .8s cubic-bezier(.2,.9,.3,1.2); }
+.aud b { min-width: 26px; text-align: right; color: var(--ink); font-variant-numeric: tabular-nums; }
+.aud.up .aud-bar div { background: linear-gradient(90deg, #2e9e6a, #e0a526); }
+.aud.down .aud-bar div { background: linear-gradient(90deg, #d93636, #e07a5f); }

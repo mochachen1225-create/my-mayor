@@ -13,7 +13,7 @@ if (!window.NO_ART) {
 
 // 英文版：把資料裡的中文換成英文
 if (LANG === 'en') {
-  [CHANGES, TYPES, VALUE_LINES, NPC, EVENTS, MAIN, TOPICS, POLICIES, BUILD, ENDINGS, MGR_ENDINGS, THREAD_USERS, THREADS, SWEEP_PEOPLE].forEach(translateDeep);
+  [CHANGES, TYPES, VALUE_LINES, NPC, EVENTS, MAIN, TOPICS, POLICIES, BUILD, ENDINGS, MGR_ENDINGS, THREAD_USERS, THREADS, SWEEP_PEOPLE, DEBATE].forEach(translateDeep);
   document.documentElement.lang = 'en';
 }
 document.title = T('我推的市長');
@@ -382,8 +382,22 @@ function closeOverlay() { const o = app.querySelector('.overlay'); if (o) o.remo
 
 const KIND_LABEL = {
   fire: T('⚠ 突發狀況'), main: T('📌 選戰大事'), money: T('💰 有人來訪'), tv: T('📺 政論節目'),
-  daily: T('☕ 戰情室日常'), crisis: T('🚨 危機'), topic: T('🎤 座談主題'), policy: T('📜 政見發表'), build: T('✨ 沒有火，來成就老闆')
+  daily: T('☕ 戰情室日常'), crisis: T('🚨 危機'), topic: T('🎤 座談主題'), policy: T('📜 政見發表'), debate: T('📺 電視辯論'), build: T('✨ 沒有火，來成就老闆')
 };
+
+// 辯論的觀眾好感條：回答後動畫跳到新數字
+function audHtml(v) {
+  return `<div class="aud"><span>${T('🎥 觀眾好感')}</span><div class="aud-bar"><div style="width:${v}%"></div></div><b>${v}</b></div>`;
+}
+function moveAud(box, a) {
+  const bar = box.querySelector('.aud-bar div'), num = box.querySelector('.aud b');
+  if (!bar) return;
+  requestAnimationFrame(() => { bar.style.width = a.after + '%'; });
+  num.textContent = a.after;
+  const d = a.after - a.before;
+  if (d) floatDelta(num, d);
+  box.querySelector('.aud').classList.add(d >= 0 ? 'up' : 'down');
+}
 
 // 最後 5 秒：滴答聲、倒數條變紅
 function hurry(box, s) {
@@ -474,6 +488,7 @@ function eventCard(ev, queueLeft, isBuild) {
     const o = overlay(`
       <div class="head"><span>${KIND_LABEL[kind]}</span><span>${queueLeft > 0 ? `<span class="q">${T('還有 {0} 件等你', queueLeft)}</span> ` : ''}⏱ <b id="sec">${secs}</b></span></div>
       <div class="timer"><div id="tbar"></div></div>
+      ${ev && ev.debate && G.debate ? audHtml(G.debate.aud) : ''}
       <div class="body">
         ${whoHtml}
         <h2>${esc(title)}</h2>
@@ -489,6 +504,7 @@ function eventCard(ev, queueLeft, isBuild) {
       o.querySelector('.timer div').style.width = '0';
       o.querySelector('#opts').innerHTML = resultHtml(res) + `<button class="btn" id="next">${T('繼續')}</button>`;
       reactFx(res, o.querySelector('.card'));
+      if (res.aud) moveAud(o, res.aud);
       o.querySelector('#next').onclick = () => { sfx('tap'); closeOverlay(); resolve(res); };
     };
     const stop = countdown(secs, (frac, s) => {
@@ -766,7 +782,7 @@ async function runGame(notes = {}) {
       if (st.step === 'poll') { await pollCard(); continue; }
       left--;
       if (st.step === 'free') await boardStep(left);
-      else await eventCard(st.ev, left, false);
+      else await eventCard(st.lazy ? lazyEvent(G, st.lazy) : st.ev, left, false);
       // 肝歸零：當場倒下，這週剩下的事都跳過
       const fall = collapse(G);
       if (fall) {
@@ -901,6 +917,7 @@ function statsOf() {
     ['😶', T('擺爛（時間到沒選）'), (G.f.idle || 0) + ` ${T('次')}`],
     ['🙄', T('老闆不聽你的'), (G.f.defied || 0) + ` ${T('次')}`],
     ['🔥', T('最高連擊'), (G.maxStreak || 0) + ` ${T('次')}`],
+    ['🎥', T('辯論觀眾好感'), G.debate ? G.debate.aud : '—'],
     ['🏃', T('菜市場掃街'), (G.f.sweeps || 0) + ` ${T('次')}`],
     ['😇', T('最後的良心'), Math.round(G.con)]
   ];
@@ -1266,6 +1283,7 @@ function openManual() {
         <li>${T('「推給中央」「說是抹黑」「不回應」很常翻車')}</li>
         <li>${T('時間到沒選，就是擺爛，老闆會一直問「接下來呢？」')}</li>
         <li>${T('連續處理得漂亮會有')}<b>${T('連擊')}</b>${T('，3、5、8 連擊時團隊士氣和你的信心都會上升；出包或老闆不聽話就歸零')}</li>
+        <li>${T('第 13 週有電視辯論：題目每局不同，每位老闆都有最怕被問的題目，對手也會拿你這局做過的事來質問；畫面上的觀眾好感，會決定辯論後脆上流傳的是金句還是迷因')}</li>
       </ul>
 
       <h3>${T('✨ 沒火就成就老闆')}</h3>
