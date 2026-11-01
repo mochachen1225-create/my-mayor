@@ -1,6 +1,6 @@
 // 英文對照表：中文原文 → English（由 scripts/i18n 流程產生，改英文就直接改這裡）
 I18N.en = {
-  "🏅 結局圖鑑新增「稱號」分頁，收集 13 種本局稱號": "🏅 New “Titles” tab in the Endings gallery: collect all 13 run titles",
+  "🏅 結局圖鑑新增「稱號」分頁，收集 14 種本局稱號（含 1 個隱藏稱號）": "🏅 New “Titles” tab in the Endings gallery: collect all 14 run titles (one is secret)",
   "🔮 開票前可以猜老闆的得票率，開票後老闆會對你的猜測有反應，猜中就拿到「神準總幹事」稱號": "🔮 Guess your boss's vote share before the count. Your boss will react to your guess, and getting it right earns the “Oracle” title",
   "神準總幹事": "The Oracle",
   "開票前猜中得票率": "Guessed the vote share before the count",
@@ -2984,4 +2984,10 @@ I18N.en = {
   '開票前我猜 {0}，結果 {1}%。': 'Before the count I guessed {0}. Result: {1}%. ',
   '你猜 {0}，結果 {1}%：只差 {2}%，好可惜！': 'You guessed {0}. Result: {1}%. Missed by just {2}%. So close!',
   '📊 最後一次內參民調：{0} {1}%、{2} {3}%，還有 {4}% 沒表態。': '📊 Last internal poll: {0} {1}%, {2} {3}%, {4}% undecided.',
+  '神算總幹事': 'The Bullseye',
+  '猜中，而且離區間正中央不到 1%': 'Guessed right, within 1% of the middle of the range',
+  '猜中得票率，而且幾乎正中紅心，大家開始問你下期樂透。': 'You called the vote share almost dead center. People are asking for your lottery picks.',
+  '隱藏稱號': 'Secret title',
+  '🎯 你猜 {0}，結果 {1}%：正中紅心！': '🎯 You guessed {0}. Result: {1}%. Dead center!',
+  '（我猜 {0} {1}）': ' (my guess: {0} {1})',
 };

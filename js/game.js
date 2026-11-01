@@ -846,6 +846,7 @@ async function electionNight() {
   show(`<p class="muted" style="color:#ccc">${T('11 月 28 日 晚上 8 點')}</p><h2>${T('開票夜')}</h2>`, 'end');
   G.guess = await guessCard();
   G.guessHit = res.share.s >= G.guess.lo && res.share.s < G.guess.hi;
+  { const mid = G.guess.lo === 0 ? 37.5 : G.guess.hi > 100 ? 57.5 : (G.guess.lo + G.guess.hi) / 2; G.guessBull = G.guessHit && Math.abs(res.share.s - mid) < 1; }
   show(`
     <p class="muted" style="color:#ccc">${T('11 月 28 日 晚上 8 點')}</p>
     <h2>${T('開票夜')}</h2>
@@ -919,7 +920,7 @@ async function electionNight() {
   $('#nightface').innerHTML = bossFace(res.win ? 'big' : 'sad');
   $('#turnout').style.visibility = 'visible';
   const gl = $('#guessline');
-  if (gl) { gl.textContent = G.guessHit ? T('🔮 你猜 {0}，結果 {1}%：猜中了！', G.guess.label, res.share.s.toFixed(1)) : (() => { const miss = Math.min(Math.abs(res.share.s - G.guess.lo), Math.abs(res.share.s - G.guess.hi)); return miss < 1 ? T('你猜 {0}，結果 {1}%：只差 {2}%，好可惜！', G.guess.label, res.share.s.toFixed(1), Math.max(0.1, miss).toFixed(1)) : T('你猜 {0}，結果 {1}%：沒猜中。', G.guess.label, res.share.s.toFixed(1)); })(); gl.style.visibility = 'visible'; if (G.guessHit) { sfx('combo'); confetti(60); } }
+  if (gl) { gl.textContent = G.guessBull ? T('🎯 你猜 {0}，結果 {1}%：正中紅心！', G.guess.label, res.share.s.toFixed(1)) : G.guessHit ? T('🔮 你猜 {0}，結果 {1}%：猜中了！', G.guess.label, res.share.s.toFixed(1)) : (() => { const miss = Math.min(Math.abs(res.share.s - G.guess.lo), Math.abs(res.share.s - G.guess.hi)); return miss < 1 ? T('你猜 {0}，結果 {1}%：只差 {2}%，好可惜！', G.guess.label, res.share.s.toFixed(1), Math.max(0.1, miss).toFixed(1)) : T('你猜 {0}，結果 {1}%：沒猜中。', G.guess.label, res.share.s.toFixed(1)); })(); gl.style.visibility = 'visible'; if (G.guessHit) { sfx('combo'); confetti(60); } }
   const gr = $('#guessreact');
   if (gr && G.guess) { gr.textContent = guessReaction(res); gr.style.display = 'block'; }
   if (G.f.complacent) $('#turnout').textContent += `　${T('支持者以為穩贏，很多人沒出門……')}`;
@@ -962,6 +963,7 @@ function closeRace(res) {
 // 本局稱號：看你這局怎麼玩，給一個好笑的稱號（只是好玩，不影響結局）
 // 稱號一覽（稱號圖鑑也用這份）
 const TITLES = [
+  ['bullseye', '🎯', T('神算總幹事'), T('猜中，而且離區間正中央不到 1%'), true],
   ['oracle', '🔮', T('神準總幹事'), T('開票前猜中得票率')],
   ['er', '🚑', T('急診室 VIP'), T('一局進了兩次急診')],
   ['combo', '🔥', T('連擊狂人'), T('連續 8 次以上處理得漂亮')],
@@ -989,6 +991,7 @@ function saveTitle(id) {
 function runTitle() {
   const f = G.f, aud = G.debate ? G.debate.aud : 50;
   const list = [
+    [G.guessBull, 'bullseye', T('猜中得票率，而且幾乎正中紅心，大家開始問你下期樂透。')],
     [G.guessHit, 'oracle', T('開票前就猜中得票率，戰情室都說你有內線。')],
     [(f.hospital || 0) >= 2, 'er', T('一局進了兩次急診，護理師都認得你了。')],
     [(G.maxStreak || 0) >= 8, 'combo', T('連續 {0} 次處理得漂亮，戰情室開始叫你「總幹事大人」。', G.maxStreak)],
@@ -1139,9 +1142,9 @@ function renderGallery(box) {
   const list = allEndings().filter(e => e.cat === galTab);
   const count = c => { if (c === 'titles') return `${Object.keys(loadTitles()).length}/${TITLES.length}`; const l = allEndings().filter(e => e.cat === c); return `${l.filter(has).length}/${l.length}`; };
   const got = loadTitles();
-  const titleCells = () => TITLES.map(([id, emoji, name, how]) => got[id]
+  const titleCells = () => TITLES.map(([id, emoji, name, how, secret]) => got[id]
     ? `<button class="gcell" data-title="${id}"><span class="e">${emoji}</span>${esc(name)}<small style="display:block;color:var(--muted);font-size:11px">${esc(how)}・${T('拿過 {0} 次', got[id].count)}</small></button>`
-    : `<button class="gcell lock" data-title="${id}"><span class="e">🔒</span>？？？<small style="display:block;color:var(--muted);font-size:11px">${esc(how)}</small></button>`).join('');
+    : `<button class="gcell lock" data-title="${id}"><span class="e">🔒</span>？？？<small style="display:block;color:var(--muted);font-size:11px">${secret ? T('隱藏稱號') : esc(how)}</small></button>`).join('');
   box.innerHTML = `
     <p class="muted center" style="margin:8px 0 0">${T('選舉結局 {0}/{1}・總幹事結局 {2}/{3}', seen.size, ENDINGS.length, mseen.size, MGR_ENDINGS.length)}</p>
     <div class="tabs">${CATS.map(([c, n]) => `<button class="tab ${c === galTab ? 'on' : ''}" data-c="${c}">${n}<small>${count(c)}</small></button>`).join('')}</div>
@@ -1304,7 +1307,7 @@ async function shareEnding(res) {
   fit(`${G.name}・${TYPES[G.type].label}`, 42); x.fillText(`${G.name}・${TYPES[G.type].label}`, W / 2, 510);
   line(res.win ? '🎉' : '😢', res.win ? T('凍蒜！') : T('落選'), 585, 58, res.win ? '#ffd166' : '#ff9a9a');
   x.textAlign = 'center'; x.font = font(34); x.fillStyle = '#ccc';
-  x.fillText(`${T('得票 {0}% vs {1}%', res.share.s.toFixed(1), res.share.r.toFixed(1))}`, W / 2, 640);
+  { const vt = T('得票 {0}% vs {1}%', res.share.s.toFixed(1), res.share.r.toFixed(1)) + (G.guess ? T('（我猜 {0} {1}）', G.guess.label, G.guessBull ? '🎯' : G.guessHit ? '✅' : '❌') : ''); fit(vt, 34, W - 160); x.fillText(vt, W / 2, 640); }
   line(res.ending.emoji, res.ending.title, 715, 48, '#fff');
   x.textAlign = 'center'; x.font = font(32); x.fillStyle = '#eee';
   const story = wrapText(x, res.text, W - 220);
