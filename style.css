@@ -338,3 +338,9 @@ html[lang="en"] .title .tag { font-size: 15px; }
 .aud b { min-width: 26px; text-align: right; color: var(--ink); font-variant-numeric: tabular-nums; }
 .aud.up .aud-bar div { background: linear-gradient(90deg, #2e9e6a, #e0a526); }
 .aud.down .aud-bar div { background: linear-gradient(90deg, #d93636, #e07a5f); }
+
+/* 本局稱號 */
+.runtitle { margin: 14px auto 6px; max-width: 340px; background: rgba(255, 209, 102, .12); border: 2px solid rgba(255, 209, 102, .6); border-radius: 16px; padding: 10px 14px; text-align: center; color: #fff; }
+.runtitle small { display: block; color: #ffd166; font-size: 12px; letter-spacing: 1px; }
+.runtitle b { display: block; font-size: 20px; margin: 2px 0; }
+.runtitle span { font-size: 13px; color: #ddd; }

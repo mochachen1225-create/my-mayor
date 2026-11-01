@@ -910,6 +910,27 @@ function closeRace(res) {
   });
 }
 
+// 本局稱號：看你這局怎麼玩，給一個好笑的稱號（只是好玩，不影響結局）
+function runTitle() {
+  const f = G.f, aud = G.debate ? G.debate.aud : 50;
+  const list = [
+    [(f.hospital || 0) >= 2, '🚑', T('急診室 VIP'), T('一局進了兩次急診，護理師都認得你了。')],
+    [(G.maxStreak || 0) >= 8, '🔥', T('連擊狂人'), T('連續 {0} 次處理得漂亮，戰情室開始叫你「總幹事大人」。', G.maxStreak)],
+    [(f.idle || 0) >= 4, '🙈', T('已讀不回之王'), T('擺爛了 {0} 次，老闆的「接下來呢？」已經變成你的鬧鐘。', f.idle)],
+    [(f.adlib || 0) >= 1 && aud <= 40, '🎭', T('脫稿受害者'), T('辯論時老闆脫稿，你在後台老了十歲。')],
+    [aud >= 68, '🎤', T('辯論金句製造機'), T('辯論觀眾好感 {0}，金句被做成貼圖。', aud)],
+    [(f.defied || 0) >= 7, '🙄', T('老闆的空氣'), T('老闆 {0} 次不聽你的，你懷疑自己是不是隱形了。', f.defied)],
+    [(f.sweeps || 0) >= 3, '👵', T('菜市場阿嬤收割機'), T('掃街 {0} 次，阿嬤們都存了你的電話。', f.sweeps)],
+    [(f.rests || 0) >= 3, '😴', T('戰情室沙發代言人'), T('被強制休息 {0} 次，沙發上有你的形狀。', f.rests)],
+    [G.con >= 85, '😇', T('良心總幹事'), T('選戰打完，良心幾乎沒掉。')],
+    [G.con <= 20, '😈', T('黑心總幹事'), T('贏不贏是一回事，良心先輸了。')],
+    [(f.hospital || 0) === 1, '🚑', T('爆肝過一次的人'), T('倒下過一次，但又爬起來了。')],
+    [true, '🧑‍💼', T('認真的總幹事'), T('沒有什麼特別的事蹟，但你撐完了整場選戰。')]
+  ];
+  const [, emoji, name, why] = list.find(x => x[0]);
+  return { emoji, name, why };
+}
+
 function statsOf() {
   return [
     ['🫀', T('爆肝被強制休息'), (G.f.rests || 0) + ` ${T('次')}`],
@@ -955,6 +976,7 @@ function endingScreen(res, seen) {
     <div class="story">${esc(res.text)}</div>
     <p class="muted" style="color:#ccc;margin-top:18px">${T('🧑‍💼 而你，總幹事……')}</p>
     <div class="story mgr"><div class="memoji">${res.mgr.emoji}</div><b>${esc(res.mgr.title)}</b><br>${esc(res.mgrText)}</div>
+    ${(() => { const t = runTitle(); return `<div class="runtitle"><small>${T('本局稱號')}</small><b>${t.emoji} ${esc(t.name)}</b><span>${esc(t.why)}</span></div>`; })()}
     <p class="muted" style="color:#ccc">${T('已解鎖結局 {0} / {1}・總幹事結局 {2} / {3}', seen.size, ENDINGS.length, loadMgr().size, MGR_ENDINGS.length)}</p>
     <button class="btn" id="share">${T('📤 分享結局截圖')}</button>
     <button class="btn ghost" id="gal">${T('📚 結局圖鑑')}</button>
@@ -1182,7 +1204,9 @@ async function shareEnding(res) {
   x.textAlign = 'center'; x.font = font(30); x.fillStyle = '#ddd';
   const quip = LANG === 'en' ? `“${res.mgr.quip || ''}”` : `「${res.mgr.quip || ''}」`;
   fit(quip, 30); x.fillText(quip, W / 2, 1045);
-  statsOf().slice(0, 3).forEach(([e, k, v], i) => line(e, `${k} ${v}`, 1105 + i * 42, 28, '#ffd166'));
+  const rt = runTitle();
+  line(rt.emoji, T('本局稱號：{0}', rt.name), 1110, 34, '#ffd166');
+  statsOf().slice(0, 2).forEach(([e, k, v], i) => line(e, `${k} ${v}`, 1160 + i * 40, 26, '#ddd'));
 
   x.textAlign = 'center'; x.fillStyle = '#e0a526'; x.font = font(34);
   fit(T('你也來當總幹事，看能不能把市長送上寶座 →'), parseInt(x.font), W - 100); x.fillText(T('你也來當總幹事，看能不能把市長送上寶座 →'), W / 2, H - 50);
