@@ -12,8 +12,12 @@
 ## 各平台
 - **itch Devlog**：標題用「Why I made a game about …」。內文從文化或場景講起，再講你在遊戲裡扮演誰，提到虛構和不酸單一陣營，最後問「which ending did you get?」。整篇不要用斜體。
 - **YouTube Shorts**：上傳直式試玩廣告。標題用最有梗的一句（例如「In Taiwan, grandmas count triple votes 👵🗳️」）。說明欄的連結**不能點**，所以要把 itch 連結放在頻道的個人資料，說明欄寫「search 遊戲名 on itch.io」。上傳後把網址貼回 itch 的 Gameplay video。
-- **Reddit**：
-  - 新帳號（1 天）很多大版不能發文，要先養 1～2 週、正常留言累積 karma，不要買。
+- **Reddit**（由作者手動貼；總編準備好貼文 md 和進度表）：
+  - 新帳號在前 24 小時內，很多版（例如 r/taiwan）會被機器人擋掉，要先養一陣子、正常留言累積 karma，不要買。
+  - **工作室帳號不碰政治、選舉的討論串**，時事遊戲也一樣：遊戲是虛構的，帳號不表態。
+  - 作者的英文語氣：短句、口語，可以有「So cute!!」這種驚嘆，用新手的姿態，不推銷。
+  - r/playmygame 是交換回饋的文化：貼文要寫清楚想要什麼回饋，問題要具體（例如「Did the humor land if you're not from Taiwan?」），也要去玩別人的遊戲、給回饋。
+  - 同一天只發一個 Reddit 版；多個遊戲的宣傳時程要錯開。
   - r/playmygame：分享型的版，照常見格式寫（Game Title、Playable Link、Platform、Description、Free to Play Status、Involvement、想要的回饋），附截圖；一定要有可以玩的連結，必填 flair。
   - 只能放連結的版：標題＋itch 連結，自己留第一則留言說明「I made this!」和一個好笑的結局。看清楚版規，例如「標題必須以遊戲名稱開頭」。
   - 機器人自動貼的版規提醒不用回。
