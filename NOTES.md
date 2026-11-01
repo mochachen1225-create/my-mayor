@@ -68,6 +68,7 @@
 - 依玩家回饋微調難度與事件文字
 
 ## 更新紀錄
+- **宣傳圖**：新增手繪「爆肝的肝」圖示（`promo/newgrounds/newgrounds-icon-liver-*.png`，原圖 `liver-handdrawn.png`），給 Newgrounds 用（遊戲本身沒改）
 - **v2.1.3**：新增 Newgrounds 版——打包時加上 `window.NO_ART = true`，不放 `art/`，所有頭像改回原本的 SVG（分享截圖也是）；新增 `scripts/build-newgrounds.sh`、`docs/newgrounds-page.md`、`promo/newgrounds/`（不含 AI 插畫的圖示與截圖）
 - **文件**：`docs/itch-page.md` 加上第一篇 itch.io Devlog 和 YouTube Shorts 文案（遊戲本身沒改）
 - **v2.1.2**：在 itch.io 上玩（網址是 itch.io／itch.zone／hwcdn.net）一律預設英文；玩家自己選過語言的話照選的；GitHub Pages 維持看瀏覽器語言
