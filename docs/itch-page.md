@@ -20,12 +20,13 @@
 | AI disclosure | 角色插畫用 AI 生成（itch.io 有「是否使用生成式 AI」的欄位，照實勾選） |
 
 ## 自動更新（GitHub Actions + butler）
-推上 GitHub 後，`.github/workflows/itch.yml` 會自動打包並用 butler 上傳到 itch 的 `html5` channel。
+`.github/workflows/itch.yml` 只在有人按 **Run workflow** 時才打包並用 butler 上傳到 itch 的 `html5` channel（GitHub → Actions → Deploy to itch.io → Run workflow）。推上 GitHub 不會自動更新 itch：總編寫好開發日誌、確認要上線時才按（2026-11-01 作者決定）。
 一次性設定：
 1. itch.io → 右上角頭像 → Settings → **API keys** → Generate new API key，複製金鑰
 2. GitHub repo → Settings → Secrets and variables → Actions → **New repository secret**，名稱 `BUTLER_API_KEY`，貼上金鑰
 3. 第一次自動上傳後，到 itch 的 Edit game → Uploads，把新出現的 `html5` 那份勾 **This file will be played in the browser**，再刪掉舊的手動上傳檔
-- 沒設金鑰時，這個流程會自動跳過，不會出錯
+- 沒設金鑰時按 Run workflow 會顯示失敗、什麼都不上傳
+- 這把金鑰等於整個 itch 帳號的鑰匙，只放在需要的 repo；外流就到 itch 的 API keys 頁撤銷
 - Newgrounds 沒有自動上傳的工具，仍要手動上傳 `scripts/build-newgrounds.sh` 打包的 zip
 
 ## 封面與截圖

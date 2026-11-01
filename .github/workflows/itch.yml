@@ -1,12 +1,19 @@
-# 推上 GitHub 後，自動把最新版上傳到 itch.io（用 itch 官方工具 butler）
-# 需要先在 GitHub repo 的 Settings → Secrets and variables → Actions 新增 BUTLER_API_KEY（itch 帳號的 API key）
+# 把最新版上傳到 itch.io（用 itch 官方工具 butler）。
+# 只在有人按「Run workflow」時才傳（11/1 作者選的：修好 bug 推上來不會馬上更新，
+# 總編寫好開發日誌、按一下才上線）。Actions 頁 → Deploy to itch.io → Run workflow。
+# 需要 Settings → Secrets and variables → Actions 的 BUTLER_API_KEY（itch 帳號 API keys 頁、來源 wharf 的那把）。
+# 那把 key 等於整個 itch 帳號的鑰匙：不要印出來；外流就到 itch 的 API keys 頁撤銷。
 name: Deploy to itch.io
 
 on:
-  push:
-    branches: [claude/nice-darwin-3ur7ro]
-    paths: ['index.html', 'style.css', 'og.png', 'js/**', 'art/**']
   workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: itch
+  cancel-in-progress: false
 
 jobs:
   itch:
@@ -15,16 +22,18 @@ jobs:
       BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
     steps:
       - uses: actions/checkout@v4
-      - name: Skip if no API key yet
-        if: env.BUTLER_API_KEY == ''
-        run: echo "BUTLER_API_KEY is not set; skipping itch.io upload."
-      - name: Build zip
-        if: env.BUTLER_API_KEY != ''
-        run: scripts/build-itch.sh dist/my-mayor-itch.zip
-      - uses: jdno/setup-butler@v1
-        if: env.BUTLER_API_KEY != ''
-      - name: Push to itch.io
-        if: env.BUTLER_API_KEY != ''
+      - name: 還沒設 BUTLER_API_KEY 就停
         run: |
+          if [ -z "$BUTLER_API_KEY" ]; then echo "還沒設定 BUTLER_API_KEY，沒有上傳"; exit 1; fi
+      - name: 打包
+        run: scripts/build-itch.sh dist/my-mayor-itch.zip
+      - name: 安裝 butler（itch 官方下載點）
+        run: |
+          curl -sSfL -o butler.zip https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default
+          unzip -q butler.zip -d butler && chmod +x butler/butler && echo "$PWD/butler" >> "$GITHUB_PATH"
+      - name: 上傳到 itch.io（html5 頻道）
+        run: |
+          butler -V
           version=$(sed -n "s/^const VERSION = '\(.*\)';/\1/p" js/data.js)
-          butler push dist/my-mayor-itch.zip mocha-cat-team/my-mayor:html5 --userversion "$version"
+          butler push dist/my-mayor-itch.zip mocha-cat-team/my-mayor:html5 --userversion "$version" --if-changed
+          butler status mocha-cat-team/my-mayor:html5
