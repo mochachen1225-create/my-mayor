@@ -69,6 +69,7 @@
 - 依玩家回饋微調難度與事件文字
 
 ## 更新紀錄
+- **上架流程定案**：itch 改成每週六 13:00 由作者 Mac 上的腳本用 butler 上傳（總編在開發日誌註明要更新哪個遊戲），GitHub Actions 版留作備用；細節在 `docs/itch-page.md`（遊戲本身沒改）
 - **打包腳本**：`scripts/build-itch.sh`、`build-newgrounds.sh` 改成 Mac 也能直接跑（拿掉 GNU 專用的 `realpath -m`、`sed -i '0,/…/'`，改用 bash＋perl）；輸出路徑若是相對路徑，以執行時所在的資料夾為準（遊戲本身沒改）
 - **itch 改成按了才上傳**：`.github/workflows/itch.yml` 拿掉「推上 GitHub 就自動上傳」，改成只在 Actions 頁按 Run workflow 時才上傳（總編寫好開發日誌再按）；butler 改從 itch 官方下載點安裝；沒設金鑰時顯示失敗（遊戲本身沒改）
 - **自動上傳 itch**：新增 `.github/workflows/itch.yml`，推上 GitHub 後用 butler 自動上傳 itch（要先在 GitHub 設定 `BUTLER_API_KEY`，步驟在 `docs/itch-page.md`）
