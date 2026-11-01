@@ -4,9 +4,10 @@
 // 沒載入 i18n.js 時（例如電腦模擬），T 就原樣回傳
 if (typeof T === 'undefined') { var T = (s, ...a) => s.replace(/\{M?(\d+)\}/g, (m, i) => (a[+i] !== undefined ? a[+i] : m)); }
 
-const VERSION = '2.1.2';
+const VERSION = '2.1.3';
 // 首頁的新版提醒（最新的放最上面，只顯示前幾行）
 const CHANGES = [
+  '新增 Newgrounds 版本（使用手繪風頭像）',
   'itch.io 上的版本預設英文（可以在首頁切回中文）',
   '修正英文版幾句不通順的文字',
   '🌏 新增英文版：首頁可以切換中文／English，第一次會自動偵測',

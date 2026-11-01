@@ -6,11 +6,12 @@
 - ✅ 可玩版本已上線：https://mochachen1225-create.github.io/my-mayor/
 - ✅ 六位老闆、106 個事件、69 個行程、10 個座談主題、41 種選舉結局＋14 種總幹事結局
 - ✅ 選單（手冊、結局圖鑑、回首頁）、選戰檢討會、分享截圖、連結預覽圖
-- ✅ 中途存檔、新版提醒、版本號（目前 v2.1.2）
+- ✅ 中途存檔、新版提醒、版本號（目前 v2.1.3）
 - ✅ 節奏選擇：🐢 我想慢慢來（不倒數）／🔥 極限爆肝模式
 - ✅ 英文版（自動偵測語言，首頁可切換）＋給外國玩家的台灣選舉小知識
 - ✅ 老闆插畫（Cloudflare Workers AI 生成，六位老闆 × 男女 × 四種表情）
 - ✅ itch.io 上架資料（`docs/itch-page.md`）與打包腳本（`scripts/build-itch.sh`）
+- ✅ Newgrounds 上架資料（`docs/newgrounds-page.md`）、打包腳本（`scripts/build-newgrounds.sh`，不含 AI 插畫）與宣傳圖（`promo/newgrounds/`）
 - ✅ 好玩大改版：菜市場掃街小遊戲、脆網友留言、連擊、刺激的開票夜、音效／震動／彩帶／飄字
 - ✅ 每月政見發表（諂媚 vs 逆風）
 - ✅ 結局圖鑑分頁、稀有度、結局小卡、選戰紀錄
@@ -54,6 +55,7 @@
 | 翻譯用「中文原文當 key」的對照表（`js/i18n.en.js`） | 不用幫每句話取 ID；程式字串用 `T()`，資料在載入時整批換掉；模擬時沒載入 i18n，`T` 原樣回傳 |
 | 語言預設：玩家選過就照選的；在 itch.io 上一律英文；其他地方看瀏覽器語言 | itch.io 的玩家大多是外國人，就算瀏覽器是中文也先給英文 |
 | 插畫放在 SVG 圓框裡（`<image>`），表情檔名 `A_m_smile.webp` | 原本頭像的尺寸 CSS 全部沿用；沒有插畫的角色自動用原本的 SVG 頭像 |
+| Newgrounds 版不放 AI 插畫（`window.NO_ART`） | Newgrounds 美術區禁止 AI 圖、社群反感；用原本的 SVG 頭像最安全，其他版本照常用插畫 |
 | 英文版社群叫 Crisp | 「脆」的直譯，避免出現真實企業名 |
 
 ## 還沒做的想法
@@ -66,6 +68,7 @@
 - 依玩家回饋微調難度與事件文字
 
 ## 更新紀錄
+- **v2.1.3**：新增 Newgrounds 版——打包時加上 `window.NO_ART = true`，不放 `art/`，所有頭像改回原本的 SVG（分享截圖也是）；新增 `scripts/build-newgrounds.sh`、`docs/newgrounds-page.md`、`promo/newgrounds/`（不含 AI 插畫的圖示與截圖）
 - **文件**：`docs/itch-page.md` 加上第一篇 itch.io Devlog 和 YouTube Shorts 文案（遊戲本身沒改）
 - **v2.1.2**：在 itch.io 上玩（網址是 itch.io／itch.zone／hwcdn.net）一律預設英文；玩家自己選過語言的話照選的；GitHub Pages 維持看瀏覽器語言
 - **v2.1.1**：修正英文版「This is a {rparty} smear」在對手是無黨籍時文法不通；新增宣傳素材：試玩廣告（中、英，`promo/my-mayor-trailer-*.mp4`）、itch.io 封面與截圖（`promo/itch/`）

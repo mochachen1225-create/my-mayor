@@ -5,8 +5,11 @@ const EVENTS_KEY = 'mymayor.seenEvents';
 let G = null;
 
 // 角色插畫：六位老闆（男女、四種表情）和部分配角
-for (const t of Object.keys(TYPES)) for (const g of ['m', 'f']) TYPES[t].look[g].art = t + '_' + g;
-for (const k of ['donor', 'elder', 'intern', 'reporter']) if (NPC[k]) NPC[k].look.art = 'npc_' + k;
+// Newgrounds 版不用 AI 插畫（打包時設定 window.NO_ART），全部用原本的 SVG 頭像
+if (!window.NO_ART) {
+  for (const t of Object.keys(TYPES)) for (const g of ['m', 'f']) TYPES[t].look[g].art = t + '_' + g;
+  for (const k of ['donor', 'elder', 'intern', 'reporter']) if (NPC[k]) NPC[k].look.art = 'npc_' + k;
+}
 
 // 英文版：把資料裡的中文換成英文
 if (LANG === 'en') {
@@ -1128,7 +1131,8 @@ async function shareEnding(res) {
   label(T('候選人'), 225, '#e0a526');
   try {
     const mood = res.win ? 'big' : 'sad';
-    const img = await loadImage(`art/${G.type}_${G.gender}_${mood}.webp`).catch(() => svgToImage(avatarSvg(lookOf(G.type, G.gender, mood))));
+    const svgFace = () => svgToImage(avatarSvg(lookOf(G.type, G.gender, mood)));
+    const img = window.NO_ART ? await svgFace() : await loadImage(`art/${G.type}_${G.gender}_${mood}.webp`).catch(svgFace);
     x.save(); x.beginPath(); x.arc(W / 2, 365, 95, 0, Math.PI * 2); x.clip();
     x.fillStyle = '#f6efe0'; x.fillRect(W / 2 - 95, 270, 190, 190);
     x.drawImage(img, W / 2 - 95, 270, 190, 190); x.restore();
