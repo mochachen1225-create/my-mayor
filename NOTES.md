@@ -72,6 +72,7 @@
 - 依玩家回饋微調難度與事件文字
 
 ## 更新紀錄
+- **主視覺**：用作者的主視覺圖（art-inbox/kv-1101）做了辯論夜、開票夜的宣傳圖，各有寬版（1920×1080，開發日誌封面）和正方形（1080×1080，IG／脆），中、英、無字三種，放在 `promo/kv/`；AI 圖已標示。選用 debate_wide_a（不用 b：記者群臉部較多、較雜）、election_night_wide（vertical 那張是三格疊圖，不用）；遊戲本身沒改
 - **宣傳排程**：辯論短片 11/14（開發日誌 #3）；開票夜短片改 11/29 選後回顧（開發日誌 #4），工作室規則是投票日當天和前幾天不發選舉相關；skill 08 同步（遊戲本身沒改）
 - **宣傳片**：用 Flow 影片（art-inbox 分支）＋真實遊戲畫面剪了兩支直式短片，各有中英版：`promo/my-mayor-debate-{zh,en}.mp4`（辯論升級，19 秒）、`promo/my-mayor-election-night-{zh,en}.mp4`（開票夜，20 秒）；AI 畫面都有標示，背景電視上 AI 亂生的字已模糊；剪輯腳本收進 skill（遊戲本身沒改）
 - **Skill／素材清單**：indie-web-game skill 補上工作室流程（`references/09-studio-workflow.md`：企劃單、大改版先提點子、美術經 Google Drive→art-inbox、Flow 清單、上架前檢查清單、宣傳錯開；隱私與 Reddit 規則加強）；新增 `docs/flow-wishlist-2026-11.md`（11/14 辯論、11/28 開票的 Flow 影片／圖片清單，13 支影片＋4 張圖）（遊戲本身沒改）

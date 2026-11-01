@@ -122,6 +122,8 @@ Everything is fictional: the city, the people, the animal-themed parties. The *r
 - `promo/my-mayor-election-night-zh.mp4`／`-en.mp4`：開票夜短片（11/29 選後回顧，跟開發日誌 #4 一起；投票日當天和前幾天不發選舉相關內容）
 - 兩支都含 AI 生成畫面（左下角已標示），上傳 YouTube／IG 時也要勾 AI 標示
 
+- `promo/kv/`：主視覺圖（作者生成的 AI 圖，左下角已標示）。`debate-*`（11/14）、`election-*`（11/29）；`-wide` 是 1920×1080，給開發日誌封面；`-square` 是 1080×1080，給 IG／脆；`-zh`／`-en` 有標題，`-clean` 沒標題，可以自己加字
+
 ### 之後
 - r/taiwan：帳號太新不能發，養 1～2 週後再發（稿子在對話紀錄，發前更新日期）
 - Newgrounds 審核通過後：發自我介紹 News Post
