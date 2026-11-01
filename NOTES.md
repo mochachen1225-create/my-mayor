@@ -71,6 +71,7 @@
 - 依玩家回饋微調難度與事件文字
 
 ## 更新紀錄
+- **skill 1.3**：每個版本加做「玩家評審」（最無聊的 3 處、一次改一項）和「Make it much, much more fun」（3 個加樂趣的點子，做最有效又便宜的 1 個、2 個給總編）；交件通知要附這兩輪做了什麼（遊戲本身沒改）
 - **版本 tag 自動化**：合併架構師的 `.github/workflows/version-tag.yml`（`VERSION` 改了就自動打 `v<版本>`；補打舊版用 Run workflow）；skill 升 1.2（遊戲本身沒改）
 - **skill 1.1**：indie-web-game 補上總編整理的 17 點（預設分支＋tag、itch-page 同步與待重拍、金鑰不進 repo、Newgrounds 暫停、AI 揭露全勾、首次上架 slug、連線遊戲、Drive 大檔、素材保留、Flow 限制與退點、時事禁發期、宣傳錯開、Threads 只貼一次連結、情境插圖、上架前檢查清單）
 - **上架策略**：作者決定 Newgrounds 短期不走，已上架的舊版保留不更新，之後只更新 itch；NG 打包腳本留作備用；CLAUDE.md、skill 07、docs/newgrounds-page.md 同步（遊戲本身沒改）

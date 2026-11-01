@@ -5,7 +5,7 @@ description: 小型手機網頁遊戲從發想到上架宣傳的完整流程。�
 
 # 小型網頁遊戲：從發想到上架
 
-> **skill 版本 1.2（2026-11-01）**：tag 改由 GitHub Actions 自動打。1.1：補上預設分支與 tag、AI 揭露全勾、Newgrounds 暫停、連線遊戲、Flow 素材細節、宣傳錯開與時事禁發期、上架前檢查清單。
+> **skill 版本 1.3（2026-11-01）**：每個版本都要做「玩家評審」和「Make it much, much more fun」兩輪。1.2：tag 改由 GitHub Actions 自動打。1.1：補上預設分支與 tag、AI 揭露全勾、Newgrounds 暫停、連線遊戲、Flow 素材細節、宣傳錯開與時事禁發期、上架前檢查清單。
 
 這套流程來自《我推的市長》（選舉題材、一局約 10 分鐘的手機網頁遊戲），從第一句發想做到 itch.io、YouTube Shorts、Reddit。照這個順序走，可以避開我們踩過的坑。
 
@@ -55,7 +55,10 @@ description: 小型手機網頁遊戲從發想到上架宣傳的完整流程。�
 6. **commit＋push 到預設分支**：小弟週六 deploy 抓的就是預設分支，推到別的分支等於沒上線。要趕上週六 13:00，就要在那之前推。
 7. **版本 tag 由 `version-tag` workflow 自動打**：`js/data.js` 的 `VERSION` 一改、推上預設分支，GitHub Actions 就會打 `v<版本>`，不用手動打（雲端環境推不上 tag）。補打舊版本：Actions →「版本 tag」→ Run workflow，填 version 和 commit。新遊戲 repo 要複製 `.github/workflows/version-tag.yml` 並改分支名稱。選用：GitHub Release 貼同一段更新說明。
 8. **金鑰永遠不進 repo**：butler 金鑰在作者 Mac 的鑰匙圈，CI 用 GitHub Secrets。
-9. 改好通知總編。
+9. **每做出一個版本**（包括第一版和每次改版），都要做兩輪（細節見 `references/03-balance-testing.md`）：
+   - **玩家評審**：用玩家的眼光玩一遍，找出最無聊、最容易讓人關掉的 3 個地方，一次改一項。
+   - **Make it much, much more fun**：想 3 個能讓遊戲好玩很多的點子（不是修 bug，是加樂趣：更爽的手感、驚喜、想再玩一次、想分享的理由），挑最有效、成本最低的 1 個做掉，另外 2 個列給總編轉作者選。
+10. 改好通知總編，**通知裡要附這兩輪做了什麼**。
 
 ## 最常踩的坑（先看）
 - **翻譯函式叫 `T`，就不要再宣告叫 `T` 的區域變數**，會蓋掉翻譯函式。自動改名工具要檢查變數名稱，不然會把整個函式的識別字都改壞（`references/04-i18n.md`）。
