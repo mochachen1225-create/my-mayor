@@ -7,7 +7,7 @@ I18N.en = {
   "聽說急診室也有人在問民調": "Heard someone in the ER was asking about the polls",
   "這陣營是不是沒有在排休": "Does this campaign even have days off?",
   "爆肝倒下不只一次，最後一週又倒了": "Collapsed from burnout more than once, including the final week",
-  "修正：肝歸零還能繼續玩的問題，現在會當場倒下送急診（感謝 Lulu 抓蟲）": "Fixed: you could keep playing with 0 liver. Now you collapse and get sent to the ER (thanks Lulu for the bug report!)",
+  "修正：肝歸零還能繼續玩的問題，現在會當場倒下送急診（感謝玩家回報）": "Fixed: you could keep playing with 0 liver. Now you collapse and get sent to the ER (thanks to the player who reported it!)",
   "你在戰情室昏倒，被送進急診。這週剩下的事，只好全部交給副總幹事。": "You collapse in the war room and get rushed to the ER. The deputy campaign manager has to handle the rest of the week.",
   "總幹事呢？": "Where's the campaign manager?",
   "🚑 你爆肝倒下了": "🚑 Your liver gave out",
