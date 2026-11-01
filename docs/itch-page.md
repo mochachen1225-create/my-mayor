@@ -118,8 +118,8 @@ Everything is fictional: the city, the people, the animal-themed parties. The *r
 | 2026-11-01 | Reddit r/BrowserGaming | 標題梗「My Mayor-to-Be: my candidate won and thanked everyone… except me」＋ itch 連結＋自己留第一則留言 |
 
 ### 已做好、待排程的素材
-- `promo/my-mayor-debate-zh.mp4`／`-en.mp4`：辯論升級短片（11/14 開發日誌 #3、Shorts、脆、IG）
-- `promo/my-mayor-election-night-zh.mp4`／`-en.mp4`：開票夜短片（11/28）
+- `promo/my-mayor-debate-zh.mp4`／`-en.mp4`：辯論升級短片（11/14，跟開發日誌 #3 同天；Shorts、脆、IG）
+- `promo/my-mayor-election-night-zh.mp4`／`-en.mp4`：開票夜短片（11/29 選後回顧，跟開發日誌 #4 一起；投票日當天和前幾天不發選舉相關內容）
 - 兩支都含 AI 生成畫面（左下角已標示），上傳 YouTube／IG 時也要勾 AI 標示
 
 ### 之後
