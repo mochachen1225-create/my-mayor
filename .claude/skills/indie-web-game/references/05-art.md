@@ -16,7 +16,7 @@
 - 前端：`avatar()` 看到 `look.art` 就輸出包在圓形 SVG 裡的 `<image>`，原本頭像的 CSS 尺寸可以直接沿用；表情檔名 `A_m_smile.webp` 這種格式。
 - 分享截圖不能用 SVG 裡的外部圖片，要另外用 `Image()` 載入、在 canvas 上裁圓形。
 
-## 無 AI 版本（Newgrounds 用）
+## 無 AI 版本（Newgrounds 用；2026-11 起 Newgrounds 暫停，不必再另做無 AI 版素材）
 - Newgrounds 美術區明文禁止 AI 圖，社群也很反感，所以要準備無 AI 版本。
 - 打包時在 `index.html` 的第一個 `<script>` 前插入 `<script>window.NO_ART = true;</script>`，並且不放 `art/`；game.js 看到 NO_ART 就不設定 `look.art`，全部用 SVG 頭像。
 - 宣傳圖也要另外做無 AI 版本，影片裡有 AI 插畫就不要用。

@@ -9,7 +9,8 @@
 ## itch.io
 - Kind of project：HTML；上傳 zip，勾「This file will be played in the browser」。
 - Embed：直式手機遊戲用 420×860，勾 Mobile friendly、Portrait、Fullscreen button。
-- 填 Genre、Tags（例如 politics, satire, election, taiwan, choices-matter, multiple-endings, funny, mobile, short）、Languages、AI disclosure（照實勾）。
+- 填 Genre、Tags（例如 politics, satire, election, taiwan, choices-matter, multiple-endings, funny, mobile, short）、Languages。**AI disclosure 預設四項全勾**（Graphics、Text、Code、Sound）。
+- 首次上架：slug 先跟總編確認，建好頁面後把網址回填到分享文字和打包腳本。
 - 頁面文案：開頭一句講清楚「你是誰、好笑在哪」，再列玩法、結局數、虛構聲明、時間、慢慢來模式、語言。
 - itch 上預設英文（i18n.js 依網域判斷）；作者自己測過中文的話，瀏覽器會記住，要用無痕視窗確認。
 - Distribute → Widget 只是給別的網站嵌入用的，不用調。
