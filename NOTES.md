@@ -72,6 +72,7 @@
 - 依玩家回饋微調難度與事件文字
 
 ## 更新紀錄
+- **新案子草案**：`docs/briefs/lunar-new-year-relatives.md`（過年親戚攻防戰企劃單，給總編與作者審閱；開工時另開 repo）（遊戲本身沒改）
 - **v2.2.1**：5 位配角換上作者用 Gemini 生成的插畫（副總幹事、里長伯、名嘴、同黨議員、志工大姐；art-inbox/portraits-1101，裁切成 256×256 WebP）；有插畫的配角共 9 位，還差局處首長、外商代表、商會會長（之後再用 `docs/gemini-npc-prompts.md` 補）；Newgrounds 版照樣用簡筆頭像
 - **素材**：新增 `docs/gemini-npc-prompts.md`，給作者用 Gemini 補齊 8 位配角插畫（遊戲本身沒改）
 - **主視覺**：用作者的主視覺圖（art-inbox/kv-1101）做了辯論夜、開票夜的宣傳圖，各有寬版（1920×1080，開發日誌封面）和正方形（1080×1080，IG／脆），中、英、無字三種，放在 `promo/kv/`；AI 圖已標示。選用 debate_wide_a（不用 b：記者群臉部較多、較雜）、election_night_wide（vertical 那張是三格疊圖，不用）；遊戲本身沒改
