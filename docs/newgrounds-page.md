@@ -6,7 +6,8 @@
 | 項目 | 檔案 |
 |---|---|
 | 遊戲 | `scripts/build-newgrounds.sh` 打包出來的 `my-mayor-newgrounds.zip`（`index.html` 在 zip 最外層，否則 Newgrounds 會跳 403） |
-| 圖示（Icon） | **`promo/newgrounds/newgrounds-icon-liver-512.png`**（手繪「爆肝的肝」，另有 1024 版；備用：`newgrounds-icon-512.png` SVG 頭像版） |
+| 圖示（Icon） | **`promo/newgrounds/newgrounds-icon-liver-512.png`**（手繪「爆肝的肝」，另有 1024 版；另一款：`newgrounds-icon-cat-512.png` 手繪躺平貓；備用：`newgrounds-icon-512.png` SVG 頭像版） |
+| 橫幅 | `promo/newgrounds/banner-cat-2400x1260.png`（躺平貓，可放頁面或 Devlog） |
 | 截圖 | `promo/newgrounds/newgrounds-screenshot-1~3.png` |
 | 宣傳影片 | ⚠️ 不要用 `promo/` 裡的試玩廣告，裡面有 AI 插畫 |
 
