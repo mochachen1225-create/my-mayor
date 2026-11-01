@@ -1,5 +1,7 @@
 # Newgrounds 上架資料
 
+**遊戲頁面**：https://www.newgrounds.com/portal/view/1059947 （2026-11-01 上傳，審核中）
+
 > Newgrounds 社群對 AI 生成圖很反感（美術區明文禁止 AI 圖），所以 **Newgrounds 版不放 AI 插畫**，改用原本的 SVG 頭像。宣傳圖也一律用沒有 AI 插畫的版本。
 
 ## 要上傳的檔案

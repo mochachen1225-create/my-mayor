@@ -68,6 +68,7 @@
 - 依玩家回饋微調難度與事件文字
 
 ## 更新紀錄
+- **上架**：Newgrounds 已上傳，網址 https://www.newgrounds.com/portal/view/1059947 （審核中）
 - **宣傳圖**：新增手繪「躺平貓」圖示與橫幅（`promo/newgrounds/newgrounds-icon-cat-*.png`、`banner-cat-2400x1260.png`，原圖 `cat-handdrawn.png`），文字改成正確拼法 Exhausted!!（遊戲本身沒改）
 - **宣傳圖**：新增手繪「爆肝的肝」圖示（`promo/newgrounds/newgrounds-icon-liver-*.png`，原圖 `liver-handdrawn.png`），給 Newgrounds 用（遊戲本身沒改）
 - **v2.1.3**：新增 Newgrounds 版——打包時加上 `window.NO_ART = true`，不放 `art/`，所有頭像改回原本的 SVG（分享截圖也是）；新增 `scripts/build-newgrounds.sh`、`docs/newgrounds-page.md`、`promo/newgrounds/`（不含 AI 插畫的圖示與截圖）
