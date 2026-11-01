@@ -1,5 +1,17 @@
 // 英文對照表：中文原文 → English（由 scripts/i18n 流程產生，改英文就直接改這裡）
 I18N.en = {
+  "（傳訊息來）「總幹事，你先休息……那明天的行程呢？」": "(texting) “Rest up, campaign manager… so what about tomorrow's schedule?”",
+  "總幹事是鐵打的嗎": "Is this campaign manager made of steel?",
+  "肝是可以這樣用的嗎": "Is a liver supposed to be used like that?",
+  "保重身體啦，選舉不會跑掉": "Take care of yourself, the election isn't going anywhere",
+  "聽說急診室也有人在問民調": "Heard someone in the ER was asking about the polls",
+  "這陣營是不是沒有在排休": "Does this campaign even have days off?",
+  "爆肝倒下不只一次，最後一週又倒了": "Collapsed from burnout more than once, including the final week",
+  "修正：肝歸零還能繼續玩的問題，現在會當場倒下送急診（感謝 Lulu 抓蟲）": "Fixed: you could keep playing with 0 liver. Now you collapse and get sent to the ER (thanks Lulu for the bug report!)",
+  "你在戰情室昏倒，被送進急診。這週剩下的事，只好全部交給副總幹事。": "You collapse in the war room and get rushed to the ER. The deputy campaign manager has to handle the rest of the week.",
+  "總幹事呢？": "Where's the campaign manager?",
+  "🚑 你爆肝倒下了": "🚑 Your liver gave out",
+  "被送急診": "Sent to the ER",
   "新增 Newgrounds 版本（使用手繪風頭像）": "New Newgrounds version (with the classic drawn avatars)",
   "itch.io 上的版本預設英文（可以在首頁切回中文）": "The itch.io version now starts in English (switch to Chinese on the title screen)",
   "修正英文版幾句不通順的文字": "Fixed a few awkward lines in the English version",

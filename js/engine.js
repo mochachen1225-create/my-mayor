@@ -418,6 +418,22 @@ function timeout(g, ev, isBuild = false) {
   return { lines, delta, idle: g.idleStreak };
 }
 
+// 爆肝：肝歸零就當場倒下送急診，這週剩下的事只好交給副總幹事（回傳 null 代表還撐得住）
+function collapse(g) {
+  if (g.liver > 0) return null;
+  g.f.hospital = (g.f.hospital || 0) + 1;
+  if (g.week >= WEEKS) g.f.hospitalLate = 1; // 投票前最後一週倒下：開票夜只能躺在病床上
+  g.streak = 0;
+  const delta = {};
+  applyFx(g, { trust: -4, team: -5, conf: -5 }, delta);
+  g.liver = 25; delta.liver = 25;
+  clampAll(g);
+  return { delta, lines: [
+    { kind: 'bad', text: T('你在戰情室昏倒，被送進急診。這週剩下的事，只好全部交給副總幹事。') },
+    { kind: 'say', mood: 'sad', text: T('（傳訊息來）「總幹事，你先休息……那明天的行程呢？」') }
+  ], collapse: true };
+}
+
 function logSwing(g, title, delta) {
   const v = (delta.s || 0) - (delta.r || 0) + (delta.fav || 0) * 0.08;
   if (Math.abs(v) >= 0.3) { g.swings.push({ title, v }); g.history.push({ title, v, week: g.week }); }
@@ -477,8 +493,9 @@ function endWeek(g) {
   const sleep = Math.max(0, 32 - g.clock);
   if (sleep < 3) { g.liver -= 3; g.team -= 3; notes.push(`${T('你昨晚只睡了 {0} 小時，整個團隊都很累。', sleep.toFixed(1))}`); }
   else if (sleep < 6) notes.push(`${T('你昨晚睡了 {0} 小時。', sleep.toFixed(1))}`);
-  if (g.liver <= 0 && !g.f.hospital) {
-    g.f.hospital = 1; g.liver = 20;
+  if (g.liver <= 0) {
+    g.f.hospital = (g.f.hospital || 0) + 1; g.liver = 20;
+    if (g.week >= WEEKS) g.f.hospitalLate = 1;
     notes.push(T('你在戰情室昏倒，被送進急診。你還在病床上用手機回訊息。'));
   }
   // 做壞事一定會被抓：分批捐款三週後爆
@@ -681,4 +698,4 @@ function decide(g, res) {
   return res;
 }
 
-if (typeof module !== 'undefined') module.exports = { newGame, planWeek, buildChoices, choose, timeout, endWeek, doPoll, finish, resolveClose, decide, fill, weekLabel, clockText, canAfford, makeRng, WEEKS, BLACKOUT_WEEK };
+if (typeof module !== 'undefined') module.exports = { newGame, planWeek, buildChoices, choose, timeout, collapse, endWeek, doPoll, finish, resolveClose, decide, fill, weekLabel, clockText, canAfford, makeRng, WEEKS, BLACKOUT_WEEK };

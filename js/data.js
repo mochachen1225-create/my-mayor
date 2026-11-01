@@ -4,9 +4,10 @@
 // 沒載入 i18n.js 時（例如電腦模擬），T 就原樣回傳
 if (typeof T === 'undefined') { var T = (s, ...a) => s.replace(/\{M?(\d+)\}/g, (m, i) => (a[+i] !== undefined ? a[+i] : m)); }
 
-const VERSION = '2.1.3';
+const VERSION = '2.1.4';
 // 首頁的新版提醒（最新的放最上面，只顯示前幾行）
 const CHANGES = [
+  '修正：肝歸零還能繼續玩的問題，現在會當場倒下送急診（感謝 Lulu 抓蟲）',
   '新增 Newgrounds 版本（使用手繪風頭像）',
   'itch.io 上的版本預設英文（可以在首頁切回中文）',
   '修正英文版幾句不通順的文字',
@@ -1608,9 +1609,9 @@ const ENDINGS = [
   { id: 'buy', emoji: '🚔', title: '賄選，當選無效', share: '當選無效', cat: 'crime', rare: 'rare', quip: '一票五百，前途歸零。', how: '讓里長伯用「傳統做法」買票',
     text: '里長伯在偵訊室裡十分鐘就全招了。檢方以賄選起訴，{boss}的選舉結果被訴請無效。',
     when: g => g.f.buy },
-  { id: 'hospital', emoji: '🏥', title: '在病床上看開票', share: '%W，但我是在病床上看開票的', cat: 'special', rare: 'legend', quip: '肝比票先開完。', how: '你的肝撐不住了',
+  { id: 'hospital', emoji: '🏥', title: '在病床上看開票', share: '%W，但我是在病床上看開票的', cat: 'special', rare: 'rare', quip: '肝比票先開完。', how: '爆肝倒下不只一次，最後一週又倒了',
     text: '你的肝先投降了。開票夜，你躺在病床上，用手機看完整場開票。{resultLine}',
-    when: g => g.f.hospital },
+    when: g => g.f.hospitalLate && g.f.hospital >= 2 },
   { id: 'ledger', emoji: '📁', title: '保險箱裡的錄音檔', share: '凍蒜，還多了一段錄音檔', cat: 'crime', rare: 'legend', quip: '收了錢，也留了一手。', how: '收下「選上幫忙」的錢，但偷偷錄音',
     text: '{boss}當選了。你把那段錄音檔鎖進保險箱。往後四年，市府的每一個重大案子，都會有人來問你的意見。',
     when: g => g.win && g.f.dirty2 && g.f.ledger },
@@ -1821,6 +1822,7 @@ const THREADS = {
   combo: [
     '這陣營最近手感好熱', '連續幾次都處理得很好欸', '{boss}的團隊開外掛了嗎', '總幹事是不是偷偷去進修了'
   ],
+  collapse: ['總幹事是鐵打的嗎', '肝是可以這樣用的嗎', '保重身體啦，選舉不會跑掉', '聽說急診室也有人在問民調', '這陣營是不是沒有在排休'],
   mom: ['我家孩子最棒了！大家投{boss}！', '{boss}小時候就很會講話了', '有沒有好好吃飯啊？']
 };
 

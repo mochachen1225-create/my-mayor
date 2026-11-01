@@ -425,7 +425,7 @@ function chipsHtml(delta) {
 // 脆上的網友反應：只是好玩，用 Math.random 不影響遊戲
 function threadsHtml(res) {
   const exec = res.exec || {};
-  const cat = res.idle ? 'idle' : res.lines.some(l => l.kind === 'combo') ? 'combo' : res.defied ? 'defy'
+  const cat = res.collapse ? 'collapse' : res.idle ? 'idle' : res.lines.some(l => l.kind === 'combo') ? 'combo' : res.defied ? 'defy'
     : res.failed ? 'bad' : (exec.fx && exec.fx.con <= -5) ? 'dirty'
     : ((res.delta.s || 0) - (res.delta.r || 0) + (res.delta.fav || 0) * 0.15 > 0.3) ? 'good' : 'meh';
   const pool = THREADS[cat].slice(), users = THREAD_USERS.slice();
@@ -767,6 +767,15 @@ async function runGame(notes = {}) {
       left--;
       if (st.step === 'free') await boardStep(left);
       else await eventCard(st.ev, left, false);
+      // 肝歸零：當場倒下，這週剩下的事都跳過
+      const fall = collapse(G);
+      if (fall) {
+        updateHud();
+        bossSays(T('總幹事呢？'), true);
+        await showResult(T('🚑 你爆肝倒下了'), fall);
+        stageDefault();
+        break;
+      }
     }
     notes = endWeek(G);
   }
@@ -888,6 +897,7 @@ function closeRace(res) {
 function statsOf() {
   return [
     ['🫀', T('爆肝被強制休息'), (G.f.rests || 0) + ` ${T('次')}`],
+    ['🚑', T('被送急診'), (G.f.hospital || 0) + ` ${T('次')}`],
     ['😶', T('擺爛（時間到沒選）'), (G.f.idle || 0) + ` ${T('次')}`],
     ['🙄', T('老闆不聽你的'), (G.f.defied || 0) + ` ${T('次')}`],
     ['🔥', T('最高連擊'), (G.maxStreak || 0) + ` ${T('次')}`],
