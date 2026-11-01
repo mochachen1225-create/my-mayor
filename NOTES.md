@@ -69,6 +69,7 @@
 - 依玩家回饋微調難度與事件文字
 
 ## 更新紀錄
+- **Skill**：把整套流程（發想→實作→平衡→雙語→美術→宣傳素材→上架→曝光→維護）整理成 `.claude/skills/indie-web-game/`，附可重複使用的腳本，給之後的遊戲和其他設計師用（遊戲本身沒改）
 - **上架流程定案**：itch 改成每週六 13:00 由作者 Mac 上的腳本用 butler 上傳（總編在開發日誌註明要更新哪個遊戲），GitHub Actions 版留作備用；細節在 `docs/itch-page.md`（遊戲本身沒改）
 - **打包腳本**：`scripts/build-itch.sh`、`build-newgrounds.sh` 改成 Mac 也能直接跑（拿掉 GNU 專用的 `realpath -m`、`sed -i '0,/…/'`，改用 bash＋perl）；輸出路徑若是相對路徑，以執行時所在的資料夾為準（遊戲本身沒改）
 - **itch 改成按了才上傳**：`.github/workflows/itch.yml` 拿掉「推上 GitHub 就自動上傳」，改成只在 Actions 頁按 Run workflow 時才上傳（總編寫好開發日誌再按）；butler 改從 itch 官方下載點安裝；沒設金鑰時顯示失敗（遊戲本身沒改）

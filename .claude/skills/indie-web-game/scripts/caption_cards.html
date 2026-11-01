@@ -1,0 +1,38 @@
+<!-- 字卡與片尾卡樣板：cap(lang, [[文字, 樣式]...]) 產生字卡；end(lang) 產生片尾卡。換遊戲時改片尾的角色圖、遊戲名、標語；角色圖從 http://localhost:8765/art/ 載入 -->
+<!doctype html><html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Noto+Sans+TC:wght@900&family=Huninn&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; box-sizing: border-box; }
+html, body { width: 1080px; background: transparent; overflow: hidden; }
+#root { width: 1080px; padding: 40px 50px; display: flex; flex-direction: column; align-items: center; gap: 18px; }
+.l { display: inline-block; padding: 10px 30px 14px; border-radius: 22px; font-size: 92px; line-height: 1.12; text-align: center; color: #fff;
+  -webkit-text-stroke: 12px #111; paint-order: stroke fill; transform: rotate(-2.5deg); }
+.l.b { background: #ffd23f; color: #111; -webkit-text-stroke: 0; box-shadow: 8px 8px 0 #111; transform: rotate(2deg); font-size: 84px; }
+.l.r { background: #e63946; -webkit-text-stroke: 0; box-shadow: 8px 8px 0 #111; transform: rotate(-2deg); }
+.en .l { font-family: 'Luckiest Guy', sans-serif; letter-spacing: 1px; }
+.zh .l { font-family: 'Noto Sans TC', sans-serif; font-weight: 900; }
+.small { font-size: 64px !important; }
+/* 片尾 */
+.end { width: 1080px; height: 1920px; background: linear-gradient(165deg, #2b2f36, #45305a); color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; font-family: 'Huninn', sans-serif; }
+.end .faces { display: flex; gap: 10px; margin-bottom: 60px; }
+.end .faces img { width: 150px; height: 150px; border-radius: 50%; background: #f6efe0; border: 5px solid #fff; }
+.end .tag { color: #e0a526; font-size: 44px; margin-bottom: 26px; }
+.end h1 { font-size: 132px; line-height: 1.05; }
+.end h2 { font-size: 64px; color: #e9e4f2; margin-top: 18px; font-weight: normal; }
+.end .cta { margin-top: 90px; font-size: 64px; background: #ffd23f; color: #111; border-radius: 999px; padding: 26px 64px; box-shadow: 8px 8px 0 #111; }
+.end .sub { margin-top: 40px; font-size: 44px; color: #ccc; }
+</style></head><body><div id="root"></div>
+<script>
+function cap(lang, lines) {
+  const r = document.getElementById('root');
+  r.className = lang;
+  r.innerHTML = lines.map(([t, c]) => `<div class="l ${c || ''}">${t}</div>`).join('');
+}
+function end(lang) {
+  const faces = ['A_m', 'B_m', 'C_f', 'D_m', 'E_m', 'F_f'].map(k => `<img src="http://localhost:8765/art/${k}_big.webp">`).join('');
+  document.body.style.height = '1920px';
+  document.getElementById('root').outerHTML = lang === 'en'
+    ? `<div class="end"><div class="faces">${faces}</div><div class="tag">Mayors aren't gods. Their staff make them gods.</div><h1 style="font-family:'Luckiest Guy',sans-serif;font-weight:normal;font-size:118px;color:#ffd23f;-webkit-text-stroke:12px #111;paint-order:stroke fill">Grandmas<br>Count Triple</h1><h2>我推的市長 · A Taiwanese Election Survival Game</h2><div class="cta">Play free in your browser</div><div class="sub">on itch.io · 10 minutes · 58 endings</div></div>`
+    : `<div class="end"><div class="faces">${faces}</div><div class="tag">市長不是神，是幕僚造出來的神。</div><h1>我推的市長</h1><h2>你是總幹事。老闆是抽到的。</h2><div class="cta">手機直接玩・免費</div><div class="sub">一局 10 分鐘・58 種結局</div></div>`;
+}
+</script></body></html>
