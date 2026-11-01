@@ -8,7 +8,7 @@ let G = null;
 // Newgrounds 版不用 AI 插畫（打包時設定 window.NO_ART），全部用原本的 SVG 頭像
 if (!window.NO_ART) {
   for (const t of Object.keys(TYPES)) for (const g of ['m', 'f']) TYPES[t].look[g].art = t + '_' + g;
-  for (const k of ['donor', 'elder', 'intern', 'reporter']) if (NPC[k]) NPC[k].look.art = 'npc_' + k;
+  for (const k of ['donor', 'elder', 'intern', 'reporter', 'staff', 'chief', 'pundit', 'councilor', 'volunteer']) if (NPC[k]) NPC[k].look.art = 'npc_' + k;
 }
 
 // 英文版：把資料裡的中文換成英文
