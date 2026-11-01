@@ -69,6 +69,7 @@
 - 依玩家回饋微調難度與事件文字
 
 ## 更新紀錄
+- **打包腳本**：`scripts/build-itch.sh`、`build-newgrounds.sh` 改成 Mac 也能直接跑（拿掉 GNU 專用的 `realpath -m`、`sed -i '0,/…/'`，改用 bash＋perl）；輸出路徑若是相對路徑，以執行時所在的資料夾為準（遊戲本身沒改）
 - **itch 改成按了才上傳**：`.github/workflows/itch.yml` 拿掉「推上 GitHub 就自動上傳」，改成只在 Actions 頁按 Run workflow 時才上傳（總編寫好開發日誌再按）；butler 改從 itch 官方下載點安裝；沒設金鑰時顯示失敗（遊戲本身沒改）
 - **自動上傳 itch**：新增 `.github/workflows/itch.yml`，推上 GitHub 後用 butler 自動上傳 itch（要先在 GitHub 設定 `BUTLER_API_KEY`，步驟在 `docs/itch-page.md`）
 - **v2.1.4**：修正肝歸零還能繼續處理事件的 bug（玩家回報）——任何一步之後肝 ≤ 0 就當場「🚑 爆肝倒下」：送急診、這週剩下的事全部跳過、信任 −4／士氣 −5／信心 −5、肝回到 25、連擊歸零，網友有專屬留言；週末結算的急診改成每次歸零都會觸發（原本只有第一次）；結局「在病床上看開票」改成要倒下兩次以上、且最後一週又倒下才拿得到（模擬約 0.9%，稀有度從傳說改成稀有）；檢討會數據加「被送急診」次數；模擬腳本也加上行程板的強制休息
