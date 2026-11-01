@@ -843,6 +843,9 @@ async function electionNight() {
   clearGame();
   const res = finish(G);
   saveSeenEvents();
+  show(`<p class="muted" style="color:#ccc">${T('11 月 28 日 晚上 8 點')}</p><h2>${T('開票夜')}</h2>`, 'end');
+  G.guess = await guessCard();
+  G.guessHit = res.share.s >= G.guess.lo && res.share.s < G.guess.hi;
   show(`
     <p class="muted" style="color:#ccc">${T('11 月 28 日 晚上 8 點')}</p>
     <h2>${T('開票夜')}</h2>
@@ -856,6 +859,7 @@ async function electionNight() {
     <div class="ticker" id="ticker">${T('📺 主播：「各位觀眾，N City 市長選舉開始開票！」')}</div>
     <div class="big-result" id="verdict">${T('開票中……')}</div>
     <p class="muted" id="turnout" style="color:#ccc;visibility:hidden">${T('投票率 {0}%', res.turnout)}</p>
+    <p class="muted" id="guessline" style="color:#ffd166;visibility:hidden"></p>
     <div id="closebox"></div>
     <button class="btn ghost" id="skip" style="border-color:#888;color:#ccc">${T('⏩ 直接看結果')}</button>
     <button class="btn" id="next" style="visibility:hidden">${T('看結局')}</button>
@@ -913,6 +917,8 @@ async function electionNight() {
   $('#verdict').textContent = res.win ? `${T('🎉 {0} 凍蒜！', G.name)}` : `${T('😢 {0} 落選', G.name)}`;
   $('#nightface').innerHTML = bossFace(res.win ? 'big' : 'sad');
   $('#turnout').style.visibility = 'visible';
+  const gl = $('#guessline');
+  if (gl) { gl.textContent = G.guessHit ? T('🔮 你猜 {0}，結果 {1}%：猜中了！', G.guess.label, res.share.s.toFixed(1)) : T('你猜 {0}，結果 {1}%：沒猜中。', G.guess.label, res.share.s.toFixed(1)); gl.style.visibility = 'visible'; if (G.guessHit) { sfx('combo'); confetti(60); } }
   if (G.f.complacent) $('#turnout').textContent += `　${T('支持者以為穩贏，很多人沒出門……')}`;
   // 差距不到 1%：要驗票、嗆聲還是認輸？
   if (res.close) await closeRace(res);
@@ -920,6 +926,7 @@ async function electionNight() {
   saveMgr(res.mgr.id);
   saveRun(res);
   if (G.daily) saveDailyResult(res);
+  { const id = runTitle().id; G.newTitle = !loadTitles()[id]; saveTitle(id); }
   const btn = $('#next');
   btn.style.visibility = 'visible';
   btn.textContent = T('選戰檢討會 →');
@@ -950,24 +957,67 @@ function closeRace(res) {
 }
 
 // 本局稱號：看你這局怎麼玩，給一個好笑的稱號（只是好玩，不影響結局）
+// 稱號一覽（稱號圖鑑也用這份）
+const TITLES = [
+  ['oracle', '🔮', T('神準總幹事'), T('開票前猜中得票率')],
+  ['er', '🚑', T('急診室 VIP'), T('一局進了兩次急診')],
+  ['combo', '🔥', T('連擊狂人'), T('連續 8 次以上處理得漂亮')],
+  ['idle', '🙈', T('已讀不回之王'), T('擺爛 4 次以上')],
+  ['adlib', '🎭', T('脫稿受害者'), T('辯論時老闆脫稿，觀眾好感又很低')],
+  ['debate', '🎤', T('辯論金句製造機'), T('辯論觀眾好感 68 以上')],
+  ['air', '🙄', T('老闆的空氣'), T('老闆 7 次以上不聽你的')],
+  ['grandma', '👵', T('菜市場阿嬤收割機'), T('掃街 3 次')],
+  ['couch', '😴', T('戰情室沙發代言人'), T('被強制休息 3 次以上')],
+  ['saint', '😇', T('良心總幹事'), T('良心 85 以上')],
+  ['villain', '😈', T('黑心總幹事'), T('良心 20 以下')],
+  ['burnout', '🚑', T('爆肝過一次的人'), T('倒下過一次')],
+  ['normal', '🧑‍💼', T('認真的總幹事'), T('什麼都沒發生也是一種成就')]
+];
+const TITLES_KEY = 'mymayor.titles';
+function loadTitles() { try { return JSON.parse(localStorage.getItem(TITLES_KEY) || '{}'); } catch (e) { return {}; } }
+function saveTitle(id) {
+  const t = loadTitles(), d = new Date();
+  t[id] = t[id] || { first: `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`, count: 0 };
+  t[id].count++;
+  try { localStorage.setItem(TITLES_KEY, JSON.stringify(t)); } catch (e) { /* 沒差 */ }
+}
+
+// 本局稱號：看你這局怎麼玩，給一個好笑的稱號（只是好玩，不影響結局）
 function runTitle() {
   const f = G.f, aud = G.debate ? G.debate.aud : 50;
   const list = [
-    [(f.hospital || 0) >= 2, '🚑', T('急診室 VIP'), T('一局進了兩次急診，護理師都認得你了。')],
-    [(G.maxStreak || 0) >= 8, '🔥', T('連擊狂人'), T('連續 {0} 次處理得漂亮，戰情室開始叫你「總幹事大人」。', G.maxStreak)],
-    [(f.idle || 0) >= 4, '🙈', T('已讀不回之王'), T('擺爛了 {0} 次，老闆的「接下來呢？」已經變成你的鬧鐘。', f.idle)],
-    [(f.adlib || 0) >= 1 && aud <= 40, '🎭', T('脫稿受害者'), T('辯論時老闆脫稿，你在後台老了十歲。')],
-    [aud >= 68, '🎤', T('辯論金句製造機'), T('辯論觀眾好感 {0}，金句被做成貼圖。', aud)],
-    [(f.defied || 0) >= 7, '🙄', T('老闆的空氣'), T('老闆 {0} 次不聽你的，你懷疑自己是不是隱形了。', f.defied)],
-    [(f.sweeps || 0) >= 3, '👵', T('菜市場阿嬤收割機'), T('掃街 {0} 次，阿嬤們都存了你的電話。', f.sweeps)],
-    [(f.rests || 0) >= 3, '😴', T('戰情室沙發代言人'), T('被強制休息 {0} 次，沙發上有你的形狀。', f.rests)],
-    [G.con >= 85, '😇', T('良心總幹事'), T('選戰打完，良心幾乎沒掉。')],
-    [G.con <= 20, '😈', T('黑心總幹事'), T('贏不贏是一回事，良心先輸了。')],
-    [(f.hospital || 0) === 1, '🚑', T('爆肝過一次的人'), T('倒下過一次，但又爬起來了。')],
-    [true, '🧑‍💼', T('認真的總幹事'), T('沒有什麼特別的事蹟，但你撐完了整場選戰。')]
+    [G.guessHit, 'oracle', T('開票前就猜中得票率，戰情室都說你有內線。')],
+    [(f.hospital || 0) >= 2, 'er', T('一局進了兩次急診，護理師都認得你了。')],
+    [(G.maxStreak || 0) >= 8, 'combo', T('連續 {0} 次處理得漂亮，戰情室開始叫你「總幹事大人」。', G.maxStreak)],
+    [(f.idle || 0) >= 4, 'idle', T('擺爛了 {0} 次，老闆的「接下來呢？」已經變成你的鬧鐘。', f.idle)],
+    [(f.adlib || 0) >= 1 && aud <= 40, 'adlib', T('辯論時老闆脫稿，你在後台老了十歲。')],
+    [aud >= 68, 'debate', T('辯論觀眾好感 {0}，金句被做成貼圖。', aud)],
+    [(f.defied || 0) >= 7, 'air', T('老闆 {0} 次不聽你的，你懷疑自己是不是隱形了。', f.defied)],
+    [(f.sweeps || 0) >= 3, 'grandma', T('掃街 {0} 次，阿嬤們都存了你的電話。', f.sweeps)],
+    [(f.rests || 0) >= 3, 'couch', T('被強制休息 {0} 次，沙發上有你的形狀。', f.rests)],
+    [G.con >= 85, 'saint', T('選戰打完，良心幾乎沒掉。')],
+    [G.con <= 20, 'villain', T('贏不贏是一回事，良心先輸了。')],
+    [(f.hospital || 0) === 1, 'burnout', T('倒下過一次，但又爬起來了。')],
+    [true, 'normal', T('沒有什麼特別的事蹟，但你撐完了整場選戰。')]
   ];
-  const [, emoji, name, why] = list.find(x => x[0]);
-  return { emoji, name, why };
+  const [, id, why] = list.find(x => x[0]);
+  const [, emoji, name] = TITLES.find(t => t[0] === id);
+  return { id, emoji, name, why };
+}
+
+// 開票前：猜猜看老闆會拿到幾 %
+function guessCard() {
+  return new Promise(resolve => {
+    const opts = [[0, 40, T('不到 40%')], [40, 45, '40～45%'], [45, 50, '45～50%'], [50, 55, '50～55%'], [55, 101, T('55% 以上')]];
+    const o = overlay(`
+      <div class="head" style="background:#3d3150"><span>${T('🔮 開票前')}</span></div>
+      <div class="body">
+        <div class="who">${bossFace('flat')}<div><b>${esc(G.name)}</b><br><small>${T('「總幹事，你覺得我會拿到幾 %？」')}</small></div></div>
+        <p>${T('投票所關門了。開票前，猜猜看{0}的得票率，猜中有特別稱號。', esc(G.name))}</p>
+        <div id="opts">${opts.map(([a, b, t], i) => `<button class="opt" data-i="${i}">${t}</button>`).join('')}</div>
+      </div>`, 'k-main');
+    o.querySelectorAll('.opt').forEach(btn => btn.onclick = () => { sfx('tap'); const [a, b, t] = opts[+btn.dataset.i]; closeOverlay(); resolve({ lo: a, hi: b, label: t }); });
+  });
 }
 
 function statsOf() {
@@ -1016,7 +1066,7 @@ function endingScreen(res, seen) {
     <div class="story">${esc(res.text)}</div>
     <p class="muted" style="color:#ccc;margin-top:18px">${T('🧑‍💼 而你，總幹事……')}</p>
     <div class="story mgr"><div class="memoji">${res.mgr.emoji}</div><b>${esc(res.mgr.title)}</b><br>${esc(res.mgrText)}</div>
-    ${(() => { const t = runTitle(); return `<div class="runtitle"><small>${T('本局稱號')}</small><b>${t.emoji} ${esc(t.name)}</b><span>${esc(t.why)}</span></div>`; })()}
+    ${(() => { const t = runTitle(); return `<div class="runtitle"><small>${G.newTitle ? T('🆕 新稱號！圖鑑收集 {0}/{1}', Object.keys(loadTitles()).length, TITLES.length) : T('本局稱號')}</small><b>${t.emoji} ${esc(t.name)}</b><span>${esc(t.why)}</span></div>`; })()}
     ${G.topPost ? `<div class="toppost"><small>${T('🧵 本局脆上最熱門的留言')}</small><div class="th-post"><div class="th-ava">${esc(G.topPost.u.slice(0, 1))}</div><div class="th-body"><b>${esc(G.topPost.u)}</b><span>${esc(G.topPost.t)}</span><small>♡ ${G.topPost.likes.toLocaleString('en-US')}</small></div></div></div>` : ''}
     <p class="muted" style="color:#ccc">${T('已解鎖結局 {0} / {1}・總幹事結局 {2} / {3}', seen.size, ENDINGS.length, loadMgr().size, MGR_ENDINGS.length)}</p>
     <button class="btn" id="share">${T('📤 分享結局截圖')}</button>
@@ -1058,7 +1108,7 @@ function saveRun(res) {
 // ---------------- 結局圖鑑 ----------------
 const CATS = [
   ['true', T('⭐ 真結局')], ['win', T('🏆 選上')], ['lose', T('🌃 落選')], ['close', T('🗳️ 險勝驗票')],
-  ['crime', T('🚔 被抓')], ['special', T('🎲 特殊')], ['mgr', T('🧑‍💼 總幹事')]
+  ['crime', T('🚔 被抓')], ['special', T('🎲 特殊')], ['mgr', T('🧑‍💼 總幹事')], ['titles', T('🏅 稱號')]
 ];
 const RARE = { common: [T('普通'), 'r-common'], rare: [T('稀有'), 'r-rare'], legend: [T('傳說'), 'r-legend'] };
 const allEndings = () => ENDINGS.concat(MGR_ENDINGS.map(e => ({ ...e, cat: 'mgr' })));
@@ -1069,16 +1119,21 @@ function renderGallery(box) {
   const seen = loadSeen(), mseen = loadMgr();
   const has = e => (e.cat === 'mgr' ? mseen : seen).has(e.id);
   const list = allEndings().filter(e => e.cat === galTab);
-  const count = c => { const l = allEndings().filter(e => e.cat === c); return `${l.filter(has).length}/${l.length}`; };
+  const count = c => { if (c === 'titles') return `${Object.keys(loadTitles()).length}/${TITLES.length}`; const l = allEndings().filter(e => e.cat === c); return `${l.filter(has).length}/${l.length}`; };
+  const got = loadTitles();
+  const titleCells = () => TITLES.map(([id, emoji, name, how]) => got[id]
+    ? `<button class="gcell" data-title="${id}"><span class="e">${emoji}</span>${esc(name)}<small style="display:block;color:var(--muted);font-size:11px">${esc(how)}・${T('拿過 {0} 次', got[id].count)}</small></button>`
+    : `<button class="gcell lock" data-title="${id}"><span class="e">🔒</span>？？？<small style="display:block;color:var(--muted);font-size:11px">${esc(how)}</small></button>`).join('');
   box.innerHTML = `
     <p class="muted center" style="margin:8px 0 0">${T('選舉結局 {0}/{1}・總幹事結局 {2}/{3}', seen.size, ENDINGS.length, mseen.size, MGR_ENDINGS.length)}</p>
     <div class="tabs">${CATS.map(([c, n]) => `<button class="tab ${c === galTab ? 'on' : ''}" data-c="${c}">${n}<small>${count(c)}</small></button>`).join('')}</div>
-    <div class="gallery">${list.map(e => has(e)
+    <div class="gallery">${galTab === 'titles' ? titleCells() : list.map(e => has(e)
       ? `<button class="gcell" data-id="${e.id}"><span class="rtag ${RARE[e.rare][1]}">${RARE[e.rare][0]}</span><span class="e">${e.emoji}</span>${esc(e.title)}</button>`
       : `<button class="gcell lock" data-id="${e.id}"><span class="rtag ${RARE[e.rare][1]}">${RARE[e.rare][0]}</span><span class="e">🔒</span>？？？</button>`).join('')}</div>
     <button class="btn ghost" id="runsbtn">${T('📜 我的選戰紀錄')}</button>`;
   box.querySelectorAll('.tab').forEach(b => b.onclick = () => { galTab = b.dataset.c; renderGallery(box); });
-  box.querySelectorAll('.gcell').forEach(b => b.onclick = () => {
+  box.querySelectorAll('.gcell[data-title]').forEach(b => b.onclick = () => { if (b.classList.contains('lock')) toast(T('還沒拿到這個稱號，照提示試試看吧')); });
+  box.querySelectorAll('.gcell[data-id]').forEach(b => b.onclick = () => {
     const e = allEndings().find(x => x.id === b.dataset.id);
     if (has(e)) endingCard(e); else toast(T('還沒解鎖，再當幾次總幹事吧'));
   });

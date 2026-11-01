@@ -59,6 +59,8 @@ Everything is fictional: the city, the people, the animal-themed parties. The *r
 
 - ⏱ About 10 minutes per run
 - 🐢 Too fast? Turn on **Take-It-Easy mode** on the title screen to remove all timers
+- 📅 **Daily Challenge**: everyone gets the same candidate and schedule each day. Compare your vote share with friends
+- 🏅 Collect 13 run titles, and guess your candidate's vote share before the count
 - 📱 Made for phones, works on desktop
 - 🌏 English / 繁體中文 (auto-detected, switchable on the title screen)
 - 💾 Progress and unlocked endings are saved in your browser
