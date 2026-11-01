@@ -14,7 +14,7 @@
 - itch 上預設英文（i18n.js 依網域判斷）；作者自己測過中文的話，瀏覽器會記住，要用無痕視窗確認。
 - Distribute → Widget 只是給別的網站嵌入用的，不用調。
 
-## Newgrounds
+## Newgrounds（工作室 2026-11 起暫停，只上 itch；以下留作參考）
 - 用無 AI 版 zip；Embed 400×800，勾 Touchscreen friendly。
 - 圖示是橫的（見 06）。分級表：沒有色情暴力就選 None；政治諷刺、提到買票或喝酒，就在 Adult Themes／Drugs-Alcohol 選 Some，大約會是 T。
 - Commentary（作者的話）：同 itch 文案再口語一點，最後一句說圖示是作者手繪的，問大家拿到哪個結局。
