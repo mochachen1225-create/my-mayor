@@ -32,7 +32,7 @@ function end(lang) {
   const faces = ['A_m', 'B_m', 'C_f', 'D_m', 'E_m', 'F_f'].map(k => `<img src="http://localhost:8765/art/${k}_big.webp">`).join('');
   document.body.style.height = '1920px';
   document.getElementById('root').outerHTML = lang === 'en'
-    ? `<div class="end"><div class="faces">${faces}</div><div class="tag">Mayors aren't gods. Their staff make them gods.</div><h1 style="font-family:'Luckiest Guy',sans-serif;font-weight:normal;font-size:118px;color:#ffd23f;-webkit-text-stroke:12px #111;paint-order:stroke fill">Grandmas<br>Count Triple</h1><h2>我推的市長 · A Taiwanese Election Survival Game</h2><div class="cta">Play free in your browser</div><div class="sub">on itch.io · 10 minutes · 58 endings</div></div>`
+    ? `<div class="end"><div class="faces">${faces}</div><div class="tag">Mayors aren't gods. Their staff make them gods.</div><h1>My Mayor‑to‑Be</h1><h2>我推的市長</h2><div class="cta">Play free in your browser</div><div class="sub">on itch.io · 10 minutes · 58 endings</div></div>`
     : `<div class="end"><div class="faces">${faces}</div><div class="tag">市長不是神，是幕僚造出來的神。</div><h1>我推的市長</h1><h2>你是總幹事。老闆是抽到的。</h2><div class="cta">手機直接玩・免費</div><div class="sub">一局 10 分鐘・58 種結局</div></div>`;
 }
 </script></body></html>

@@ -9,6 +9,8 @@
 | `extract_i18n.js` | 抽出所有要翻譯的字串（data.js 的資料常數＋程式裡的 `T('…')`），輸出 `[{zh, ctx}]` | 同上 |
 | `stage_scenes.js` | 照劇本演一局：靜態畫面截圖、會動的畫面連拍（試玩廣告素材） | Playwright（雲端已預裝）、本地伺服器 |
 | `caption_cards.html` | 試玩廣告的字卡和片尾卡樣板（用 Playwright 截成 PNG） | 本地伺服器（片尾卡要載入角色圖） |
+| `build_promo_with_ai_clips.py` | 把 Flow／Gemini 的 AI 影片（自動加「AI 生成畫面」標示、可模糊 AI 亂生的文字）和真實遊戲畫面剪成宣傳短片 | ffmpeg |
+| `stage_feature_example.js` | 拍某個新功能的畫面（範例：辯論的弱點題、觀眾好感連拍、翻車迷因），改 `G.rng` 控制劇情 | Playwright、本地伺服器 |
 | `build_trailer.py` | 把截圖＋連拍＋字卡＋音樂剪成 1080×1920 的試玩廣告 | ffmpeg |
 
 `build-itch.sh`、`build-newgrounds.sh` 放在每個遊戲 repo 自己的 `scripts/`（見 references/07）。

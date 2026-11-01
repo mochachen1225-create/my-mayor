@@ -117,6 +117,11 @@ Everything is fictional: the city, the people, the animal-themed parties. The *r
 | 2026-11-01 | Reddit r/playmygame | 功能介紹型貼文（附截圖、Shorts） |
 | 2026-11-01 | Reddit r/BrowserGaming | 標題梗「My Mayor-to-Be: my candidate won and thanked everyone… except me」＋ itch 連結＋自己留第一則留言 |
 
+### 已做好、待排程的素材
+- `promo/my-mayor-debate-zh.mp4`／`-en.mp4`：辯論升級短片（11/14 開發日誌 #3、Shorts、脆、IG）
+- `promo/my-mayor-election-night-zh.mp4`／`-en.mp4`：開票夜短片（11/28）
+- 兩支都含 AI 生成畫面（左下角已標示），上傳 YouTube／IG 時也要勾 AI 標示
+
 ### 之後
 - r/taiwan：帳號太新不能發，養 1～2 週後再發（稿子在對話紀錄，發前更新日期）
 - Newgrounds 審核通過後：發自我介紹 News Post
