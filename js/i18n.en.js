@@ -1,5 +1,6 @@
 // 英文對照表：中文原文 → English（由 scripts/i18n 流程產生，改英文就直接改這裡）
 I18N.en = {
+  "🎨 所有配角都有插畫了：局處首長、外商代表、商會會長也換上新插畫": "🎨 Every supporting character now has a portrait: the department director, the foreign investor and the chamber-of-commerce chairman joined the cast",
   "🎨 副總幹事、里長伯、名嘴、議員、志工大姐換上新插畫": "🎨 New portraits for the deputy campaign manager, the borough chief, the pundit, the councilor and the volunteer auntie",
   "📺 電視辯論大升級：題目每局不同、每位老闆都有最怕的題目、對手會翻你的舊帳、即時觀眾好感，辯論後還有金句或迷因": "📺 Debate night got a lot meaner: new questions every run, a dreaded topic for each boss, a rival who digs up your past, a live audience meter, and a viral one-liner or meme afterward",
   "⚠️ 這題正中{boss}的弱點，台下一陣騷動。": "⚠️ This one hits {boss}'s weak spot. The audience stirs.",
