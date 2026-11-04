@@ -5,7 +5,7 @@ description: 小型手機網頁遊戲從發想到上架宣傳的完整流程。�
 
 # 小型網頁遊戲：從發想到上架
 
-> **skill 版本 1.4（2026-11-02）**：公開檔案（程式註解、commit、NOTES、文件、遊戲內）不寫作者的名字，署名一律寫「摩卡與貓貓小隊」。1.3（2026-11-01）：每個版本都要做「玩家評審」和「Make it much, much more fun」兩輪。1.2：tag 改由 GitHub Actions 自動打。1.1：補上預設分支與 tag、AI 揭露全勾、Newgrounds 暫停、連線遊戲、Flow 素材細節、宣傳錯開與時事禁發期、上架前檢查清單。
+> **skill 版本 1.5（2026-11-04）**：英文署名定為「Mocha & the Cat Hero Party」。1.4（2026-11-02）：公開檔案（程式註解、commit、NOTES、文件、遊戲內）不寫作者的名字，署名一律寫「摩卡與貓貓小隊」；英文（itch 頁、遊戲內 credits、英文文案）一律寫「Mocha & the Cat Hero Party」。1.3（2026-11-01）：每個版本都要做「玩家評審」和「Make it much, much more fun」兩輪。1.2：tag 改由 GitHub Actions 自動打。1.1：補上預設分支與 tag、AI 揭露全勾、Newgrounds 暫停、連線遊戲、Flow 素材細節、宣傳錯開與時事禁發期、上架前檢查清單。
 
 這套流程來自《我推的市長》（選舉題材、一局約 10 分鐘的手機網頁遊戲），從第一句發想做到 itch.io、YouTube Shorts、Reddit。照這個順序走，可以避開我們踩過的坑。
 
