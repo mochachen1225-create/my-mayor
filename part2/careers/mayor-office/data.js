@@ -18,14 +18,14 @@ const CAREER_MAYOR_OFFICE = {
   blameLate: { pop: -8, council: -3 },
 
   drawer: [
-    { id: 'A', start: 1, look: 1, real: 2, chain: ['C'], fx: { staff: 4 }, title: T('交接空城'), text: T('電腦只剩螢幕，密碼便利貼寫「問前任」。') },
-    { id: 'C', look: 1, real: 3, chain: ['B'], fx: { council: 3 }, title: T('合約抽屜'), text: T('找到一箱合約，最上面那份寫著「自動續約」。') },
-    { id: 'B', look: 1, real: 5, fx: { pop: 10 }, title: T('路燈委外 75 年'), text: T('前任把全市路燈租出去，換一顆燈泡要付廠商錢。') },
+    { id: 'A', start: 1, look: 1, real: 2, chain: ['C'], fx: { staff: 4 }, title: T('交接清冊第 287 頁'), text: T('移交清冊 300 頁，第 287 頁寫著「詳見附件」，附件不見了。系統密碼只有原承辦知道，他上個月退休了。') },
+    { id: 'C', look: 1, real: 3, chain: ['B'], fx: { council: 3 }, title: T('附件找到了'), text: T('附件在地下室的一箱合約裡，最上面那份寫著「期滿自動續約」。') },
+    { id: 'B', look: 1, real: 5, fx: { pop: 10 }, title: T('20 年路燈節能合約'), text: T('前任簽了 20 年的路燈節能合約：廠商出錢換 LED、用省下的電費回收。條款寫得很妙：換色溫要另外付費、燈壞了要等廠商、提前解約要賠一大筆。') },
     { id: 'D', start: 1, look: 3, real: 3, conflict: ['E'], conflictKind: 'cost', fx: { pop: 6 }, title: T('多功能藝文體育會展中心'), text: T('蓋好三年沒人用，每年電費比辦活動還貴。') },
     { id: 'E', start: 1, look: 2, real: 4, conflict: ['D'], conflictKind: 'cost', fx: { pop: 8, council: 3 }, title: T('蓋一半的市民天空步道'), text: T('廠商跑了，重新發包流標兩次。') },
-    { id: 'F', start: 1, look: 2, real: 3, chain: ['G'], conflict: ['H'], conflictKind: 'block', fx: { pop: 10 }, title: T('敬老加碼政見'), text: T('前任答應每月加發，錢從「明年的預算」先借。') },
-    { id: 'G', look: 1, real: 5, fx: { council: 8 }, title: T('第二本帳'), text: T('會計科長小聲說：「其實……帳本有兩本。」') },
-    { id: 'H', start: 1, look: 3, real: 4, conflict: ['F'], conflictKind: 'block', fx: { staff: 12 }, title: T('清潔隊同酬判決'), text: T('法院判市府要補發 20 年的薪水。') }
+    { id: 'F', start: 1, look: 2, real: 3, chain: ['G'], conflict: ['H'], conflictKind: 'block', fx: { pop: 10 }, title: T('敬老加碼政見'), text: T('前任答應敬老金每月加碼，但預算書上只編了半年。') },
+    { id: 'G', look: 1, real: 5, fx: { council: 8 }, title: T('不在預算書上的那一筆'), text: T('會計科長小聲說：「有一筆不在預算書上……」前任先用明年的錢付了今年的帳，包商工程款也欠著。') },
+    { id: 'H', start: 1, look: 3, real: 4, conflict: ['F'], conflictKind: 'block', fx: { pop: 8, staff: 4 }, title: T('免費營養午餐'), text: T('前任宣布國中小營養午餐全面免費，下學期開始，經費「再想辦法」。') }
   ],
 
   events: [
